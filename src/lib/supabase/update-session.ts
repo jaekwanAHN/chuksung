@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-/** 세션 갱신 후 `user`와 최종 `response`를 반환합니다. */
+/** Proxy에서 세션 쿠키를 갱신한 뒤 `user`와 응답을 반환합니다. */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request })
 
