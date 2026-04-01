@@ -61,8 +61,8 @@ export default function DailyPlannerPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between gap-2">
           <Button
             type="button"
             variant="secondary"
@@ -72,20 +72,9 @@ export default function DailyPlannerPage() {
           >
             <ChevronLeft className="size-5" />
           </Button>
-          <div className="min-w-0 flex-1 text-center sm:text-left">
-            <p className="text-lg font-bold text-zinc-900">{targetLabel}</p>
-            {!isToday ? (
-              <button
-                type="button"
-                className="text-xs font-medium text-emerald-600 hover:underline"
-                onClick={() => setDate(new Date())}
-              >
-                오늘로 이동
-              </button>
-            ) : (
-              <span className="text-xs text-zinc-400">오늘</span>
-            )}
-          </div>
+          <h1 className="flex-1 text-center text-lg font-bold text-zinc-900">
+            {targetLabel}
+          </h1>
           <Button
             type="button"
             variant="secondary"
@@ -96,7 +85,23 @@ export default function DailyPlannerPage() {
             <ChevronRight className="size-5" />
           </Button>
         </div>
-        <Button type="button" onClick={() => openForm()} className="w-full sm:w-auto">
+        <div className="text-center text-sm text-zinc-500">
+          {isToday ? (
+            <span>오늘</span>
+          ) : (
+            <button
+              type="button"
+              className="font-medium text-emerald-600 hover:underline"
+              onClick={() => setDate(new Date())}
+            >
+              오늘로 이동
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button type="button" onClick={() => openForm()}>
           <Plus className="size-4" />
           새 태스크
         </Button>
