@@ -66,16 +66,17 @@ function TaskFormBody({
       <div>
         <label
           htmlFor="task-title"
-          className="mb-1 block text-xs font-medium text-zinc-600"
+          className="mb-1 block text-xs font-medium text-zinc-700"
         >
           제목 <span className="text-red-500">*</span>
         </label>
         <input
           id="task-title"
           required
+          autoFocus
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 shadow-inner"
           placeholder="무엇을 할까요?"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -88,7 +89,7 @@ function TaskFormBody({
       <div>
         <label
           htmlFor="task-desc"
-          className="mb-1 block text-xs font-medium text-zinc-600"
+          className="mb-1 block text-xs font-medium text-zinc-700"
         >
           설명
         </label>
@@ -97,18 +98,18 @@ function TaskFormBody({
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 shadow-inner"
           placeholder="선택"
         />
       </div>
       <div>
-        <span className="mb-1 block text-xs font-medium text-zinc-600">
+        <span className="mb-1 block text-xs font-medium text-zinc-700">
           카테고리
         </span>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as TaskCategory)}
-          className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-inner"
         >
           {categories.map((c) => (
             <option key={c.value} value={c.value}>
@@ -118,7 +119,7 @@ function TaskFormBody({
         </select>
       </div>
       <fieldset>
-        <legend className="mb-2 text-xs font-medium text-zinc-600">
+        <legend className="mb-2 text-xs font-medium text-zinc-700">
           우선순위
         </legend>
         <div className="flex flex-wrap gap-4">
@@ -131,7 +132,7 @@ function TaskFormBody({
           ).map(([p, label]) => (
             <label
               key={p}
-              className="flex cursor-pointer items-center gap-2 text-sm"
+              className="flex cursor-pointer items-center gap-2 text-sm text-zinc-900"
             >
               <input
                 type="radio"
@@ -147,7 +148,7 @@ function TaskFormBody({
       <div>
         <label
           htmlFor="task-date"
-          className="mb-1 block text-xs font-medium text-zinc-600"
+          className="mb-1 block text-xs font-medium text-zinc-700"
         >
           기준 날짜
         </label>
@@ -156,7 +157,7 @@ function TaskFormBody({
           type="date"
           value={targetDate}
           onChange={(e) => setTargetDate(e.target.value)}
-          className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-inner [color-scheme:light]"
         />
       </div>
     </form>

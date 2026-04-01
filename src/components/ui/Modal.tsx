@@ -62,7 +62,9 @@ export function Modal({
             <X className="size-5" />
           </Button>
         </div>
-        <div className="flex-1 overflow-y-auto p-4">{children}</div>
+        <div className="flex-1 overflow-y-auto bg-white p-4 text-zinc-900 [color-scheme:light]">
+          {children}
+        </div>
         {footer ? (
           <div className="flex justify-end gap-2 border-t border-zinc-100 px-4 py-3">
             {footer}
