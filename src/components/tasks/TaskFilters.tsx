@@ -47,33 +47,53 @@ export function TaskFilters({
       </div>
       {mode === 'category' ? (
         <select
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
           value={category}
           onChange={(e) =>
             onCategoryChange(e.target.value as TaskCategory | 'all')
           }
         >
-          <option value="all">모든 카테고리</option>
-          <option value="application">지원서</option>
-          <option value="study">공부·자격증</option>
-          <option value="networking">네트워킹</option>
-          <option value="interview">면접</option>
-          <option value="general">기타</option>
+          <option value="all" className="bg-white text-zinc-900">
+            모든 카테고리
+          </option>
+          <option value="application" className="bg-white text-zinc-900">
+            지원서
+          </option>
+          <option value="study" className="bg-white text-zinc-900">
+            공부·자격증
+          </option>
+          <option value="networking" className="bg-white text-zinc-900">
+            네트워킹
+          </option>
+          <option value="interview" className="bg-white text-zinc-900">
+            면접
+          </option>
+          <option value="general" className="bg-white text-zinc-900">
+            기타
+          </option>
         </select>
       ) : null}
       {mode === 'priority' ? (
         <select
-          className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
           value={priority === 'all' ? 'all' : String(priority)}
           onChange={(e) => {
             const v = e.target.value
             onPriorityChange(v === 'all' ? 'all' : (Number(v) as TaskPriority))
           }}
         >
-          <option value="all">모든 우선순위</option>
-          <option value="1">높음</option>
-          <option value="2">중간</option>
-          <option value="3">낮음</option>
+          <option value="all" className="bg-white text-zinc-900">
+            모든 우선순위
+          </option>
+          <option value="1" className="bg-white text-zinc-900">
+            높음
+          </option>
+          <option value="2" className="bg-white text-zinc-900">
+            중간
+          </option>
+          <option value="3" className="bg-white text-zinc-900">
+            낮음
+          </option>
         </select>
       ) : null}
     </div>
