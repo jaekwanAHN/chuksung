@@ -1,0 +1,32 @@
+# PR이 main 대상일 때 배포된 사이트 주요 경로 HTTP 200 여부 확인
+name: Deploy Health Check
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened, synchronize, reopened]
+
+jobs:
+  health-check:
+    name: health-check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify deployed URLs return HTTP 200
+        run: |
+          set -euo pipefail
+          urls=(
+            "https://chuksung.vercel.app"
+            "https://chuksung.vercel.app/login"
+          )
+          for url in "${urls[@]}"; do
+            code=$(curl -sS -L -o /dev/null -w "%{http_code}" --max-time 30 "$url")
+            if [ "$code" != "200" ]; then
+              echo "::error::Expected HTTP 200 from $url, got $code"
+              exit 1
+            fi
+            echo "OK: $url -> $code"
+          done
