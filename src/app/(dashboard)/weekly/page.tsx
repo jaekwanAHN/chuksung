@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import {
   addWeeks,
   endOfWeek,
@@ -10,16 +10,9 @@ import {
 } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { useTasks } from '@/hooks/useTasks'
-import {
-  useCreateTask,
-  useDeleteTask,
-  useToggleTask,
-  useUpdateTask,
-} from '@/hooks/useTaskMutations'
-import type { CreateTaskInput, Task, TaskCategory, TaskPriority } from '@/types'
+import { usePlannerPage } from '@/hooks/tasks/usePlannerPage'
 import { TaskList } from '@/components/tasks/TaskList'
-import { TaskFilters, type FilterMode } from '@/components/tasks/TaskFilters'
+import { TaskFilters } from '@/components/tasks/TaskFilters'
 import { TaskForm } from '@/components/tasks/TaskForm'
 import { Button } from '@/components/ui/Button'
 
@@ -43,67 +36,33 @@ function WeeklyProgress({ tasks }: { tasks: { is_completed: boolean }[] }) {
 
 export default function WeeklyPlannerPage() {
   const [weekAnchor, setWeekAnchor] = useState(() => new Date())
-  const [filterMode, setFilterMode] = useState<FilterMode>('all')
-  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>(
-    'all'
-  )
-  const [priorityFilter, setPriorityFilter] = useState<
-    TaskPriority | 'all'
-  >('all')
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Task | null>(null)
-  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const {
+    tasks,
+    isLoading,
+    error,
+    filterMode,
+    setFilterMode,
+    categoryFilter,
+    setCategoryFilter,
+    priorityFilter,
+    setPriorityFilter,
+    formOpen,
+    editing,
+    togglingId,
+    isMutating,
+    openForm,
+    closeForm,
+    handleToggle,
+    handleDelete,
+    handleSave,
+  } = usePlannerPage('weekly', weekAnchor)
 
   const weekStart = startOfWeek(weekAnchor, { weekStartsOn: 1 })
   const weekEnd = endOfWeek(weekAnchor, { weekStartsOn: 1 })
   const weekNum = getWeek(weekAnchor, { weekStartsOn: 1 })
 
-  const { data: tasks = [], isLoading, error } = useTasks('weekly', weekAnchor)
-  const createTask = useCreateTask('weekly', weekAnchor)
-  const toggleTask = useToggleTask('weekly', weekAnchor)
-  const deleteTask = useDeleteTask('weekly', weekAnchor)
-  const updateTask = useUpdateTask('weekly', weekAnchor)
-
   const titleText = `${format(weekAnchor, 'yyyy년 M월', { locale: ko })} ${weekNum}주차`
   const rangeText = `${format(weekStart, 'M/d(E)', { locale: ko })} ~ ${format(weekEnd, 'M/d(E)', { locale: ko })}`
-
-  const handleToggle = (id: string, done: boolean) => {
-    setTogglingId(id)
-    toggleTask.mutate(
-      { id, is_completed: done },
-      { onSettled: () => setTogglingId(null) }
-    )
-  }
-
-  const handleDelete = (id: string) => {
-    if (!confirm('이 태스크를 삭제할까요?')) return
-    deleteTask.mutate(id)
-  }
-
-  const handleSave = (input: CreateTaskInput) => {
-    if (editing) {
-      updateTask.mutate(
-        {
-          id: editing.id,
-          title: input.title,
-          description: input.description ?? null,
-          category: input.category,
-          priority: input.priority,
-          target_date: input.target_date,
-        },
-        {
-          onSuccess: () => {
-            setFormOpen(false)
-            setEditing(null)
-          },
-        }
-      )
-    } else {
-      createTask.mutate(input, { onSuccess: () => setFormOpen(false) })
-    }
-  }
-
-  const listTasks = useMemo(() => tasks, [tasks])
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -135,7 +94,7 @@ export default function WeeklyPlannerPage() {
       </div>
 
       <div className="flex justify-end">
-        <Button type="button" onClick={() => setFormOpen(true)}>
+        <Button type="button" onClick={() => openForm()}>
           <Plus className="size-4" />
           주간 목표 추가
         </Button>
@@ -157,32 +116,26 @@ export default function WeeklyPlannerPage() {
       ) : (
         <>
           <TaskList
-            tasks={listTasks}
+            tasks={tasks}
             filterMode={filterMode}
             categoryFilter={categoryFilter}
             priorityFilter={priorityFilter}
             onToggle={handleToggle}
             onDelete={handleDelete}
-            onEdit={(t) => {
-              setEditing(t)
-              setFormOpen(true)
-            }}
+            onEdit={(t) => openForm(t)}
             togglingId={togglingId}
           />
-          <WeeklyProgress tasks={listTasks} />
+          <WeeklyProgress tasks={tasks} />
         </>
       )}
 
       <TaskForm
         open={formOpen}
-        onClose={() => {
-          setFormOpen(false)
-          setEditing(null)
-        }}
+        onClose={closeForm}
         scope="weekly"
         anchorDate={weekAnchor}
         initial={editing}
-        loading={createTask.isPending || updateTask.isPending}
+        loading={isMutating}
         onSubmit={handleSave}
       />
     </div>

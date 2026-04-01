@@ -1,21 +1,15 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { addDays, format, isSameDay } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { useTasks } from '@/hooks/useTasks'
-import {
-  useCreateTask,
-  useDeleteTask,
-  useToggleTask,
-  useUpdateTask,
-} from '@/hooks/useTaskMutations'
-import type { CreateTaskInput, Task, TaskCategory, TaskPriority } from '@/types'
+import { usePlannerPage } from '@/hooks/tasks/usePlannerPage'
 import { TaskList } from '@/components/tasks/TaskList'
-import { TaskFilters, type FilterMode } from '@/components/tasks/TaskFilters'
+import { TaskFilters } from '@/components/tasks/TaskFilters'
 import { TaskForm } from '@/components/tasks/TaskForm'
 import { Button } from '@/components/ui/Button'
+
 function ProgressSummary({ tasks }: { tasks: { is_completed: boolean }[] }) {
   const total = tasks.length
   const done = tasks.filter((t) => t.is_completed).length
@@ -41,66 +35,29 @@ function ProgressSummary({ tasks }: { tasks: { is_completed: boolean }[] }) {
 
 export default function DailyPlannerPage() {
   const [date, setDate] = useState(() => new Date())
-  const [filterMode, setFilterMode] = useState<FilterMode>('all')
-  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>(
-    'all'
-  )
-  const [priorityFilter, setPriorityFilter] = useState<
-    TaskPriority | 'all'
-  >('all')
-
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Task | null>(null)
-  const [togglingId, setTogglingId] = useState<string | null>(null)
-
-  const { data: tasks = [], isLoading, error } = useTasks('daily', date)
-  const createTask = useCreateTask('daily', date)
-  const toggleTask = useToggleTask('daily', date)
-  const deleteTask = useDeleteTask('daily', date)
-  const updateTask = useUpdateTask('daily', date)
+  const {
+    tasks,
+    isLoading,
+    error,
+    filterMode,
+    setFilterMode,
+    categoryFilter,
+    setCategoryFilter,
+    priorityFilter,
+    setPriorityFilter,
+    formOpen,
+    editing,
+    togglingId,
+    isMutating,
+    openForm,
+    closeForm,
+    handleToggle,
+    handleDelete,
+    handleSave,
+  } = usePlannerPage('daily', date)
 
   const targetLabel = format(date, 'PPP (EEE)', { locale: ko })
   const isToday = isSameDay(date, new Date())
-
-  const handleToggle = (id: string, done: boolean) => {
-    setTogglingId(id)
-    toggleTask.mutate(
-      { id, is_completed: done },
-      { onSettled: () => setTogglingId(null) }
-    )
-  }
-
-  const handleDelete = (id: string) => {
-    if (!confirm('이 태스크를 삭제할까요?')) return
-    deleteTask.mutate(id)
-  }
-
-  const handleSave = (input: CreateTaskInput) => {
-    if (editing) {
-      updateTask.mutate(
-        {
-          id: editing.id,
-          title: input.title,
-          description: input.description ?? null,
-          category: input.category,
-          priority: input.priority,
-          target_date: input.target_date,
-        },
-        {
-          onSuccess: () => {
-            setFormOpen(false)
-            setEditing(null)
-          },
-        }
-      )
-    } else {
-      createTask.mutate(input, {
-        onSuccess: () => setFormOpen(false),
-      })
-    }
-  }
-
-  const listTasks = useMemo(() => tasks, [tasks])
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -139,7 +96,7 @@ export default function DailyPlannerPage() {
             <ChevronRight className="size-5" />
           </Button>
         </div>
-        <Button type="button" onClick={() => setFormOpen(true)} className="w-full sm:w-auto">
+        <Button type="button" onClick={() => openForm()} className="w-full sm:w-auto">
           <Plus className="size-4" />
           새 태스크
         </Button>
@@ -163,32 +120,26 @@ export default function DailyPlannerPage() {
       ) : (
         <>
           <TaskList
-            tasks={listTasks}
+            tasks={tasks}
             filterMode={filterMode}
             categoryFilter={categoryFilter}
             priorityFilter={priorityFilter}
             onToggle={handleToggle}
             onDelete={handleDelete}
-            onEdit={(t) => {
-              setEditing(t)
-              setFormOpen(true)
-            }}
+            onEdit={(t) => openForm(t)}
             togglingId={togglingId}
           />
-          <ProgressSummary tasks={listTasks} />
+          <ProgressSummary tasks={tasks} />
         </>
       )}
 
       <TaskForm
         open={formOpen}
-        onClose={() => {
-          setFormOpen(false)
-          setEditing(null)
-        }}
+        onClose={closeForm}
         scope="daily"
         anchorDate={date}
         initial={editing}
-        loading={createTask.isPending || updateTask.isPending}
+        loading={isMutating}
         onSubmit={handleSave}
       />
     </div>

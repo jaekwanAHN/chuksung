@@ -10,7 +10,7 @@ import {
 } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import type { Task, TaskCategory } from '@/types'
-import { useCompletedHistory } from '@/hooks/useTasks'
+import { useCompletedHistory } from '@/hooks/tasks/useTasks'
 import { CategoryBadge, PriorityBadge } from '@/components/ui/Badge'
 import { HistoryStats } from '@/components/history/HistoryStats'
 import { HistoryCalendar } from '@/components/history/HistoryCalendar'

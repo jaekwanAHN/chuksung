@@ -10,16 +10,10 @@ import {
 } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { useTasks, useCompletedHistory } from '@/hooks/useTasks'
-import {
-  useCreateTask,
-  useDeleteTask,
-  useToggleTask,
-  useUpdateTask,
-} from '@/hooks/useTaskMutations'
-import type { CreateTaskInput, Task, TaskCategory, TaskPriority } from '@/types'
+import { usePlannerPage } from '@/hooks/tasks/usePlannerPage'
+import { useCompletedHistory } from '@/hooks/tasks/useTasks'
 import { TaskList } from '@/components/tasks/TaskList'
-import { TaskFilters, type FilterMode } from '@/components/tasks/TaskFilters'
+import { TaskFilters } from '@/components/tasks/TaskFilters'
 import { TaskForm } from '@/components/tasks/TaskForm'
 import { MonthMiniCalendar } from '@/components/tasks/MonthMiniCalendar'
 import { Button } from '@/components/ui/Button'
@@ -44,18 +38,27 @@ function MonthlyProgress({ tasks }: { tasks: { is_completed: boolean }[] }) {
 
 export default function MonthlyPlannerPage() {
   const [month, setMonth] = useState(() => new Date())
-  const [filterMode, setFilterMode] = useState<FilterMode>('all')
-  const [categoryFilter, setCategoryFilter] = useState<TaskCategory | 'all'>(
-    'all'
-  )
-  const [priorityFilter, setPriorityFilter] = useState<
-    TaskPriority | 'all'
-  >('all')
-  const [formOpen, setFormOpen] = useState(false)
-  const [editing, setEditing] = useState<Task | null>(null)
-  const [togglingId, setTogglingId] = useState<string | null>(null)
+  const {
+    tasks,
+    isLoading,
+    error,
+    filterMode,
+    setFilterMode,
+    categoryFilter,
+    setCategoryFilter,
+    priorityFilter,
+    setPriorityFilter,
+    formOpen,
+    editing,
+    togglingId,
+    isMutating,
+    openForm,
+    closeForm,
+    handleToggle,
+    handleDelete,
+    handleSave,
+  } = usePlannerPage('monthly', month)
 
-  const { data: tasks = [], isLoading, error } = useTasks('monthly', month)
   const { data: completed = [] } = useCompletedHistory()
 
   const dayCounts = useMemo(() => {
@@ -72,50 +75,7 @@ export default function MonthlyPlannerPage() {
     return map
   }, [completed, month])
 
-  const createTask = useCreateTask('monthly', month)
-  const toggleTask = useToggleTask('monthly', month)
-  const deleteTask = useDeleteTask('monthly', month)
-  const updateTask = useUpdateTask('monthly', month)
-
   const monthTitle = format(month, 'yyyy년 M월', { locale: ko })
-
-  const handleToggle = (id: string, done: boolean) => {
-    setTogglingId(id)
-    toggleTask.mutate(
-      { id, is_completed: done },
-      { onSettled: () => setTogglingId(null) }
-    )
-  }
-
-  const handleDelete = (id: string) => {
-    if (!confirm('이 태스크를 삭제할까요?')) return
-    deleteTask.mutate(id)
-  }
-
-  const handleSave = (input: CreateTaskInput) => {
-    if (editing) {
-      updateTask.mutate(
-        {
-          id: editing.id,
-          title: input.title,
-          description: input.description ?? null,
-          category: input.category,
-          priority: input.priority,
-          target_date: input.target_date,
-        },
-        {
-          onSuccess: () => {
-            setFormOpen(false)
-            setEditing(null)
-          },
-        }
-      )
-    } else {
-      createTask.mutate(input, { onSuccess: () => setFormOpen(false) })
-    }
-  }
-
-  const listTasks = useMemo(() => tasks, [tasks])
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -142,7 +102,7 @@ export default function MonthlyPlannerPage() {
       </div>
 
       <div className="flex justify-end">
-        <Button type="button" onClick={() => setFormOpen(true)}>
+        <Button type="button" onClick={() => openForm()}>
           <Plus className="size-4" />
           월간 목표 추가
         </Button>
@@ -164,35 +124,29 @@ export default function MonthlyPlannerPage() {
       ) : (
         <>
           <TaskList
-            tasks={listTasks}
+            tasks={tasks}
             filterMode={filterMode}
             categoryFilter={categoryFilter}
             priorityFilter={priorityFilter}
             onToggle={handleToggle}
             onDelete={handleDelete}
-            onEdit={(t) => {
-              setEditing(t)
-              setFormOpen(true)
-            }}
+            onEdit={(t) => openForm(t)}
             togglingId={togglingId}
           />
           <div className="grid gap-4 lg:grid-cols-2">
             <MonthMiniCalendar month={month} counts={dayCounts} />
-            <MonthlyProgress tasks={listTasks} />
+            <MonthlyProgress tasks={tasks} />
           </div>
         </>
       )}
 
       <TaskForm
         open={formOpen}
-        onClose={() => {
-          setFormOpen(false)
-          setEditing(null)
-        }}
+        onClose={closeForm}
         scope="monthly"
         anchorDate={month}
         initial={editing}
-        loading={createTask.isPending || updateTask.isPending}
+        loading={isMutating}
         onSubmit={handleSave}
       />
     </div>

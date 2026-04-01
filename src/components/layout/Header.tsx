@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { LogOut } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
-import { useAuth } from '@/hooks/useAuth'
+import { useAuth } from '@/hooks/auth/useAuth'
 import { Button } from '@/components/ui/Button'
 
 export function Header() {

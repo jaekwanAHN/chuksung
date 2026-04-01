@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import type { CreateTaskInput, Task, TaskScope } from '@/types'
-import { taskKeys } from '@/hooks/useTasks'
+import { taskKeys } from '@/hooks/tasks/useTasks'
 import { getTargetDateForScope } from '@/lib/task-dates'
 
 export function useCreateTask(scope: TaskScope, date: Date) {
