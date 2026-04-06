@@ -1,9 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { CalendarDays, CalendarRange, History, LayoutGrid } from 'lucide-react'
+import { CalendarDays, CalendarRange, History, LayoutGrid, Settings } from 'lucide-react'
+import { differenceInDays, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
+import { useDdays } from '@/hooks/dday/useDdays'
+import { DdayManager } from '@/components/dday/DdayManager'
 
 const nav = [
   { href: '/daily', label: '일간', icon: CalendarDays },
@@ -12,8 +16,67 @@ const nav = [
   { href: '/history', label: '기록', icon: History },
 ]
 
+function daysLeft(targetDate: string): number {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return differenceInDays(parseISO(targetDate), today)
+}
+
+function DdayLabel({ days }: { days: number }) {
+  if (days === 0) return <span className="text-xs font-bold text-emerald-600">D-Day</span>
+  if (days > 0) return <span className="text-xs font-bold text-blue-600">D-{days}</span>
+  return <span className="text-xs font-bold text-zinc-400">D+{Math.abs(days)}</span>
+}
+
+function DdaySidebar({ onOpen }: { onOpen: () => void }) {
+  const { ddays } = useDdays()
+
+  return (
+    <div className="mt-1 border-t border-zinc-100 px-1 pt-3">
+      <div className="mb-2 flex items-center justify-between">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">
+          D-day
+        </span>
+        <button
+          type="button"
+          onClick={onOpen}
+          className="text-zinc-400 hover:text-zinc-700"
+          aria-label="D-day 설정"
+        >
+          <Settings className="size-3.5" />
+        </button>
+      </div>
+      {ddays.length === 0 ? (
+        <button
+          type="button"
+          onClick={onOpen}
+          className="w-full text-left text-xs text-zinc-400 hover:text-zinc-600"
+        >
+          + D-day 추가
+        </button>
+      ) : (
+        <ul className="space-y-1.5">
+          {ddays.map((d) => {
+            const days = daysLeft(d.target_date)
+            return (
+              <li
+                key={d.id}
+                className="flex items-center justify-between gap-1"
+              >
+                <span className="truncate text-xs text-zinc-600">{d.label}</span>
+                <DdayLabel days={days} />
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </div>
+  )
+}
+
 export function Sidebar() {
   const pathname = usePathname()
+  const [managerOpen, setManagerOpen] = useState(false)
 
   return (
     <>
@@ -44,8 +107,11 @@ export function Sidebar() {
               </Link>
             )
           })}
+          <DdaySidebar onOpen={() => setManagerOpen(true)} />
         </nav>
       </aside>
+
+      {/* 모바일 하단 탭 */}
       <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-zinc-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur md:hidden">
         {nav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`)
@@ -63,7 +129,17 @@ export function Sidebar() {
             </Link>
           )
         })}
+        <button
+          type="button"
+          onClick={() => setManagerOpen(true)}
+          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-zinc-400"
+        >
+          <Settings className="size-5" aria-hidden />
+          D-day
+        </button>
       </nav>
+
+      <DdayManager open={managerOpen} onClose={() => setManagerOpen(false)} />
     </>
   )
 }

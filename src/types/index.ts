@@ -30,6 +30,19 @@ export interface Profile {
   created_at: string
 }
 
+export interface Dday {
+  id: string
+  user_id: string
+  label: string
+  target_date: string
+  created_at: string
+}
+
+export interface CreateDdayInput {
+  label: string
+  target_date: string
+}
+
 export interface CreateTaskInput {
   title: string
   description?: string
