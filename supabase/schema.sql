@@ -84,6 +84,29 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
+-- 8. D-day 테이블
+CREATE TABLE public.ddays (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  label TEXT NOT NULL,
+  target_date DATE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.ddays ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own ddays" ON public.ddays
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own ddays" ON public.ddays
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own ddays" ON public.ddays
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own ddays" ON public.ddays
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- 7. updated_at 자동 갱신
 CREATE OR REPLACE FUNCTION public.handle_updated_at()
 RETURNS TRIGGER AS $$
