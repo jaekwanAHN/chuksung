@@ -1,17 +1,17 @@
-# JobReady (planner)
+# chuksung (planner)
 
 취업 준비생을 위한 플래너입니다. **일간 / 주간 / 월간** 단위로 목표를 잡고 완료를 체크하며, **히트맵과 통계**로 누적 기록을 볼 수 있습니다.
 
 ## 기술 스택
 
-| 구분 | 사용 기술 |
-|------|-----------|
-| 프레임워크 | [Next.js 16](https://nextjs.org) (App Router) |
-| UI | React 19, [Tailwind CSS v4](https://tailwindcss.com) |
-| 데이터 패칭 | [TanStack Query v5](https://tanstack.com/query) |
-| 인증·DB | [Supabase](https://supabase.com) (Auth + PostgreSQL, `@supabase/ssr`) |
-| 날짜 | [date-fns](https://date-fns.org) |
-| 아이콘 | [Lucide React](https://lucide.dev) |
+| 구분        | 사용 기술                                                             |
+| ----------- | --------------------------------------------------------------------- |
+| 프레임워크  | [Next.js 16](https://nextjs.org) (App Router)                         |
+| UI          | React 19, [Tailwind CSS v4](https://tailwindcss.com)                  |
+| 데이터 패칭 | [TanStack Query v5](https://tanstack.com/query)                       |
+| 인증·DB     | [Supabase](https://supabase.com) (Auth + PostgreSQL, `@supabase/ssr`) |
+| 날짜        | [date-fns](https://date-fns.org)                                      |
+| 아이콘      | [Lucide React](https://lucide.dev)                                    |
 
 ## 주요 기능
 
@@ -70,7 +70,7 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ### 데이터베이스
 
 1. Supabase 대시보드 → **SQL Editor**
-2. [`supabase/schema.sql`](supabase/schema.sql) 내용을 **한 번에 적용할 프로젝트**에 맞게 검토한 뒤 실행  
+2. [`supabase/schema.sql`](supabase/schema.sql) 내용을 **한 번에 적용할 프로젝트**에 맞게 검토한 뒤 실행
    - 이미 테이블이 있으면 충돌할 수 있으므로 신규 프로젝트 또는 마이그레이션 전략에 맞게 실행하세요.
 3. PostgreSQL 버전에 따라 트리거 구문이 `EXECUTE FUNCTION` 대신 `EXECUTE PROCEDURE`를 요구할 수 있습니다. 오류가 나면 Supabase/PostgreSQL 문서를 참고해 수정하세요.
 
@@ -91,12 +91,12 @@ npm run dev
 
 ## 스크립트
 
-| 명령 | 설명 |
-|------|------|
-| `npm run dev` | 개발 서버 |
-| `npm run build` | 프로덕션 빌드 |
+| 명령            | 설명                         |
+| --------------- | ---------------------------- |
+| `npm run dev`   | 개발 서버                    |
+| `npm run build` | 프로덕션 빌드                |
 | `npm run start` | 프로덕션 서버 (`next start`) |
-| `npm run lint` | ESLint |
+| `npm run lint`  | ESLint                       |
 
 ## 데이터 모델 (요약)
 
