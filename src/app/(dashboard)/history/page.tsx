@@ -63,7 +63,7 @@ export default function HistoryPage() {
                   setMonth(e.target.value)
                   setVisible(PAGE_SIZE)
                 }}
-                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm"
+                className="rounded-lg border border-zinc-200 px-3 py-2 text-sm text-black"
               />
             </div>
             <div className="flex-1">
@@ -76,7 +76,7 @@ export default function HistoryPage() {
                   setCategory(e.target.value as TaskCategory | 'all')
                   setVisible(PAGE_SIZE)
                 }}
-                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm sm:max-w-xs"
+                className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm sm:max-w-xs text-black"
               >
                 <option value="all">전체</option>
                 <option value="application">지원서</option>
