@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { useDdayManager } from './useDdayManager'
+import type { Dday, CreateDdayInput, UpdateDdayInput } from '@/types'
 
 function daysLeft(targetDate: string): number {
   const today = new Date()
@@ -17,8 +18,6 @@ function DdayBadge({ days }: { days: number }) {
   if (days > 0) return <span className="font-bold text-blue-600">D-{days}</span>
   return <span className="font-bold text-zinc-400">D+{Math.abs(days)}</span>
 }
-
-import type { Dday, CreateDdayInput, UpdateDdayInput } from '@/types'
 
 export function DdayManager({
   open,
@@ -37,39 +36,18 @@ export function DdayManager({
   update: (id: string, input: UpdateDdayInput) => Promise<void>
   remove: (id: string) => Promise<void>
 }) {
-  const [label, setLabel] = useState('')
-  const [date, setDate] = useState('')
-  const [saving, setSaving] = useState(false)
-  const [editingId, setEditingId] = useState<string | null>(null)
-  const [editLabel, setEditLabel] = useState('')
-  const [editDate, setEditDate] = useState('')
-
-  const handleAdd = async () => {
-    if (!label.trim() || !date) return
-    setSaving(true)
-    await add({ label: label.trim(), target_date: date })
-    setLabel('')
-    setDate('')
-    setSaving(false)
-  }
-
-  const startEdit = (id: string, currentLabel: string, currentDate: string) => {
-    setEditingId(id)
-    setEditLabel(currentLabel)
-    setEditDate(currentDate)
-  }
-
-  const cancelEdit = () => {
-    setEditingId(null)
-    setEditLabel('')
-    setEditDate('')
-  }
-
-  const handleUpdate = async (id: string) => {
-    if (!editLabel.trim() || !editDate) return
-    await update(id, { label: editLabel.trim(), target_date: editDate })
-    cancelEdit()
-  }
+  const {
+    label, setLabel,
+    date, setDate,
+    saving,
+    editingId,
+    editLabel, setEditLabel,
+    editDate, setEditDate,
+    handleAdd,
+    startEdit,
+    cancelEdit,
+    handleUpdate,
+  } = useDdayManager({ add, update })
 
   return (
     <Modal
