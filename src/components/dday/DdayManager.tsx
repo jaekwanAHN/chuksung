@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 import { differenceInDays, parseISO } from 'date-fns'
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
-import { useDdays } from '@/hooks/dday/useDdays'
 
 function daysLeft(targetDate: string): number {
   const today = new Date()
@@ -19,17 +18,31 @@ function DdayBadge({ days }: { days: number }) {
   return <span className="font-bold text-zinc-400">D+{Math.abs(days)}</span>
 }
 
+import type { Dday, CreateDdayInput, UpdateDdayInput } from '@/types'
+
 export function DdayManager({
   open,
   onClose,
+  ddays,
+  loading,
+  add,
+  update,
+  remove,
 }: {
   open: boolean
   onClose: () => void
+  ddays: Dday[]
+  loading: boolean
+  add: (input: CreateDdayInput) => Promise<void>
+  update: (id: string, input: UpdateDdayInput) => Promise<void>
+  remove: (id: string) => Promise<void>
 }) {
-  const { ddays, loading, add, remove } = useDdays()
   const [label, setLabel] = useState('')
   const [date, setDate] = useState('')
   const [saving, setSaving] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editLabel, setEditLabel] = useState('')
+  const [editDate, setEditDate] = useState('')
 
   const handleAdd = async () => {
     if (!label.trim() || !date) return
@@ -38,6 +51,24 @@ export function DdayManager({
     setLabel('')
     setDate('')
     setSaving(false)
+  }
+
+  const startEdit = (id: string, currentLabel: string, currentDate: string) => {
+    setEditingId(id)
+    setEditLabel(currentLabel)
+    setEditDate(currentDate)
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+    setEditLabel('')
+    setEditDate('')
+  }
+
+  const handleUpdate = async (id: string) => {
+    if (!editLabel.trim() || !editDate) return
+    await update(id, { label: editLabel.trim(), target_date: editDate })
+    cancelEdit()
   }
 
   return (
@@ -86,6 +117,51 @@ export function DdayManager({
           ) : (
             ddays.map((d) => {
               const days = daysLeft(d.target_date)
+              const isEditing = editingId === d.id
+
+              if (isEditing) {
+                return (
+                  <div
+                    key={d.id}
+                    className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2"
+                  >
+                    <input
+                      type="text"
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                      className="w-full rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
+                      maxLength={30}
+                      autoFocus
+                    />
+                    <input
+                      type="date"
+                      value={editDate}
+                      onChange={(e) => setEditDate(e.target.value)}
+                      className="w-full rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleUpdate(d.id)}
+                        disabled={!editLabel.trim() || !editDate}
+                        className="flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-40"
+                      >
+                        <Check className="size-3" />
+                        저장
+                      </button>
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="flex items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                      >
+                        <X className="size-3" />
+                        취소
+                      </button>
+                    </div>
+                  </div>
+                )
+              }
+
               return (
                 <div
                   key={d.id}
@@ -99,6 +175,14 @@ export function DdayManager({
                   </div>
                   <div className="flex items-center gap-2">
                     <DdayBadge days={days} />
+                    <button
+                      type="button"
+                      onClick={() => startEdit(d.id, d.label, d.target_date)}
+                      className="text-zinc-400 hover:text-blue-500"
+                      aria-label="수정"
+                    >
+                      <Pencil className="size-4" />
+                    </button>
                     <button
                       type="button"
                       onClick={() => remove(d.id)}

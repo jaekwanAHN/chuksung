@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import type { CreateDdayInput, Dday } from '@/types'
+import type { CreateDdayInput, UpdateDdayInput, Dday } from '@/types'
 
 export function useDdays() {
   const [ddays, setDdays] = useState<Dday[]>([])
@@ -35,6 +35,26 @@ export function useDdays() {
     [fetch],
   )
 
+  const update = useCallback(
+    async (id: string, input: UpdateDdayInput) => {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('ddays')
+        .update(input)
+        .eq('id', id)
+        .select()
+        .single()
+      if (data) {
+        setDdays((prev) =>
+          prev
+            .map((d) => (d.id === id ? (data as Dday) : d))
+            .sort((a, b) => a.target_date.localeCompare(b.target_date)),
+        )
+      }
+    },
+    [],
+  )
+
   const remove = useCallback(
     async (id: string) => {
       const supabase = createClient()
@@ -44,5 +64,5 @@ export function useDdays() {
     [],
   )
 
-  return { ddays, loading, add, remove }
+  return { ddays, loading, add, update, remove }
 }
