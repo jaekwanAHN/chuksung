@@ -28,9 +28,7 @@ function DdayLabel({ days }: { days: number }) {
   return <span className="text-xs font-bold text-zinc-400">D+{Math.abs(days)}</span>
 }
 
-function DdaySidebar({ onOpen }: { onOpen: () => void }) {
-  const { ddays } = useDdays()
-
+function DdaySidebar({ onOpen, ddays }: { onOpen: () => void; ddays: ReturnType<typeof useDdays>['ddays'] }) {
   return (
     <div className="mt-1 border-t border-zinc-100 px-1 pt-3">
       <div className="mb-2 flex items-center justify-between">
@@ -77,6 +75,7 @@ function DdaySidebar({ onOpen }: { onOpen: () => void }) {
 export function Sidebar() {
   const pathname = usePathname()
   const [managerOpen, setManagerOpen] = useState(false)
+  const { ddays, loading, add, update, remove } = useDdays()
 
   return (
     <>
@@ -107,7 +106,7 @@ export function Sidebar() {
               </Link>
             )
           })}
-          <DdaySidebar onOpen={() => setManagerOpen(true)} />
+          <DdaySidebar onOpen={() => setManagerOpen(true)} ddays={ddays} />
         </nav>
       </aside>
 
@@ -139,7 +138,15 @@ export function Sidebar() {
         </button>
       </nav>
 
-      <DdayManager open={managerOpen} onClose={() => setManagerOpen(false)} />
+      <DdayManager
+        open={managerOpen}
+        onClose={() => setManagerOpen(false)}
+        ddays={ddays}
+        loading={loading}
+        add={add}
+        update={update}
+        remove={remove}
+      />
     </>
   )
 }

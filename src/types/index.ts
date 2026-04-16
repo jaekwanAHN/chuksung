@@ -43,6 +43,11 @@ export interface CreateDdayInput {
   target_date: string
 }
 
+export interface UpdateDdayInput {
+  label?: string
+  target_date?: string
+}
+
 export interface CreateTaskInput {
   title: string
   description?: string
