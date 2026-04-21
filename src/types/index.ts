@@ -60,3 +60,29 @@ export interface CreateTaskInput {
 export interface UpdateTaskInput extends Partial<CreateTaskInput> {
   is_completed?: boolean
 }
+
+export type JobPostingStatus = 'saved' | 'applied' | 'interviewing' | 'passed' | 'rejected' | 'offer'
+
+export interface JobPosting {
+  id: string
+  user_id: string
+  title: string
+  url: string | null
+  company: string | null
+  status: JobPostingStatus
+  deadline: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateJobPostingInput {
+  title: string
+  url?: string
+  company?: string
+  status?: JobPostingStatus
+  deadline?: string
+  notes?: string
+}
+
+export interface UpdateJobPostingInput extends Partial<CreateJobPostingInput> {}

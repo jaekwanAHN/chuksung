@@ -119,3 +119,35 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER set_tasks_updated_at
   BEFORE UPDATE ON public.tasks
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- 9. 취업공고 테이블
+CREATE TABLE public.job_postings (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  url TEXT,
+  company TEXT,
+  status TEXT DEFAULT 'saved' CHECK (status IN ('saved', 'applied', 'interviewing', 'passed', 'rejected', 'offer')),
+  deadline DATE,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.job_postings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own job_postings" ON public.job_postings
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own job_postings" ON public.job_postings
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own job_postings" ON public.job_postings
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own job_postings" ON public.job_postings
+  FOR DELETE USING (auth.uid() = user_id);
+
+CREATE TRIGGER set_job_postings_updated_at
+  BEFORE UPDATE ON public.job_postings
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
