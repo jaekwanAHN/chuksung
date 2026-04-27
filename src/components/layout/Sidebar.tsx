@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Briefcase, CalendarDays, CalendarRange, History, LayoutGrid, Settings } from 'lucide-react'
+import { Briefcase, BrainCircuit, CalendarDays, CalendarRange, History, LayoutGrid, Settings } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useDdays } from '@/hooks/dday/useDdays'
@@ -15,6 +15,7 @@ const nav = [
   { href: '/monthly', label: '월간', icon: LayoutGrid },
   { href: '/history', label: '기록', icon: History },
   { href: '/jobs', label: '취업공고', icon: Briefcase },
+  { href: '/quiz', label: 'CS 퀴즈', icon: BrainCircuit },
 ]
 
 function daysLeft(targetDate: string): number {
