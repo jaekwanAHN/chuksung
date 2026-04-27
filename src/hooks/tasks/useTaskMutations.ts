@@ -2,7 +2,10 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import type { CreateTaskInput, Task, TaskScope } from '@/types'
 import { taskKeys } from '@/hooks/tasks/useTasks'
-import { getTargetDateForScope } from '@/lib/task-dates'
+import {
+  getTargetDateForScope,
+  normalizeTaskTargetDate,
+} from '@/lib/task-dates'
 
 export function useCreateTask(scope: TaskScope, date: Date) {
   const supabase = createClient()
@@ -18,7 +21,11 @@ export function useCreateTask(scope: TaskScope, date: Date) {
 
       const { data, error } = await supabase
         .from('tasks')
-        .insert({ ...input, user_id: user.id })
+        .insert({
+          ...input,
+          target_date: normalizeTaskTargetDate(scope, input.target_date),
+          user_id: user.id,
+        })
         .select()
         .single()
 
@@ -130,7 +137,12 @@ export function useUpdateTask(scope: TaskScope, date: Date) {
     }>) => {
       const { data, error } = await supabase
         .from('tasks')
-        .update(patch)
+        .update({
+          ...patch,
+          ...(patch.target_date
+            ? { target_date: normalizeTaskTargetDate(scope, patch.target_date) }
+            : {}),
+        })
         .eq('id', id)
         .select()
         .single()

@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import type { Task, TaskScope } from '@/types'
-import { getTargetDateForScope } from '@/lib/task-dates'
+import {
+  getMonthlyTargetDateRange,
+  getTargetDateForScope,
+} from '@/lib/task-dates'
 
 export const taskKeys = {
   all: ['tasks'] as const,
@@ -17,11 +20,19 @@ export function useTasks(scope: TaskScope, date: Date) {
   return useQuery({
     queryKey: taskKeys.byScope(scope, targetDate),
     queryFn: async (): Promise<Task[]> => {
-      const { data, error } = await supabase
+      let query = supabase
         .from('tasks')
         .select('*')
         .eq('scope', scope)
-        .eq('target_date', targetDate)
+
+      if (scope === 'monthly') {
+        const { start, end } = getMonthlyTargetDateRange(date)
+        query = query.gte('target_date', start).lte('target_date', end)
+      } else {
+        query = query.eq('target_date', targetDate)
+      }
+
+      const { data, error } = await query
         .order('priority', { ascending: true })
         .order('created_at', { ascending: true })
 
