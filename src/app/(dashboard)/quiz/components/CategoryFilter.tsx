@@ -1,6 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { QuizCategory } from '@/types/quiz'
 
@@ -29,6 +30,19 @@ export function CategoryFilter({ categories, selected }: Props) {
         )}
       >
         전체
+      </button>
+      <button
+        type="button"
+        onClick={() => push('favorites')}
+        className={cn(
+          'flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition',
+          selected === 'favorites'
+            ? 'bg-amber-400 text-white'
+            : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
+        )}
+      >
+        <Star className={cn('size-3.5', selected === 'favorites' && 'fill-white')} />
+        즐겨찾기
       </button>
       {categories.map((cat) => (
         <button
