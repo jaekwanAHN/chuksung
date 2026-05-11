@@ -1,10 +1,10 @@
 'use client'
 
-import { useHistoryPage } from '@/hooks/history/useHistoryPage'
-import { HistoryStats } from '@/components/history/HistoryStats'
-import { HistoryCalendar } from '@/components/history/HistoryCalendar'
-import { HistoryFilter } from '@/components/history/HistoryFilter'
-import { HistoryRow } from '@/components/history/HistoryRow'
+import { useHistoryPage } from './_hooks/useHistoryPage'
+import { HistoryStats } from './_components/HistoryStats'
+import { HistoryCalendar } from './_components/HistoryCalendar'
+import { HistoryFilter } from './_components/HistoryFilter'
+import { HistoryRow } from './_components/HistoryRow'
 
 export default function HistoryPage() {
   const {

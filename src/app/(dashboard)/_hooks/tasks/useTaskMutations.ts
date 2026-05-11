@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { CreateTaskInput, Task, TaskScope } from '@/types'
-import { taskKeys } from '@/hooks/tasks/useTasks'
+import { taskKeys } from './useTasks'
 import { getTargetDateForScope, normalizeTaskTargetDate } from '@/lib/task-dates'
 
 export function useCreateTask(scope: TaskScope, date: Date) {

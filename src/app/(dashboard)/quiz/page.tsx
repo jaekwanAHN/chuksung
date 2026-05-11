@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
-import { QuizContent } from './components/QuizContent'
+import { QuizContent } from './_components/QuizContent'
 import type { QuizCategory, QuizQuestion } from '@/types/quiz'
 
 export default async function QuizPage({

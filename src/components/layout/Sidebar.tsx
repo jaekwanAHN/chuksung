@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation'
 import { Briefcase, BrainCircuit, CalendarDays, CalendarRange, History, LayoutGrid, Settings } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { useDdays } from '@/hooks/dday/useDdays'
-import { DdayManager } from '@/components/dday/DdayManager'
+import { useDdays } from '@/app/(dashboard)/_hooks/dday/useDdays'
+import { DdayManager } from '@/app/(dashboard)/_components/dday/DdayManager'
 import { useNavigation } from '@/components/layout/NavigationProgress'
 
 const nav = [

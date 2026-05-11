@@ -1,6 +1,6 @@
 'use client'
 
-import { useFavorites } from '@/hooks/useFavorites'
+import { useFavorites } from '../_hooks/useFavorites'
 import { CategoryFilter } from './CategoryFilter'
 import { QuizCard } from './QuizCard'
 import type { QuizCategory, QuizQuestion } from '@/types/quiz'

@@ -1,7 +1,7 @@
 import {
   GoogleLoginButton,
   KakaoLoginButton,
-} from '@/components/auth/LoginButton'
+} from './_components/LoginButton'
 
 export default async function LoginPage({
   searchParams,

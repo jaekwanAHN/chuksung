@@ -1,13 +1,13 @@
 import { useState } from 'react'
-import { useTasks } from '@/hooks/tasks/useTasks'
+import { useTasks } from './useTasks'
 import {
   useCreateTask,
   useDeleteTask,
   useToggleTask,
   useUpdateTask,
-} from '@/hooks/tasks/useTaskMutations'
+} from './useTaskMutations'
 import type { CreateTaskInput, Task, TaskCategory, TaskPriority, TaskScope } from '@/types'
-import type { FilterMode } from '@/components/tasks/TaskFilters'
+import type { FilterMode } from '../../_components/tasks/TaskFilters'
 
 export function usePlannerPage(scope: TaskScope, anchor: Date) {
   const [filterMode, setFilterMode] = useState<FilterMode>('all')

@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
-import { useJobPostings } from '@/hooks/jobs/useJobPostings'
-import { EMPTY_FORM } from '@/components/jobs/constants'
+import { useJobPostings } from './useJobPostings'
+import { EMPTY_FORM } from '../_components/constants'
 import type { CreateJobPostingInput, JobPosting, UpdateJobPostingInput } from '@/types'
 
 export function useJobsPage() {
