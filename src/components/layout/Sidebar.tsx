@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Briefcase, BrainCircuit, CalendarDays, CalendarRange, History, LayoutGrid, Settings } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useDdays } from '@/hooks/dday/useDdays'
 import { DdayManager } from '@/components/dday/DdayManager'
+import { useNavigation } from '@/components/layout/NavigationProgress'
 
 const nav = [
   { href: '/daily', label: '일간', icon: CalendarDays },
@@ -78,14 +78,19 @@ export function Sidebar() {
   const pathname = usePathname()
   const [managerOpen, setManagerOpen] = useState(false)
   const { ddays, loading, add, update, remove } = useDdays()
+  const { navigate } = useNavigation()
 
   return (
     <>
       <aside className="hidden w-52 shrink-0 flex-col border-r border-zinc-200 bg-white md:flex">
         <div className="border-b border-zinc-100 px-4 py-4">
-          <Link href="/daily" className="text-lg font-bold text-zinc-900">
+          <button
+            type="button"
+            onClick={() => navigate('/daily')}
+            className="text-lg font-bold text-zinc-900"
+          >
             JobReady
-          </Link>
+          </button>
           <p className="mt-1 text-xs text-zinc-500">취업 준비 플래너</p>
         </div>
         <nav className="flex flex-1 flex-col gap-1 p-3">
@@ -93,9 +98,10 @@ export function Sidebar() {
             const active =
               pathname === href || pathname.startsWith(`${href}/`)
             return (
-              <Link
+              <button
                 key={href}
-                href={href}
+                type="button"
+                onClick={() => navigate(href)}
                 className={cn(
                   'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition',
                   active
@@ -105,7 +111,7 @@ export function Sidebar() {
               >
                 <Icon className="size-4 shrink-0" aria-hidden />
                 {label}
-              </Link>
+              </button>
             )
           })}
           <DdaySidebar onOpen={() => setManagerOpen(true)} ddays={ddays} />
@@ -117,9 +123,10 @@ export function Sidebar() {
         {nav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`)
           return (
-            <Link
+            <button
               key={href}
-              href={href}
+              type="button"
+              onClick={() => navigate(href)}
               className={cn(
                 'flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium',
                 active ? 'text-zinc-900' : 'text-zinc-400'
@@ -127,7 +134,7 @@ export function Sidebar() {
             >
               <Icon className="size-5" aria-hidden />
               {label}
-            </Link>
+            </button>
           )
         })}
         <button
