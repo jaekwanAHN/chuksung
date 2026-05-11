@@ -1,15 +1,7 @@
 'use client'
 
 import type { TaskCategory } from '@/types'
-
-const CATEGORY_OPTIONS: { value: TaskCategory | 'all'; label: string }[] = [
-  { value: 'all', label: '전체' },
-  { value: 'application', label: '지원서' },
-  { value: 'study', label: '공부·자격증' },
-  { value: 'networking', label: '네트워킹' },
-  { value: 'interview', label: '면접' },
-  { value: 'general', label: '기타' },
-]
+import { TASK_CATEGORY_OPTIONS } from '../../_constants/task'
 
 const inputClass = 'rounded-lg border border-zinc-200 px-3 py-2 text-sm text-black'
 
@@ -42,9 +34,10 @@ export function HistoryFilter({
           onChange={(e) => onCategoryChange(e.target.value as TaskCategory | 'all')}
           className={`${inputClass} w-full sm:max-w-xs`}
         >
-          {CATEGORY_OPTIONS.map((opt) => (
-            <option key={opt.value} value={opt.value}>
-              {opt.label}
+          <option value="all">전체</option>
+          {TASK_CATEGORY_OPTIONS.map(({ value, label }) => (
+            <option key={value} value={value}>
+              {label}
             </option>
           ))}
         </select>
