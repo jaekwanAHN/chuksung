@@ -1,68 +1,60 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
-import type { CreateDdayInput, UpdateDdayInput, Dday } from '@/types'
+import { useCallback } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import apiClient from '@/lib/axios'
+import type { CreateDdayInput, Dday, UpdateDdayInput } from '@/types'
+
+const ddayKeys = {
+  all: ['ddays'] as const,
+}
 
 export function useDdays() {
-  const [ddays, setDdays] = useState<Dday[]>([])
-  const [loading, setLoading] = useState(true)
+  const queryClient = useQueryClient()
 
-  const fetch = useCallback(async () => {
-    const supabase = createClient()
-    const { data } = await supabase
-      .from('ddays')
-      .select('*')
-      .order('target_date', { ascending: true })
-    setDdays((data as Dday[]) ?? [])
-    setLoading(false)
-  }, [])
-
-  useEffect(() => {
-    fetch()
-  }, [fetch])
+  const {
+    data: ddays = [],
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey: ddayKeys.all,
+    queryFn: async (): Promise<Dday[]> => {
+      const { data } = await apiClient.get<Dday[]>('/ddays')
+      return data
+    },
+  })
 
   const add = useCallback(
     async (input: CreateDdayInput) => {
-      const supabase = createClient()
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) return
-      await supabase.from('ddays').insert({ ...input, user_id: user.id })
-      await fetch()
+      const { data } = await apiClient.post<Dday>('/ddays', input)
+      queryClient.setQueryData<Dday[]>(ddayKeys.all, (prev = []) =>
+        [...prev, data].sort((a, b) => a.target_date.localeCompare(b.target_date)),
+      )
     },
-    [fetch],
+    [queryClient],
   )
 
   const update = useCallback(
     async (id: string, input: UpdateDdayInput) => {
-      const supabase = createClient()
-      const { data } = await supabase
-        .from('ddays')
-        .update(input)
-        .eq('id', id)
-        .select()
-        .single()
-      if (data) {
-        setDdays((prev) =>
-          prev
-            .map((d) => (d.id === id ? (data as Dday) : d))
-            .sort((a, b) => a.target_date.localeCompare(b.target_date)),
-        )
-      }
+      const { data } = await apiClient.patch<Dday>(`/ddays/${id}`, input)
+      queryClient.setQueryData<Dday[]>(ddayKeys.all, (prev = []) =>
+        prev
+          .map((d) => (d.id === id ? data : d))
+          .sort((a, b) => a.target_date.localeCompare(b.target_date)),
+      )
     },
-    [],
+    [queryClient],
   )
 
   const remove = useCallback(
     async (id: string) => {
-      const supabase = createClient()
-      await supabase.from('ddays').delete().eq('id', id)
-      setDdays((prev) => prev.filter((d) => d.id !== id))
+      await apiClient.delete(`/ddays/${id}`)
+      queryClient.setQueryData<Dday[]>(ddayKeys.all, (prev = []) =>
+        prev.filter((d) => d.id !== id),
+      )
     },
-    [],
+    [queryClient],
   )
 
-  return { ddays, loading, add, update, remove }
+  return { ddays, loading, error, add, update, remove }
 }

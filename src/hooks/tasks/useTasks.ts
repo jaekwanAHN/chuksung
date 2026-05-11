@@ -1,10 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { createClient } from '@/lib/supabase/client'
+import apiClient from '@/lib/axios'
 import type { Task, TaskScope } from '@/types'
-import {
-  getMonthlyTargetDateRange,
-  getTargetDateForScope,
-} from '@/lib/task-dates'
+import { getMonthlyTargetDateRange, getTargetDateForScope } from '@/lib/task-dates'
 
 export const taskKeys = {
   all: ['tasks'] as const,
@@ -14,48 +11,35 @@ export const taskKeys = {
 }
 
 export function useTasks(scope: TaskScope, date: Date) {
-  const supabase = createClient()
   const targetDate = getTargetDateForScope(scope, date)
 
   return useQuery({
     queryKey: taskKeys.byScope(scope, targetDate),
     queryFn: async (): Promise<Task[]> => {
-      let query = supabase
-        .from('tasks')
-        .select('*')
-        .eq('scope', scope)
+      const params: Record<string, string> = { scope }
 
       if (scope === 'monthly') {
         const { start, end } = getMonthlyTargetDateRange(date)
-        query = query.gte('target_date', start).lte('target_date', end)
+        params.start = start
+        params.end = end
       } else {
-        query = query.eq('target_date', targetDate)
+        params.target_date = targetDate
       }
 
-      const { data, error } = await query
-        .order('priority', { ascending: true })
-        .order('created_at', { ascending: true })
-
-      if (error) throw error
-      return (data ?? []) as Task[]
+      const { data } = await apiClient.get<Task[]>('/tasks', { params })
+      return data
     },
   })
 }
 
 export function useCompletedHistory() {
-  const supabase = createClient()
-
   return useQuery({
     queryKey: taskKeys.history(),
     queryFn: async (): Promise<Task[]> => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .select('*')
-        .eq('is_completed', true)
-        .order('completed_at', { ascending: false })
-
-      if (error) throw error
-      return (data ?? []) as Task[]
+      const { data } = await apiClient.get<Task[]>('/tasks', {
+        params: { completed: 'true' },
+      })
+      return data
     },
   })
 }
