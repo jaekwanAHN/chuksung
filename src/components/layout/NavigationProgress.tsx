@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { createContext, useCallback, useContext, useState } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Loader2 } from 'lucide-react'
 
@@ -14,18 +14,15 @@ export function useNavigation() {
 }
 
 export function NavigationProgressProvider({ children }: { children: React.ReactNode }) {
-  const [isNavigating, setIsNavigating] = useState(false)
+  const [pendingHref, setPendingHref] = useState<string | null>(null)
   const pathname = usePathname()
   const router = useRouter()
-
-  useEffect(() => {
-    setIsNavigating(false)
-  }, [pathname])
+  const isNavigating = pendingHref !== null && pendingHref !== pathname
 
   const navigate = useCallback(
     (href: string) => {
       if (href === pathname) return
-      setIsNavigating(true)
+      setPendingHref(href)
       router.push(href)
     },
     [router, pathname]

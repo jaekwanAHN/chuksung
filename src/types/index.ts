@@ -85,4 +85,4 @@ export interface CreateJobPostingInput {
   notes?: string
 }
 
-export interface UpdateJobPostingInput extends Partial<CreateJobPostingInput> {}
+export type UpdateJobPostingInput = Partial<CreateJobPostingInput>
