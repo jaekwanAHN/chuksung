@@ -89,7 +89,7 @@ export function Sidebar() {
             onClick={() => navigate('/daily')}
             className="text-lg font-bold text-zinc-900"
           >
-            JobReady
+            chuksung
           </button>
           <p className="mt-1 text-xs text-zinc-500">취업 준비 플래너</p>
         </div>
