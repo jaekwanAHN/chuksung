@@ -1,35 +1,19 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createClient } from '@/lib/supabase/client'
+import apiClient from '@/lib/axios'
 import type { CreateTaskInput, Task, TaskScope } from '@/types'
 import { taskKeys } from '@/hooks/tasks/useTasks'
-import {
-  getTargetDateForScope,
-  normalizeTaskTargetDate,
-} from '@/lib/task-dates'
+import { getTargetDateForScope, normalizeTaskTargetDate } from '@/lib/task-dates'
 
 export function useCreateTask(scope: TaskScope, date: Date) {
-  const supabase = createClient()
   const queryClient = useQueryClient()
   const targetKey = getTargetDateForScope(scope, date)
 
   return useMutation({
     mutationFn: async (input: CreateTaskInput) => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
-
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert({
-          ...input,
-          target_date: normalizeTaskTargetDate(scope, input.target_date),
-          user_id: user.id,
-        })
-        .select()
-        .single()
-
-      if (error) throw error
+      const { data } = await apiClient.post<Task>('/tasks', {
+        ...input,
+        target_date: normalizeTaskTargetDate(scope, input.target_date),
+      })
       return data
     },
     onSuccess: () => {
@@ -41,7 +25,6 @@ export function useCreateTask(scope: TaskScope, date: Date) {
 }
 
 export function useToggleTask(scope: TaskScope, date: Date) {
-  const supabase = createClient()
   const queryClient = useQueryClient()
   const targetDate = getTargetDateForScope(scope, date)
 
@@ -53,17 +36,10 @@ export function useToggleTask(scope: TaskScope, date: Date) {
       id: string
       is_completed: boolean
     }) => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({
-          is_completed,
-          completed_at: is_completed ? new Date().toISOString() : null,
-        })
-        .eq('id', id)
-        .select()
-        .single()
-
-      if (error) throw error
+      const { data } = await apiClient.patch<Task>(`/tasks/${id}`, {
+        is_completed,
+        completed_at: is_completed ? new Date().toISOString() : null,
+      })
       return data
     },
     onMutate: async ({ id, is_completed }) => {
@@ -73,7 +49,6 @@ export function useToggleTask(scope: TaskScope, date: Date) {
       const previous = queryClient.getQueryData<Task[]>(
         taskKeys.byScope(scope, targetDate)
       )
-
       queryClient.setQueryData<Task[]>(
         taskKeys.byScope(scope, targetDate),
         (old) =>
@@ -81,7 +56,6 @@ export function useToggleTask(scope: TaskScope, date: Date) {
             task.id === id ? { ...task, is_completed } : task
           )
       )
-
       return { previous }
     },
     onError: (_err, _vars, context) => {
@@ -102,14 +76,12 @@ export function useToggleTask(scope: TaskScope, date: Date) {
 }
 
 export function useDeleteTask(scope: TaskScope, date: Date) {
-  const supabase = createClient()
   const queryClient = useQueryClient()
   const targetDate = getTargetDateForScope(scope, date)
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from('tasks').delete().eq('id', id)
-      if (error) throw error
+      await apiClient.delete(`/tasks/${id}`)
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -120,7 +92,6 @@ export function useDeleteTask(scope: TaskScope, date: Date) {
 }
 
 export function useUpdateTask(scope: TaskScope, date: Date) {
-  const supabase = createClient()
   const queryClient = useQueryClient()
   const targetDate = getTargetDateForScope(scope, date)
 
@@ -135,18 +106,12 @@ export function useUpdateTask(scope: TaskScope, date: Date) {
       priority: number
       target_date: string
     }>) => {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update({
-          ...patch,
-          ...(patch.target_date
-            ? { target_date: normalizeTaskTargetDate(scope, patch.target_date) }
-            : {}),
-        })
-        .eq('id', id)
-        .select()
-        .single()
-      if (error) throw error
+      const { data } = await apiClient.patch<Task>(`/tasks/${id}`, {
+        ...patch,
+        ...(patch.target_date
+          ? { target_date: normalizeTaskTargetDate(scope, patch.target_date) }
+          : {}),
+      })
       return data
     },
     onSuccess: () => {
