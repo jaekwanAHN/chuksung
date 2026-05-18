@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'JobReady',
+  title: 'chuksung',
   description: '취업 준비 플래너 — 일간·주간·월간 목표와 완료 기록',
 }
 

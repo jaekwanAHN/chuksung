@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight, RotateCcw, Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
-import { useQuiz } from '@/hooks/useQuiz'
+import { useQuiz } from '../_hooks/useQuiz'
 import { QuizProgress } from './QuizProgress'
 import type { QuizQuestion } from '@/types/quiz'
 

@@ -1,7 +1,9 @@
+'use client'
+
 import { useCallback, useMemo, useState } from 'react'
 import { endOfMonth, format, isWithinInterval, parseISO, startOfMonth } from 'date-fns'
 import type { TaskCategory } from '@/types'
-import { useCompletedHistory } from '@/hooks/tasks/useTasks'
+import { useCompletedHistory } from '../../_hooks/tasks/useTasks'
 
 const PAGE_SIZE = 40
 

@@ -2,7 +2,7 @@
 
 import { ExternalLink, Pencil, Trash2 } from 'lucide-react'
 import type { JobPosting } from '@/types'
-import { usePostingCard } from '@/hooks/jobs/usePostingCard'
+import { usePostingCard } from '../_hooks/usePostingCard'
 import { STATUS_COLOR, STATUS_LABEL } from './constants'
 
 export function PostingCard({

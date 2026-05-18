@@ -4,34 +4,12 @@ import { useState } from 'react'
 import { addDays, format, isSameDay } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { usePlannerPage } from '@/hooks/tasks/usePlannerPage'
-import { TaskList } from '@/components/tasks/TaskList'
-import { TaskFilters } from '@/components/tasks/TaskFilters'
-import { TaskForm } from '@/components/tasks/TaskForm'
+import { usePlannerPage } from '../_hooks/tasks/usePlannerPage'
+import { TaskList } from '../_components/tasks/TaskList'
+import { TaskFilters } from '../_components/tasks/TaskFilters'
+import { TaskForm } from '../_components/tasks/TaskForm'
 import { Button } from '@/components/ui/Button'
-
-function ProgressSummary({ tasks }: { tasks: { is_completed: boolean }[] }) {
-  const total = tasks.length
-  const done = tasks.filter((t) => t.is_completed).length
-  const pct = total === 0 ? 0 : Math.round((done / total) * 100)
-  return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-      <div className="mb-2 h-2 overflow-hidden rounded-full bg-zinc-200">
-        <div
-          className="h-full rounded-full bg-emerald-500 transition-all"
-          style={{ width: `${pct}%` }}
-        />
-      </div>
-      <p className="text-sm text-zinc-600">
-        완료:{' '}
-        <span className="font-semibold text-zinc-900">
-          {done}/{total}
-        </span>{' '}
-        ({pct}%)
-      </p>
-    </div>
-  )
-}
+import { PlannerProgress } from '../_components/tasks/PlannerProgress'
 
 export default function DailyPlannerPage() {
   const [date, setDate] = useState(() => new Date())
@@ -134,7 +112,7 @@ export default function DailyPlannerPage() {
             onEdit={(t) => openForm(t)}
             togglingId={togglingId}
           />
-          <ProgressSummary tasks={tasks} />
+          <PlannerProgress tasks={tasks} />
         </>
       )}
 

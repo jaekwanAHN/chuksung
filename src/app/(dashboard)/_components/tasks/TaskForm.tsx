@@ -11,14 +11,7 @@ import type {
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { getTargetDateForScope } from '@/lib/task-dates'
-
-const categories: { value: TaskCategory; label: string }[] = [
-  { value: 'application', label: '지원서 작성' },
-  { value: 'study', label: '공부·자격증' },
-  { value: 'networking', label: '네트워킹' },
-  { value: 'interview', label: '면접 준비' },
-  { value: 'general', label: '기타' },
-]
+import { TASK_CATEGORY_OPTIONS } from '../../_constants/task'
 
 function TaskFormBody({
   scope,
@@ -111,7 +104,7 @@ function TaskFormBody({
           onChange={(e) => setCategory(e.target.value as TaskCategory)}
           className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
         >
-          {categories.map((c) => (
+          {TASK_CATEGORY_OPTIONS.map((c) => (
             <option
               key={c.value}
               value={c.value}

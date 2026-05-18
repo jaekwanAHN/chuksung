@@ -2,10 +2,10 @@
 
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import { PostingCard } from '@/components/jobs/PostingCard'
-import { JobPostingModal } from '@/components/jobs/JobPostingModal'
-import { DeleteModal } from '@/components/jobs/DeleteModal'
-import { useJobsPage } from '@/hooks/jobs/useJobsPage'
+import { PostingCard } from './_components/PostingCard'
+import { JobPostingModal } from './_components/JobPostingModal'
+import { DeleteModal } from './_components/DeleteModal'
+import { useJobsPage } from './_hooks/useJobsPage'
 
 export default function JobsPage() {
   const {

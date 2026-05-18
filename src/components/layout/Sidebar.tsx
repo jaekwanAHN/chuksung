@@ -5,8 +5,8 @@ import { usePathname } from 'next/navigation'
 import { Briefcase, BrainCircuit, CalendarDays, CalendarRange, History, LayoutGrid, Settings } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
-import { useDdays } from '@/hooks/dday/useDdays'
-import { DdayManager } from '@/components/dday/DdayManager'
+import { useDdays } from '@/app/(dashboard)/_hooks/dday/useDdays'
+import { DdayManager } from '@/app/(dashboard)/_components/dday/DdayManager'
 import { useNavigation } from '@/components/layout/NavigationProgress'
 
 const nav = [
@@ -89,7 +89,7 @@ export function Sidebar() {
             onClick={() => navigate('/daily')}
             className="text-lg font-bold text-zinc-900"
           >
-            JobReady
+            chuksung
           </button>
           <p className="mt-1 text-xs text-zinc-500">취업 준비 플래너</p>
         </div>

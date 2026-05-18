@@ -2,8 +2,15 @@
 
 import { cn } from '@/lib/utils'
 import type { TaskCategory, TaskPriority } from '@/types'
+import { TASK_CATEGORY_OPTIONS, TASK_PRIORITY_OPTIONS } from '../../_constants/task'
 
 export type FilterMode = 'all' | 'category' | 'priority'
+
+const FILTER_MODES: { key: FilterMode; label: string }[] = [
+  { key: 'all', label: '전체' },
+  { key: 'category', label: '카테고리' },
+  { key: 'priority', label: '우선순위' },
+]
 
 export function TaskFilters({
   mode,
@@ -23,13 +30,7 @@ export function TaskFilters({
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex flex-wrap gap-2">
-        {(
-          [
-            ['all', '전체'],
-            ['category', '카테고리'],
-            ['priority', '우선순위'],
-          ] as const
-        ).map(([key, label]) => (
+        {FILTER_MODES.map(({ key, label }) => (
           <button
             key={key}
             type="button"
@@ -55,24 +56,12 @@ export function TaskFilters({
                 onCategoryChange(e.target.value as TaskCategory | 'all')
               }
             >
-              <option value="all" className="bg-white text-zinc-900">
-                모든 카테고리
-              </option>
-              <option value="application" className="bg-white text-zinc-900">
-                지원서
-              </option>
-              <option value="study" className="bg-white text-zinc-900">
-                공부·자격증
-              </option>
-              <option value="networking" className="bg-white text-zinc-900">
-                네트워킹
-              </option>
-              <option value="interview" className="bg-white text-zinc-900">
-                면접
-              </option>
-              <option value="general" className="bg-white text-zinc-900">
-                기타
-              </option>
+              <option value="all" className="bg-white text-zinc-900">모든 카테고리</option>
+              {TASK_CATEGORY_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value} className="bg-white text-zinc-900">
+                  {label}
+                </option>
+              ))}
             </select>
           ) : mode === 'priority' ? (
             <select
@@ -85,18 +74,12 @@ export function TaskFilters({
                 )
               }}
             >
-              <option value="all" className="bg-white text-zinc-900">
-                모든 우선순위
-              </option>
-              <option value="1" className="bg-white text-zinc-900">
-                높음
-              </option>
-              <option value="2" className="bg-white text-zinc-900">
-                중간
-              </option>
-              <option value="3" className="bg-white text-zinc-900">
-                낮음
-              </option>
+              <option value="all" className="bg-white text-zinc-900">모든 우선순위</option>
+              {TASK_PRIORITY_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value} className="bg-white text-zinc-900">
+                  {label}
+                </option>
+              ))}
             </select>
           ) : null}
         </div>
