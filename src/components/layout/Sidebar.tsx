@@ -40,7 +40,7 @@ function DdaySidebar({ onOpen, ddays }: { onOpen: () => void; ddays: ReturnType<
         <button
           type="button"
           onClick={onOpen}
-          className="text-zinc-400 hover:text-zinc-700"
+          className="cursor-pointer text-zinc-400 hover:text-zinc-700"
           aria-label="D-day 설정"
         >
           <Settings className="size-3.5" />
@@ -50,7 +50,7 @@ function DdaySidebar({ onOpen, ddays }: { onOpen: () => void; ddays: ReturnType<
         <button
           type="button"
           onClick={onOpen}
-          className="w-full text-left text-xs text-zinc-400 hover:text-zinc-600"
+          className="w-full cursor-pointer text-left text-xs text-zinc-400 hover:text-zinc-600"
         >
           + D-day 추가
         </button>
@@ -87,7 +87,7 @@ export function Sidebar() {
           <button
             type="button"
             onClick={() => navigate('/daily')}
-            className="text-lg font-bold text-zinc-900"
+            className="cursor-pointer text-lg font-bold text-zinc-900"
           >
             chuksung
           </button>
@@ -103,7 +103,7 @@ export function Sidebar() {
                 type="button"
                 onClick={() => navigate(href)}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition',
+                  'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition',
                   active
                     ? 'bg-zinc-900 text-white'
                     : 'text-zinc-600 hover:bg-zinc-100'
@@ -128,7 +128,7 @@ export function Sidebar() {
               type="button"
               onClick={() => navigate(href)}
               className={cn(
-                'flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium',
+                'flex flex-1 cursor-pointer flex-col items-center gap-0.5 py-2 text-[10px] font-medium',
                 active ? 'text-zinc-900' : 'text-zinc-400'
               )}
             >
@@ -140,7 +140,7 @@ export function Sidebar() {
         <button
           type="button"
           onClick={() => setManagerOpen(true)}
-          className="flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-zinc-400"
+          className="flex flex-1 cursor-pointer flex-col items-center gap-0.5 py-2 text-[10px] font-medium text-zinc-400"
         >
           <Settings className="size-5" aria-hidden />
           D-day

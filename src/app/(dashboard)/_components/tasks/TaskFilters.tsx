@@ -36,7 +36,7 @@ export function TaskFilters({
             type="button"
             onClick={() => onModeChange(key)}
             className={cn(
-              'rounded-full px-3 py-1 text-xs font-medium transition',
+              'cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition',
               mode === key
                 ? 'bg-zinc-900 text-white'
                 : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200'
@@ -50,7 +50,7 @@ export function TaskFilters({
         <div className="flex min-h-10 w-full items-center">
           {mode === 'category' ? (
             <select
-              className="h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
+              className="h-10 w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
               value={category}
               onChange={(e) =>
                 onCategoryChange(e.target.value as TaskCategory | 'all')
@@ -65,7 +65,7 @@ export function TaskFilters({
             </select>
           ) : mode === 'priority' ? (
             <select
-              className="h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
+              className="h-10 w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
               value={priority === 'all' ? 'all' : String(priority)}
               onChange={(e) => {
                 const v = e.target.value

@@ -23,7 +23,7 @@ export function CategoryFilter({ categories, selected }: Props) {
         type="button"
         onClick={() => push('all')}
         className={cn(
-          'rounded-full px-3 py-1 text-sm font-medium transition',
+          'cursor-pointer rounded-full px-3 py-1 text-sm font-medium transition',
           selected === 'all'
             ? 'bg-zinc-900 text-white'
             : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
@@ -35,7 +35,7 @@ export function CategoryFilter({ categories, selected }: Props) {
         type="button"
         onClick={() => push('favorites')}
         className={cn(
-          'flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition',
+          'flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition',
           selected === 'favorites'
             ? 'bg-amber-400 text-white'
             : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
@@ -50,7 +50,7 @@ export function CategoryFilter({ categories, selected }: Props) {
           type="button"
           onClick={() => push(cat.id)}
           className={cn(
-            'rounded-full px-3 py-1 text-sm font-medium transition',
+            'cursor-pointer rounded-full px-3 py-1 text-sm font-medium transition',
             selected === cat.id
               ? 'bg-zinc-900 text-white'
               : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',

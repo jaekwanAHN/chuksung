@@ -31,7 +31,7 @@ export function TaskCard({
         checked={task.is_completed}
         disabled={toggling}
         onChange={(e) => onToggle(task.id, e.target.checked)}
-        className="mt-1 size-4 shrink-0 rounded border-zinc-300"
+        className="mt-1 size-4 shrink-0 cursor-pointer rounded border-zinc-300"
         aria-label={task.is_completed ? '완료 취소' : '완료'}
       />
       <div className="min-w-0 flex-1">

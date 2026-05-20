@@ -69,7 +69,7 @@ export default function DailyPlannerPage() {
           ) : (
             <button
               type="button"
-              className="font-medium text-emerald-600 hover:underline"
+              className="cursor-pointer font-medium text-emerald-600 hover:underline"
               onClick={() => setDate(new Date())}
             >
               오늘로 이동
