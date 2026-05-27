@@ -122,7 +122,7 @@ export function DdayManager({
                         type="button"
                         onClick={() => handleUpdate(d.id)}
                         disabled={!editLabel.trim() || !editDate}
-                        className="flex items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-40"
+                        className="flex cursor-pointer items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-40"
                       >
                         <Check className="size-3" />
                         저장
@@ -130,7 +130,7 @@ export function DdayManager({
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className="flex items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                        className="flex cursor-pointer items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
                       >
                         <X className="size-3" />
                         취소
@@ -156,7 +156,7 @@ export function DdayManager({
                     <button
                       type="button"
                       onClick={() => startEdit(d.id, d.label, d.target_date)}
-                      className="text-zinc-400 hover:text-blue-500"
+                      className="cursor-pointer text-zinc-400 hover:text-blue-500"
                       aria-label="수정"
                     >
                       <Pencil className="size-4" />
@@ -164,7 +164,7 @@ export function DdayManager({
                     <button
                       type="button"
                       onClick={() => remove(d.id)}
-                      className="text-zinc-400 hover:text-red-500"
+                      className="cursor-pointer text-zinc-400 hover:text-red-500"
                       aria-label="삭제"
                     >
                       <Trash2 className="size-4" />

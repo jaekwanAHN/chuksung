@@ -102,7 +102,7 @@ function TaskFormBody({
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as TaskCategory)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
+          className="w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
         >
           {TASK_CATEGORY_OPTIONS.map((c) => (
             <option
@@ -155,7 +155,7 @@ function TaskFormBody({
           type="date"
           value={targetDate}
           onChange={(e) => setTargetDate(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-inner [color-scheme:light]"
+          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-inner [color-scheme:light] [&::-webkit-calendar-picker-indicator]:cursor-pointer"
         />
       </div>
     </form>

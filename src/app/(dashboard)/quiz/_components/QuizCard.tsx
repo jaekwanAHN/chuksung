@@ -83,7 +83,7 @@ export function QuizCard({
             type="button"
             onClick={() => onToggleFavorite(current.id)}
             aria-label={isFavorite(current.id) ? '즐겨찾기 해제' : '즐겨찾기 추가'}
-            className="shrink-0 transition hover:scale-110"
+            className="shrink-0 cursor-pointer transition hover:scale-110"
           >
             <Star
               className={cn(

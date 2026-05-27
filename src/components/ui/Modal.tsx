@@ -36,7 +36,7 @@ export function Modal({
       <button
         type="button"
         aria-label="닫기"
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 cursor-pointer bg-black/40"
         onClick={onClose}
       />
       <div

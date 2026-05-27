@@ -82,7 +82,7 @@ export function JobPostingModal({
           <select
             value={form.status}
             onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as JobPostingStatus }))}
-            className={inputClass}
+            className={`${inputClass} cursor-pointer`}
           >
             {(Object.keys(STATUS_LABEL) as JobPostingStatus[]).map((s) => (
               <option key={s} value={s}>
@@ -96,7 +96,7 @@ export function JobPostingModal({
             type="date"
             value={form.deadline}
             onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
-            className={inputClass}
+            className={`${inputClass} [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
           />
         </Field>
         <Field label="메모">

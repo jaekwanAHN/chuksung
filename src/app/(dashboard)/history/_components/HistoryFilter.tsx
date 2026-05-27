@@ -3,7 +3,7 @@
 import type { TaskCategory } from '@/types'
 import { TASK_CATEGORY_OPTIONS } from '../../_constants/task'
 
-const inputClass = 'rounded-lg border border-zinc-200 px-3 py-2 text-sm text-black'
+const inputClass = 'cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-sm text-black'
 
 export function HistoryFilter({
   month,

@@ -51,7 +51,7 @@ export function PostingCard({
           <button
             type="button"
             onClick={onEdit}
-            className="rounded p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
+            className="cursor-pointer rounded p-1.5 text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700"
             aria-label="수정"
           >
             <Pencil className="size-3.5" />
@@ -59,7 +59,7 @@ export function PostingCard({
           <button
             type="button"
             onClick={onDelete}
-            className="rounded p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500"
+            className="cursor-pointer rounded p-1.5 text-zinc-400 hover:bg-red-50 hover:text-red-500"
             aria-label="삭제"
           >
             <Trash2 className="size-3.5" />

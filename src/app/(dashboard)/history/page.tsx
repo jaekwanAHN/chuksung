@@ -53,7 +53,7 @@ export default function HistoryPage() {
             {hasMore && (
               <button
                 type="button"
-                className="mt-4 w-full rounded-lg border border-zinc-200 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-200 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
                 onClick={showMore}
               >
                 더 보기
