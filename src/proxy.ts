@@ -4,7 +4,7 @@ import { updateSession } from '@/lib/supabase/update-session'
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request)
 
-  const protectedPaths = ['/daily', '/weekly', '/monthly', '/history']
+  const protectedPaths = ['/daily', '/weekly', '/monthly', '/history', '/timer']
   const isProtected = protectedPaths.some((p) =>
     request.nextUrl.pathname.startsWith(p)
   )

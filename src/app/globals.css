@@ -33,3 +33,13 @@ body {
 @utility animate-fade-in {
   animation: fade-in 0.15s ease-out;
 }
+
+/* Toast 등장 애니메이션 — 위치 지정용 translate-x와 분리하기 위해 translateY만 사용 */
+@keyframes slide-up {
+  from { transform: translateY(0.75rem); opacity: 0; }
+  to   { transform: translateY(0);       opacity: 1; }
+}
+
+@utility animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
