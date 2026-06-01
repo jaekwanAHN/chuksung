@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { Briefcase, BrainCircuit, CalendarDays, CalendarRange, History, LayoutGrid, Settings } from 'lucide-react'
+import { Briefcase, BrainCircuit, CalendarDays, CalendarRange, History, LayoutGrid, Settings, Timer } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useDdays } from '@/app/(dashboard)/_hooks/dday/useDdays'
@@ -16,6 +16,7 @@ const nav = [
   { href: '/history', label: '기록', icon: History },
   { href: '/jobs', label: '취업공고', icon: Briefcase },
   { href: '/quiz', label: 'CS 퀴즈', icon: BrainCircuit },
+  { href: '/timer', label: '타이머', icon: Timer },
 ]
 
 function daysLeft(targetDate: string): number {
@@ -82,7 +83,7 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="hidden w-52 shrink-0 flex-col border-r border-zinc-200 bg-white md:flex">
+      <aside className="hidden w-52 shrink-0 flex-col border-r border-zinc-200 bg-background md:flex">
         <div className="border-b border-zinc-100 px-4 py-4">
           <button
             type="button"
@@ -119,7 +120,7 @@ export function Sidebar() {
       </aside>
 
       {/* 모바일 하단 탭 */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-zinc-200 bg-white/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-zinc-200 bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur md:hidden">
         {nav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`)
           return (
