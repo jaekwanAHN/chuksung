@@ -2,7 +2,7 @@
 
 취업 준비생을 위한 플래너입니다. **일간 / 주간 / 월간** 단위로 목표를 잡고 완료를 체크하며, **히트맵과 통계**로 누적 기록을 볼 수 있습니다.
 
-이하 내용은 언제든 수정될 수 있습니다. 
+이하 내용은 언제든 수정될 수 있습니다.
 
 ## 기술 스택
 
@@ -31,8 +31,6 @@
 - **페이지 전환 로딩**: 라우트 이동 시 상단 프로그레스 바 표시
 - **라우트 보호**: 미인증 시 대시보드 접근 시 `/login`으로 리다이렉트 ([`src/proxy.ts`](src/proxy.ts))
 - **푸터**: GitHub 링크·이메일 클릭 복사
-
-> Next.js 16에서는 예전 `middleware` 파일 대신 **`proxy`** 규약을 사용합니다. 인증 세션 갱신은 [`src/lib/supabase/update-session.ts`](src/lib/supabase/update-session.ts)에서 처리합니다.
 
 ## 디렉터리 구조 (요약)
 
@@ -69,12 +67,6 @@ supabase/
 └── schema.sql                  # DB 스키마·RLS·트리거 (SQL Editor용)
 ```
 
-## 사전 준비
-
-- Node.js (LTS 권장)
-- [Supabase](https://supabase.com) 프로젝트
-- (선택) Google Cloud · 카카오 개발자 콘솔에서 OAuth 앱 설정
-
 ## 설치 및 실행
 
 ```bash
@@ -82,8 +74,6 @@ npm install
 ```
 
 ### 환경 변수
-
-프로젝트 루트에 `.env.local`을 만들고 값을 채웁니다. (이 파일은 `.gitignore`에 포함되어 있어 저장소에 올리지 마세요.)
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
@@ -93,20 +83,6 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 배포 시 `NEXT_PUBLIC_SITE_URL`은 실제 도메인으로 바꿉니다.
-
-### 데이터베이스
-
-1. Supabase 대시보드 → **SQL Editor**
-2. [`supabase/schema.sql`](supabase/schema.sql) 내용을 **한 번에 적용할 프로젝트**에 맞게 검토한 뒤 실행
-   - 이미 테이블이 있으면 충돌할 수 있으므로 신규 프로젝트 또는 마이그레이션 전략에 맞게 실행하세요.
-3. PostgreSQL 버전에 따라 트리거 구문이 `EXECUTE FUNCTION` 대신 `EXECUTE PROCEDURE`를 요구할 수 있습니다. 오류가 나면 Supabase/PostgreSQL 문서를 참고해 수정하세요.
-
-### OAuth 리다이렉트 (요약)
-
-- Supabase Auth URL 설정에 **Site URL**과 **Redirect URLs**에  
-  `http://localhost:3000/auth/callback` (배포 URL도 동일 경로) 추가
-- Google / 카카오 콘솔의 리다이렉트 URI에 Supabase가 안내하는  
-  `https://<project-ref>.supabase.co/auth/v1/callback` 형식을 등록
 
 ### 개발 서버
 
@@ -135,11 +111,3 @@ npm run dev
 - **`quiz_questions`**: 퀴즈 문제 (`question`, `answer`, `difficulty`, `tags`)
 - **`quiz_histories`**: 퀴즈 히스토리·즐겨찾기 (`is_bookmarked`)
 - **RLS**: 본인 `user_id` 데이터만 조회·수정·삭제 가능
-
-## 배포
-
-[Vercel](https://vercel.com) 등에 올릴 때 위 환경 변수를 동일하게 설정하고, Supabase·OAuth 제공자의 리다이렉트 URL을 프로덕션 주소에 맞게 갱신하세요.
-
-## 라이선스
-
-개인 프로젝트(`private`) 기준으로 관리 중이면 저장소 설정에 맞게 정리하면 됩니다.
