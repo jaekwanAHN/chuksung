@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { Star } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { QuizCategory } from '@/types/quiz'
@@ -8,22 +7,19 @@ import type { QuizCategory } from '@/types/quiz'
 interface Props {
   categories: QuizCategory[]
   selected: string
+  onSelect: (id: string) => void
+  isPending: boolean
 }
 
-export function CategoryFilter({ categories, selected }: Props) {
-  const router = useRouter()
-
-  const push = (id: string) => {
-    router.push(`/quiz?category=${id}`)
-  }
-
+export function CategoryFilter({ categories, selected, onSelect, isPending }: Props) {
   return (
     <div className="flex flex-wrap gap-2">
       <button
         type="button"
-        onClick={() => push('all')}
+        onClick={() => onSelect('all')}
+        disabled={isPending}
         className={cn(
-          'cursor-pointer rounded-full px-3 py-1 text-sm font-medium transition',
+          'cursor-pointer rounded-full px-3 py-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60',
           selected === 'all'
             ? 'bg-zinc-900 text-white'
             : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
@@ -33,9 +29,10 @@ export function CategoryFilter({ categories, selected }: Props) {
       </button>
       <button
         type="button"
-        onClick={() => push('favorites')}
+        onClick={() => onSelect('favorites')}
+        disabled={isPending}
         className={cn(
-          'flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition',
+          'flex cursor-pointer items-center gap-1 rounded-full px-3 py-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60',
           selected === 'favorites'
             ? 'bg-amber-400 text-white'
             : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
@@ -48,9 +45,10 @@ export function CategoryFilter({ categories, selected }: Props) {
         <button
           key={cat.id}
           type="button"
-          onClick={() => push(cat.id)}
+          onClick={() => onSelect(cat.id)}
+          disabled={isPending}
           className={cn(
-            'cursor-pointer rounded-full px-3 py-1 text-sm font-medium transition',
+            'cursor-pointer rounded-full px-3 py-1 text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60',
             selected === cat.id
               ? 'bg-zinc-900 text-white'
               : 'bg-zinc-100 text-zinc-600 hover:bg-zinc-200',
