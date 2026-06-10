@@ -86,3 +86,15 @@ export interface CreateJobPostingInput {
 }
 
 export type UpdateJobPostingInput = Partial<CreateJobPostingInput>
+
+export interface Goal {
+  id: string
+  user_id: string
+  content: string
+  created_at: string
+  updated_at: string
+}
+
+export interface UpsertGoalInput {
+  content: string
+}
