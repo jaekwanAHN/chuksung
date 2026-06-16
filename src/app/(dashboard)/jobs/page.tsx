@@ -18,6 +18,7 @@ export default function JobsPage() {
     saving,
     deleteTarget,
     setDeleteTarget,
+    deleting,
     openAdd,
     openEdit,
     closeModal,
@@ -66,6 +67,7 @@ export default function JobsPage() {
 
       <DeleteModal
         target={deleteTarget}
+        deleting={deleting}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
       />
