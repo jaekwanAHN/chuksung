@@ -6,10 +6,12 @@ import type { JobPosting } from '@/types'
 
 export function DeleteModal({
   target,
+  deleting,
   onClose,
   onConfirm,
 }: {
   target: JobPosting | null
+  deleting: boolean
   onClose: () => void
   onConfirm: () => void
 }) {
@@ -20,11 +22,11 @@ export function DeleteModal({
       onClose={onClose}
       footer={
         <>
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={deleting}>
             취소
           </Button>
-          <Button variant="danger" onClick={onConfirm}>
-            삭제
+          <Button variant="danger" onClick={onConfirm} disabled={deleting}>
+            {deleting ? '삭제 중…' : '삭제'}
           </Button>
         </>
       }

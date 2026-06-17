@@ -10,6 +10,7 @@ export function useJobsPage() {
   const [form, setForm] = useState<CreateJobPostingInput>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<JobPosting | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   const openAdd = useCallback(() => {
     setEditing(null)
@@ -58,8 +59,13 @@ export function useJobsPage() {
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return
-    await remove(deleteTarget.id)
-    setDeleteTarget(null)
+    setDeleting(true)
+    try {
+      await remove(deleteTarget.id)
+      setDeleteTarget(null)
+    } finally {
+      setDeleting(false)
+    }
   }, [deleteTarget, remove])
 
   return {
@@ -72,6 +78,7 @@ export function useJobsPage() {
     saving,
     deleteTarget,
     setDeleteTarget,
+    deleting,
     openAdd,
     openEdit,
     closeModal,
