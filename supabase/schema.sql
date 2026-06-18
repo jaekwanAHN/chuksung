@@ -7,6 +7,7 @@ CREATE TABLE public.profiles (
   email TEXT,
   full_name TEXT,
   avatar_url TEXT,
+  day_start_time TIME NOT NULL DEFAULT '06:00',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -151,3 +152,55 @@ CREATE POLICY "Users can delete own job_postings" ON public.job_postings
 CREATE TRIGGER set_job_postings_updated_at
   BEFORE UPDATE ON public.job_postings
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- 10. 일간 태스크 템플릿 테이블 (매일 자동 추가)
+CREATE TABLE public.task_templates (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  title TEXT NOT NULL,
+  description TEXT,
+  category TEXT DEFAULT 'general',
+  priority INTEGER DEFAULT 2 CHECK (priority IN (1, 2, 3)),
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.task_templates ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY task_templates_select ON public.task_templates
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY task_templates_insert ON public.task_templates
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY task_templates_update ON public.task_templates
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY task_templates_delete ON public.task_templates
+  FOR DELETE USING (auth.uid() = user_id);
+
+CREATE TRIGGER set_task_templates_updated_at
+  BEFORE UPDATE ON public.task_templates
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
+-- 11. 템플릿 적용 기록 ((템플릿, 날짜) 당 1회만 적용 — 멱등)
+CREATE TABLE public.task_template_applications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE NOT NULL,
+  template_id UUID REFERENCES public.task_templates(id) ON DELETE CASCADE NOT NULL,
+  applied_date DATE NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (template_id, applied_date)
+);
+
+ALTER TABLE public.task_template_applications ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY tta_select ON public.task_template_applications
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY tta_insert ON public.task_template_applications
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY tta_delete ON public.task_template_applications
+  FOR DELETE USING (auth.uid() = user_id);

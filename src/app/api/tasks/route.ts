@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { applyDailyTemplates } from '@/lib/apply-daily-templates'
 
 export async function GET(request: NextRequest) {
   const supabase = await createClient()
@@ -12,6 +13,24 @@ export async function GET(request: NextRequest) {
   const start = searchParams.get('start')
   const end = searchParams.get('end')
   const completed = searchParams.get('completed')
+  const clientNow = searchParams.get('client_now') // 로컬 현재시각 'yyyy-MM-ddTHH:mm'
+
+  // 시간 게이트: scope=daily이고, 조회 날짜가 클라이언트 기준 오늘 이후이며,
+  // 현재 로컬 시각이 그날의 "하루 시작 시각"을 지났을 때만 템플릿을 시딩한다.
+  if (scope === 'daily' && targetDate && clientNow) {
+    const today = clientNow.slice(0, 10)
+    if (targetDate >= today) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('day_start_time')
+        .eq('id', user.id)
+        .single()
+      const startTime = (profile?.day_start_time ?? '06:00:00').slice(0, 5)
+      if (clientNow >= `${targetDate}T${startTime}`) {
+        await applyDailyTemplates(supabase, user.id, targetDate)
+      }
+    }
+  }
 
   let query = supabase.from('tasks').select('*')
 

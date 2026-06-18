@@ -3,16 +3,18 @@
 import { useState } from 'react'
 import { addDays, format, isSameDay } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, LayoutTemplate, Plus } from 'lucide-react'
 import { usePlannerPage } from '../_hooks/tasks/usePlannerPage'
 import { TaskList } from '../_components/tasks/TaskList'
 import { TaskFilters } from '../_components/tasks/TaskFilters'
 import { TaskForm } from '../_components/tasks/TaskForm'
 import { Button } from '@/components/ui/Button'
 import { PlannerProgress } from '../_components/tasks/PlannerProgress'
+import { TemplateManager } from '../_components/templates/TemplateManager'
 
 export default function DailyPlannerPage() {
   const [date, setDate] = useState(() => new Date())
+  const [managerOpen, setManagerOpen] = useState(false)
   const {
     tasks,
     isLoading,
@@ -78,7 +80,15 @@ export default function DailyPlannerPage() {
         </div>
       </div>
 
-      <div className="flex justify-end">
+      <div className="flex justify-end gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setManagerOpen(true)}
+        >
+          <LayoutTemplate className="size-4" />
+          템플릿 관리
+        </Button>
         <Button type="button" onClick={() => openForm()}>
           <Plus className="size-4" />
           새 태스크
@@ -124,6 +134,11 @@ export default function DailyPlannerPage() {
         initial={editing}
         loading={isMutating}
         onSubmit={handleSave}
+      />
+
+      <TemplateManager
+        open={managerOpen}
+        onClose={() => setManagerOpen(false)}
       />
     </div>
   )
