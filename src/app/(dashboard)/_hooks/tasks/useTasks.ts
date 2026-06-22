@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { format } from 'date-fns'
 import apiClient from '@/lib/axios'
 import type { Task, TaskScope } from '@/types'
 import { getMonthlyTargetDateRange, getTargetDateForScope } from '@/lib/task-dates'
@@ -24,6 +25,11 @@ export function useTasks(scope: TaskScope, date: Date) {
         params.end = end
       } else {
         params.target_date = targetDate
+        if (scope === 'daily') {
+          // 서버 측 템플릿 시딩의 시간 게이트 판정용 로컬 현재시각.
+          // queryKey에는 넣지 않아 캐시 키는 날짜 단위로 유지된다.
+          params.client_now = format(new Date(), "yyyy-MM-dd'T'HH:mm")
+        }
       }
 
       const { data } = await apiClient.get<Task[]>('/tasks', { params })

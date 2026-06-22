@@ -27,7 +27,35 @@ export interface Profile {
   email: string | null
   full_name: string | null
   avatar_url: string | null
+  day_start_time: string
   created_at: string
+}
+
+export interface UpdateProfileInput {
+  day_start_time?: string
+}
+
+export interface TaskTemplate {
+  id: string
+  user_id: string
+  title: string
+  description: string | null
+  category: TaskCategory
+  priority: TaskPriority
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface CreateTaskTemplateInput {
+  title: string
+  description?: string
+  category?: TaskCategory
+  priority?: TaskPriority
+}
+
+export interface UpdateTaskTemplateInput extends Partial<CreateTaskTemplateInput> {
+  is_active?: boolean
 }
 
 export interface Dday {
