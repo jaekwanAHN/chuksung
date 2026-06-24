@@ -1,6 +1,6 @@
 'use client'
 
-import { Plus, Trash2, Pencil, Check, X } from 'lucide-react'
+import { Plus, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
@@ -37,6 +37,7 @@ export function TemplateManager({
     priority,
     setPriority,
     saving,
+    deletingId,
     editingId,
     editTitle,
     setEditTitle,
@@ -48,7 +49,8 @@ export function TemplateManager({
     startEdit,
     cancelEdit,
     handleUpdate,
-  } = useTemplateManager({ add, update })
+    handleRemove,
+  } = useTemplateManager({ add, update, remove })
 
   return (
     <Modal open={open} title="템플릿 관리" onClose={onClose} className="max-w-md">
@@ -136,6 +138,7 @@ export function TemplateManager({
           ) : (
             templates.map((t) => {
               const isEditing = editingId === t.id
+              const isDeleting = deletingId === t.id
 
               if (isEditing) {
                 return (
@@ -204,10 +207,11 @@ export function TemplateManager({
                 <div
                   key={t.id}
                   className={cn(
-                    'flex items-center justify-between gap-2 rounded-lg border px-3 py-2',
+                    'flex items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-opacity',
                     t.is_active
                       ? 'border-zinc-100 bg-zinc-50'
-                      : 'border-zinc-100 bg-white opacity-60'
+                      : 'border-zinc-100 bg-white opacity-60',
+                    isDeleting && 'opacity-50'
                   )}
                 >
                   <div className="min-w-0">
@@ -224,6 +228,7 @@ export function TemplateManager({
                         type="checkbox"
                         checked={t.is_active}
                         onChange={(e) => update(t.id, { is_active: e.target.checked })}
+                        disabled={isDeleting}
                         className="size-3.5 accent-zinc-800 [color-scheme:light]"
                       />
                       활성
@@ -231,18 +236,24 @@ export function TemplateManager({
                     <button
                       type="button"
                       onClick={() => startEdit(t)}
-                      className="cursor-pointer text-zinc-400 hover:text-blue-500"
+                      disabled={isDeleting}
+                      className="cursor-pointer text-zinc-400 hover:text-blue-500 disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label="수정"
                     >
                       <Pencil className="size-4" />
                     </button>
                     <button
                       type="button"
-                      onClick={() => remove(t.id)}
-                      className="cursor-pointer text-zinc-400 hover:text-red-500"
+                      onClick={() => handleRemove(t.id)}
+                      disabled={isDeleting}
+                      className="cursor-pointer text-zinc-400 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-40"
                       aria-label="삭제"
                     >
-                      <Trash2 className="size-4" />
+                      {isDeleting ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="size-4" />
+                      )}
                     </button>
                   </div>
                 </div>

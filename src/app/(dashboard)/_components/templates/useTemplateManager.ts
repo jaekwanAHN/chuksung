@@ -12,14 +12,16 @@ import type {
 interface UseTemplateManagerOptions {
   add: (input: CreateTaskTemplateInput) => Promise<void>
   update: (id: string, input: UpdateTaskTemplateInput) => Promise<void>
+  remove: (id: string) => Promise<void>
 }
 
-export function useTemplateManager({ add, update }: UseTemplateManagerOptions) {
+export function useTemplateManager({ add, update, remove }: UseTemplateManagerOptions) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<TaskCategory>('general')
   const [priority, setPriority] = useState<TaskPriority>(2)
   const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editTitle, setEditTitle] = useState('')
@@ -69,6 +71,16 @@ export function useTemplateManager({ add, update }: UseTemplateManagerOptions) {
     cancelEdit()
   }
 
+  const handleRemove = async (id: string) => {
+    if (deletingId) return
+    setDeletingId(id)
+    try {
+      await remove(id)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
   return {
     title,
     setTitle,
@@ -79,6 +91,7 @@ export function useTemplateManager({ add, update }: UseTemplateManagerOptions) {
     priority,
     setPriority,
     saving,
+    deletingId,
     editingId,
     editTitle,
     setEditTitle,
@@ -90,5 +103,6 @@ export function useTemplateManager({ add, update }: UseTemplateManagerOptions) {
     startEdit,
     cancelEdit,
     handleUpdate,
+    handleRemove,
   }
 }
