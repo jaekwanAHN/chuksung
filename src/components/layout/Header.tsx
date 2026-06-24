@@ -18,6 +18,28 @@ export function Header() {
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
+  // 현재 시간 (클라이언트에서만 설정해 하이드레이션 불일치 방지)
+  const [now, setNow] = useState<Date | null>(null)
+
+  // requestAnimationFrame 루프로 갱신하되, 표시 단위(초)가 바뀔 때만 state 업데이트
+  useEffect(() => {
+    let frame: number
+    let lastSecond = -1
+
+    const tick = () => {
+      const current = new Date()
+      const second = Math.floor(current.getTime() / 1000)
+      if (second !== lastSecond) {
+        lastSecond = second
+        setNow(current)
+      }
+      frame = requestAnimationFrame(tick)
+    }
+
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [])
+
   useEffect(() => {
     const handleMouseDown = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -35,6 +57,7 @@ export function Header() {
   }
 
   const todayLabel = format(new Date(), 'PPP (EEE)', { locale: ko })
+  const timeLabel = now ? format(now, 'a h:mm:ss', { locale: ko }) : null
 
   return (
     <header className="flex items-center justify-between gap-4 border-b border-zinc-200 bg-background px-4 py-3 md:px-6">
@@ -42,7 +65,14 @@ export function Header() {
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
           오늘
         </p>
-        <p className="text-sm font-semibold text-zinc-900">{todayLabel}</p>
+        <p className="text-sm font-semibold text-zinc-900">
+          {todayLabel}
+          {timeLabel && (
+            <span className="ml-2 font-mono tabular-nums text-zinc-500">
+              {timeLabel}
+            </span>
+          )}
+        </p>
       </div>
       <div className="flex items-center gap-3">
         {/* 테마 드롭다운 */}
