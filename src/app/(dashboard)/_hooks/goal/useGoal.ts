@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { Goal, UpsertGoalInput } from '@/types'
+import { STABLE_QUERY_OPTIONS } from '@/lib/query'
 
 const goalKeys = {
   all: ['goal'] as const,
@@ -22,6 +23,7 @@ export function useGoal() {
       const { data } = await apiClient.get<Goal | null>('/goal')
       return data
     },
+    ...STABLE_QUERY_OPTIONS,
   })
 
   const save = useCallback(
