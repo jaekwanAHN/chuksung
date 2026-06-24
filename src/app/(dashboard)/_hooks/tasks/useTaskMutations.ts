@@ -87,6 +87,8 @@ export function useDeleteTask(scope: TaskScope, date: Date) {
       queryClient.invalidateQueries({
         queryKey: taskKeys.byScope(scope, targetDate),
       })
+      // 완료된 태스크를 삭제한 경우 history 캐시에도 남으므로 함께 무효화한다.
+      queryClient.invalidateQueries({ queryKey: taskKeys.history() })
     },
   })
 }
