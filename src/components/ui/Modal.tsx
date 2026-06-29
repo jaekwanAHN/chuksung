@@ -32,16 +32,16 @@ export function Modal({
   if (!open) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
       <button
         type="button"
         aria-label="닫기"
-        className="absolute inset-0 cursor-pointer bg-black/40"
+        className="absolute inset-0 cursor-pointer bg-black/40 "
         onClick={onClose}
       />
       <div
         className={cn(
-          'relative z-10 flex max-h-[90vh] w-full max-w-lg flex-col rounded-t-2xl border border-zinc-200 bg-white shadow-xl sm:rounded-2xl',
+          'relative z-10 m-4 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl',
           className
         )}
         role="dialog"
