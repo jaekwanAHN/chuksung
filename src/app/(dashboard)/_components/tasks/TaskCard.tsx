@@ -1,6 +1,6 @@
 'use client'
 
-import { Pencil, Trash2 } from 'lucide-react'
+import { Loader2, Pencil, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { Task } from '@/types'
 import { CategoryBadge, PriorityBadge } from '@/components/ui/Badge'
@@ -12,12 +12,14 @@ export function TaskCard({
   onDelete,
   onEdit,
   toggling,
+  deleting,
 }: {
   task: Task
   onToggle: (id: string, done: boolean) => void
   onDelete: (id: string) => void
   onEdit: (task: Task) => void
   toggling?: boolean
+  deleting?: boolean
 }) {
   return (
     <div
@@ -64,6 +66,7 @@ export function TaskCard({
           variant="ghost"
           className="!p-2"
           onClick={() => onEdit(task)}
+          disabled={deleting}
           aria-label="수정"
         >
           <Pencil className="size-4 text-zinc-500" />
@@ -73,9 +76,14 @@ export function TaskCard({
           variant="ghost"
           className="!p-2"
           onClick={() => onDelete(task.id)}
+          disabled={deleting}
           aria-label="삭제"
         >
-          <Trash2 className="size-4 text-red-500" />
+          {deleting ? (
+            <Loader2 className="size-4 animate-spin text-red-500" />
+          ) : (
+            <Trash2 className="size-4 text-red-500" />
+          )}
         </Button>
       </div>
     </div>
