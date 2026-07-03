@@ -34,6 +34,7 @@ export default function MonthlyPlannerPage() {
     formOpen,
     editing,
     togglingId,
+    deletingId,
     isMutating,
     openForm,
     closeForm,
@@ -115,6 +116,7 @@ export default function MonthlyPlannerPage() {
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
             togglingId={togglingId}
+            deletingId={deletingId}
           />
           <div className="grid gap-4 lg:grid-cols-2">
             <MonthMiniCalendar month={month} counts={dayCounts} />
