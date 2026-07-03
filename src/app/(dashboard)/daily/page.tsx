@@ -28,6 +28,7 @@ export default function DailyPlannerPage() {
     formOpen,
     editing,
     togglingId,
+    deletingId,
     isMutating,
     openForm,
     closeForm,
@@ -121,6 +122,7 @@ export default function DailyPlannerPage() {
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
             togglingId={togglingId}
+            deletingId={deletingId}
           />
           <PlannerProgress tasks={tasks} />
         </>

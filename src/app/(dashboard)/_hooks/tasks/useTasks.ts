@@ -3,6 +3,7 @@ import { format } from 'date-fns'
 import apiClient from '@/lib/axios'
 import type { Task, TaskScope } from '@/types'
 import { getMonthlyTargetDateRange, getTargetDateForScope } from '@/lib/task-dates'
+import { DAILY_QUERY_OPTIONS, STABLE_QUERY_OPTIONS } from '@/lib/query'
 
 export const taskKeys = {
   all: ['tasks'] as const,
@@ -35,6 +36,8 @@ export function useTasks(scope: TaskScope, date: Date) {
       const { data } = await apiClient.get<Task[]>('/tasks', { params })
       return data
     },
+    // daily 는 시간 게이트(템플릿 시딩)·날짜 전환 때문에 짧게, 그 외(주간/월간)는 길게.
+    ...(scope === 'daily' ? DAILY_QUERY_OPTIONS : STABLE_QUERY_OPTIONS),
   })
 }
 
@@ -47,5 +50,6 @@ export function useCompletedHistory() {
       })
       return data
     },
+    ...STABLE_QUERY_OPTIONS,
   })
 }

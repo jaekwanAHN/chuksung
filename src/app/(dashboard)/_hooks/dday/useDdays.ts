@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { CreateDdayInput, Dday, UpdateDdayInput } from '@/types'
+import { STABLE_QUERY_OPTIONS } from '@/lib/query'
 
 const ddayKeys = {
   all: ['ddays'] as const,
@@ -22,6 +23,7 @@ export function useDdays() {
       const { data } = await apiClient.get<Dday[]>('/ddays')
       return data
     },
+    ...STABLE_QUERY_OPTIONS,
   })
 
   const add = useCallback(

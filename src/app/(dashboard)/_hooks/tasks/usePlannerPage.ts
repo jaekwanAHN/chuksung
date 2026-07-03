@@ -16,6 +16,7 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const { data: tasks = [], isLoading, error } = useTasks(scope, anchor)
   const createTask = useCreateTask(scope, anchor)
@@ -33,7 +34,8 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
 
   const handleDelete = (id: string) => {
     if (!confirm('이 태스크를 삭제할까요?')) return
-    deleteTask.mutate(id)
+    setDeletingId(id)
+    deleteTask.mutate(id, { onSettled: () => setDeletingId(null) })
   }
 
   const handleSave = (input: CreateTaskInput) => {
@@ -82,6 +84,7 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
     formOpen,
     editing,
     togglingId,
+    deletingId,
     isMutating: createTask.isPending || updateTask.isPending,
     openForm,
     closeForm,

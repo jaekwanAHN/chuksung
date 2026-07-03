@@ -4,6 +4,7 @@ import { useCallback } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { CreateJobPostingInput, JobPosting, UpdateJobPostingInput } from '@/types'
+import { STABLE_QUERY_OPTIONS } from '@/lib/query'
 
 const jobPostingKeys = {
   all: ['job-postings'] as const,
@@ -31,6 +32,7 @@ export function useJobPostings() {
       const { data } = await apiClient.get<JobPosting[]>('/job-postings')
       return data
     },
+    ...STABLE_QUERY_OPTIONS,
   })
 
   const add = useCallback(
