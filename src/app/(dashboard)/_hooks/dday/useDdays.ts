@@ -1,13 +1,17 @@
 'use client'
 
 import { useCallback } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { CreateDdayInput, Dday, UpdateDdayInput } from '@/types'
 import { STABLE_QUERY_OPTIONS } from '@/lib/query'
 
 const ddayKeys = {
   all: ['ddays'] as const,
+}
+
+function sortByTargetDate(ddays: Dday[]) {
+  return [...ddays].sort((a, b) => a.target_date.localeCompare(b.target_date))
 }
 
 export function useDdays() {
@@ -26,36 +30,65 @@ export function useDdays() {
     ...STABLE_QUERY_OPTIONS,
   })
 
-  const add = useCallback(
-    async (input: CreateDdayInput) => {
+  const addMutation = useMutation({
+    mutationFn: async (input: CreateDdayInput) => {
       const { data } = await apiClient.post<Dday>('/ddays', input)
+      return data
+    },
+    onSuccess: (created) => {
       queryClient.setQueryData<Dday[]>(ddayKeys.all, (prev = []) =>
-        [...prev, data].sort((a, b) => a.target_date.localeCompare(b.target_date)),
+        sortByTargetDate([...prev, created]),
       )
     },
-    [queryClient],
-  )
+  })
 
-  const update = useCallback(
-    async (id: string, input: UpdateDdayInput) => {
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: UpdateDdayInput }) => {
       const { data } = await apiClient.patch<Dday>(`/ddays/${id}`, input)
+      return data
+    },
+    onSuccess: (updated, { id }) => {
       queryClient.setQueryData<Dday[]>(ddayKeys.all, (prev = []) =>
-        prev
-          .map((d) => (d.id === id ? data : d))
-          .sort((a, b) => a.target_date.localeCompare(b.target_date)),
+        sortByTargetDate(prev.map((d) => (d.id === id ? updated : d))),
       )
     },
-    [queryClient],
-  )
+  })
 
-  const remove = useCallback(
-    async (id: string) => {
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
       await apiClient.delete(`/ddays/${id}`)
+    },
+    onSuccess: (_data, id) => {
       queryClient.setQueryData<Dday[]>(ddayKeys.all, (prev = []) =>
         prev.filter((d) => d.id !== id),
       )
     },
-    [queryClient],
+  })
+
+  const { mutateAsync: addAsync } = addMutation
+  const { mutateAsync: updateAsync } = updateMutation
+  const { mutateAsync: removeAsync } = removeMutation
+
+  // 기존 소비처 시그니처(Promise<void>)를 유지하기 위한 얇은 래퍼
+  const add = useCallback(
+    async (input: CreateDdayInput): Promise<void> => {
+      await addAsync(input)
+    },
+    [addAsync],
+  )
+
+  const update = useCallback(
+    async (id: string, input: UpdateDdayInput): Promise<void> => {
+      await updateAsync({ id, input })
+    },
+    [updateAsync],
+  )
+
+  const remove = useCallback(
+    async (id: string): Promise<void> => {
+      await removeAsync(id)
+    },
+    [removeAsync],
   )
 
   return { ddays, loading, error, add, update, remove }

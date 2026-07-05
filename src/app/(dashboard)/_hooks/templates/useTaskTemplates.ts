@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type {
   CreateTaskTemplateInput,
@@ -37,38 +37,69 @@ export function useTaskTemplates() {
     },
   })
 
-  const add = useCallback(
-    async (input: CreateTaskTemplateInput) => {
+  const addMutation = useMutation({
+    mutationFn: async (input: CreateTaskTemplateInput) => {
       const { data } = await apiClient.post<TaskTemplate>('/task-templates', input)
+      return data
+    },
+    onSuccess: (created) => {
       queryClient.setQueryData<TaskTemplate[]>(templateKeys.all, (prev = []) => [
         ...prev,
-        data,
+        created,
       ])
       invalidateToday()
     },
-    [queryClient, invalidateToday]
-  )
+  })
 
-  const update = useCallback(
-    async (id: string, input: UpdateTaskTemplateInput) => {
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: UpdateTaskTemplateInput }) => {
       const { data } = await apiClient.patch<TaskTemplate>(`/task-templates/${id}`, input)
+      return data
+    },
+    onSuccess: (updated, { id }) => {
       queryClient.setQueryData<TaskTemplate[]>(templateKeys.all, (prev = []) =>
-        prev.map((t) => (t.id === id ? data : t))
+        prev.map((t) => (t.id === id ? updated : t))
       )
       invalidateToday()
     },
-    [queryClient, invalidateToday]
-  )
+  })
 
-  const remove = useCallback(
-    async (id: string) => {
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
       await apiClient.delete(`/task-templates/${id}`)
+    },
+    onSuccess: (_data, id) => {
       queryClient.setQueryData<TaskTemplate[]>(templateKeys.all, (prev = []) =>
         prev.filter((t) => t.id !== id)
       )
       invalidateToday()
     },
-    [queryClient, invalidateToday]
+  })
+
+  const { mutateAsync: addAsync } = addMutation
+  const { mutateAsync: updateAsync } = updateMutation
+  const { mutateAsync: removeAsync } = removeMutation
+
+  // 기존 소비처 시그니처(Promise<void>)를 유지하기 위한 얇은 래퍼
+  const add = useCallback(
+    async (input: CreateTaskTemplateInput): Promise<void> => {
+      await addAsync(input)
+    },
+    [addAsync]
+  )
+
+  const update = useCallback(
+    async (id: string, input: UpdateTaskTemplateInput): Promise<void> => {
+      await updateAsync({ id, input })
+    },
+    [updateAsync]
+  )
+
+  const remove = useCallback(
+    async (id: string): Promise<void> => {
+      await removeAsync(id)
+    },
+    [removeAsync]
   )
 
   return { templates, loading, error, add, update, remove }
