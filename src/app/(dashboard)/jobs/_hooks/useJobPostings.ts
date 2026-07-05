@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { CreateJobPostingInput, JobPosting, UpdateJobPostingInput } from '@/types'
 import { STABLE_QUERY_OPTIONS } from '@/lib/query'
@@ -35,34 +35,48 @@ export function useJobPostings() {
     ...STABLE_QUERY_OPTIONS,
   })
 
-  const add = useCallback(
-    async (input: CreateJobPostingInput) => {
+  const addMutation = useMutation({
+    mutationFn: async (input: CreateJobPostingInput) => {
       const { data } = await apiClient.post<JobPosting>('/job-postings', input)
+      return data
+    },
+    onSuccess: (created) => {
       queryClient.setQueryData<JobPosting[]>(jobPostingKeys.all, (prev = []) =>
-        sortPostings([...prev, data]),
+        sortPostings([...prev, created]),
       )
     },
-    [queryClient],
-  )
+  })
 
-  const update = useCallback(
-    async (id: string, input: UpdateJobPostingInput) => {
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: UpdateJobPostingInput }) => {
       const { data } = await apiClient.patch<JobPosting>(`/job-postings/${id}`, input)
+      return data
+    },
+    onSuccess: (updated, { id }) => {
       queryClient.setQueryData<JobPosting[]>(jobPostingKeys.all, (prev = []) =>
-        sortPostings(prev.map((posting) => (posting.id === id ? data : posting))),
+        sortPostings(prev.map((posting) => (posting.id === id ? updated : posting))),
       )
     },
-    [queryClient],
-  )
+  })
 
-  const remove = useCallback(
-    async (id: string) => {
+  const removeMutation = useMutation({
+    mutationFn: async (id: string) => {
       await apiClient.delete(`/job-postings/${id}`)
+    },
+    onSuccess: (_data, id) => {
       queryClient.setQueryData<JobPosting[]>(jobPostingKeys.all, (prev = []) =>
         prev.filter((p) => p.id !== id),
       )
     },
-    [queryClient],
+  })
+
+  const { mutateAsync: add } = addMutation
+  const { mutateAsync: mutateUpdate } = updateMutation
+  const { mutateAsync: remove } = removeMutation
+
+  const update = useCallback(
+    (id: string, input: UpdateJobPostingInput) => mutateUpdate({ id, input }),
+    [mutateUpdate],
   )
 
   return { postings, loading, error, add, update, remove }

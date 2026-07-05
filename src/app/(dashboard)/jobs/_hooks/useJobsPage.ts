@@ -1,3 +1,5 @@
+'use client'
+
 import { useCallback, useState } from 'react'
 import { useJobPostings } from './useJobPostings'
 import { EMPTY_FORM } from '../_components/constants'
@@ -48,13 +50,16 @@ export function useJobsPage() {
       deadline: form.deadline || undefined,
       notes: form.notes?.trim() || undefined,
     }
-    if (editing) {
-      await update(editing.id, payload)
-    } else {
-      await add(payload)
+    try {
+      if (editing) {
+        await update(editing.id, payload)
+      } else {
+        await add(payload)
+      }
+      closeModal()
+    } finally {
+      setSaving(false)
     }
-    setSaving(false)
-    closeModal()
   }, [add, closeModal, editing, form, update])
 
   const handleDelete = useCallback(async () => {
