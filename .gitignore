@@ -46,6 +46,7 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# claude code (auto-generated agent memory & review outputs)
+# claude code (auto-generated agent memory, review outputs & personal local settings)
 .claude/agent-memory/
 /reviews/
+.claude/settings.local.json
