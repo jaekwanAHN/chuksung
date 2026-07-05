@@ -1,7 +1,6 @@
 'use client'
 
-import { useCallback } from 'react'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { Goal, UpsertGoalInput } from '@/types'
 import { STABLE_QUERY_OPTIONS } from '@/lib/query'
@@ -26,14 +25,15 @@ export function useGoal() {
     ...STABLE_QUERY_OPTIONS,
   })
 
-  const save = useCallback(
-    async (input: UpsertGoalInput) => {
+  const { mutateAsync: save } = useMutation({
+    mutationFn: async (input: UpsertGoalInput) => {
       const { data } = await apiClient.put<Goal>('/goal', input)
-      queryClient.setQueryData<Goal | null>(goalKeys.all, data)
       return data
     },
-    [queryClient],
-  )
+    onSuccess: (data) => {
+      queryClient.setQueryData<Goal | null>(goalKeys.all, data)
+    },
+  })
 
   return { goal, loading, error, save }
 }
