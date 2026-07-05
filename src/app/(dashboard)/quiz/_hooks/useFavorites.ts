@@ -1,27 +1,41 @@
 'use client'
 
 import { useCallback, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 
 export function useFavorites(initialIds: string[] = []) {
   const [favorites, setFavorites] = useState<Set<string>>(new Set(initialIds))
 
-  const toggle = useCallback(
-    async (id: string) => {
-      const willBeFavorite = !favorites.has(id)
-      setFavorites((prev) => {
-        const next = new Set(prev)
-        if (willBeFavorite) next.add(id)
-        else next.delete(id)
-        return next
-      })
+  const setFavorite = useCallback((id: string, isFavorite: boolean) => {
+    setFavorites((prev) => {
+      const next = new Set(prev)
+      if (isFavorite) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }, [])
 
+  const { mutate } = useMutation({
+    mutationFn: async ({ id, willBeFavorite }: { id: string; willBeFavorite: boolean }) => {
       await apiClient.post('/quiz-histories', {
         question_id: id,
         is_bookmarked: willBeFavorite,
       })
     },
-    [favorites],
+    // 요청 실패 시 낙관적으로 바꿔둔 즐겨찾기 상태를 되돌린다
+    onError: (_err, { id, willBeFavorite }) => {
+      setFavorite(id, !willBeFavorite)
+    },
+  })
+
+  const toggle = useCallback(
+    (id: string) => {
+      const willBeFavorite = !favorites.has(id)
+      setFavorite(id, willBeFavorite)
+      mutate({ id, willBeFavorite })
+    },
+    [favorites, mutate, setFavorite],
   )
 
   const isFavorite = useCallback((id: string) => favorites.has(id), [favorites])

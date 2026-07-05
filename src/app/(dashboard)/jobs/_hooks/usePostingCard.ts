@@ -1,3 +1,5 @@
+'use client'
+
 import { useMemo } from 'react'
 import { differenceInCalendarDays, format, parseISO, startOfDay } from 'date-fns'
 import { ko } from 'date-fns/locale'
