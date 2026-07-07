@@ -11,14 +11,12 @@ export function TaskCard({
   onToggle,
   onDelete,
   onEdit,
-  toggling,
   deleting,
 }: {
   task: Task
   onToggle: (id: string, done: boolean) => void
   onDelete: (id: string) => void
   onEdit: (task: Task) => void
-  toggling?: boolean
   deleting?: boolean
 }) {
   return (
@@ -31,7 +29,6 @@ export function TaskCard({
       <input
         type="checkbox"
         checked={task.is_completed}
-        disabled={toggling}
         onChange={(e) => onToggle(task.id, e.target.checked)}
         className="mt-1 size-4 shrink-0 cursor-pointer rounded border-zinc-300"
         aria-label={task.is_completed ? '완료 취소' : '완료'}

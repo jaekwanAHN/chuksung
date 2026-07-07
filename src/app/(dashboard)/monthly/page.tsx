@@ -33,7 +33,6 @@ export default function MonthlyPlannerPage() {
     setPriorityFilter,
     formOpen,
     editing,
-    togglingId,
     deletingId,
     isMutating,
     openForm,
@@ -115,7 +114,6 @@ export default function MonthlyPlannerPage() {
             onToggle={handleToggle}
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
-            togglingId={togglingId}
             deletingId={deletingId}
           />
           <div className="grid gap-4 lg:grid-cols-2">

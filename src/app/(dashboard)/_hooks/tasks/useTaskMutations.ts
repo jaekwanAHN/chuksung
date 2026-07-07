@@ -68,10 +68,19 @@ export function useToggleTask(scope: TaskScope, date: Date) {
         )
       }
     },
+    onSuccess: (updated) => {
+      // 서버가 확정한 task(completed_at 포함)로 해당 항목만 교체한다.
+      // 리스트 전체를 invalidate 하면 daily 재조회 시 서버 템플릿 시딩까지
+      // 매 토글마다 다시 도므로, 응답 데이터를 재사용해 왕복을 최소화한다.
+      queryClient.setQueryData<Task[]>(
+        taskKeys.byScope(scope, targetDate),
+        (old) =>
+          (old ?? []).map((task) => (task.id === updated.id ? updated : task))
+      )
+    },
     onSettled: () => {
-      queryClient.invalidateQueries({
-        queryKey: taskKeys.byScope(scope, targetDate),
-      })
+      // 완료/취소는 완료 기록 목록에 영향을 주지만 그 데이터는 응답에 없으므로
+      // history 만 무효화한다.
       queryClient.invalidateQueries({ queryKey: taskKeys.history() })
     },
   })

@@ -14,7 +14,6 @@ export function TaskList({
   onToggle,
   onDelete,
   onEdit,
-  togglingId,
   deletingId,
 }: {
   tasks: Task[]
@@ -24,7 +23,6 @@ export function TaskList({
   onToggle: (id: string, done: boolean) => void
   onDelete: (id: string) => void
   onEdit: (task: Task) => void
-  togglingId?: string | null
   deletingId?: string | null
 }) {
   const filtered = useMemo(() => {
@@ -60,7 +58,6 @@ export function TaskList({
             onToggle={onToggle}
             onDelete={onDelete}
             onEdit={onEdit}
-            toggling={togglingId === task.id}
             deleting={deletingId === task.id}
           />
         </li>

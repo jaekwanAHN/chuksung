@@ -31,7 +31,6 @@ export default function WeeklyPlannerPage() {
     setPriorityFilter,
     formOpen,
     editing,
-    togglingId,
     deletingId,
     isMutating,
     openForm,
@@ -107,7 +106,6 @@ export default function WeeklyPlannerPage() {
             onToggle={handleToggle}
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
-            togglingId={togglingId}
             deletingId={deletingId}
           />
           <PlannerProgress tasks={tasks} label="주간 달성률" />
