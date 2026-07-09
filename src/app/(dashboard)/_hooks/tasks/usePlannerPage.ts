@@ -17,7 +17,6 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | 'all'>('all')
   const [formOpen, setFormOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
-  const [togglingId, setTogglingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const { data: tasks = [], isLoading, error } = useTasks(scope, anchor)
@@ -27,11 +26,9 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
   const updateTask = useUpdateTask(scope, anchor)
 
   const handleToggle = (id: string, done: boolean) => {
-    setTogglingId(id)
-    toggleTask.mutate(
-      { id, is_completed: done },
-      { onSettled: () => setTogglingId(null) }
-    )
+    // 낙관적 업데이트가 즉시 화면을 갱신하고 실패 시 onError 가 롤백하므로
+    // 토글은 진행 중 상태를 별도로 추적하지 않는다.
+    toggleTask.mutate({ id, is_completed: done })
   }
 
   const handleDelete = (id: string) => {
@@ -85,7 +82,6 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
     setPriorityFilter,
     formOpen,
     editing,
-    togglingId,
     deletingId,
     isMutating: createTask.isPending || updateTask.isPending,
     openForm,
