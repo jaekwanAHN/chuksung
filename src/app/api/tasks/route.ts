@@ -1,12 +1,8 @@
-import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
 import { applyDailyTemplates } from '@/lib/apply-daily-templates'
+import { dbError, parseBody, withAuth } from '@/lib/api/route-helpers'
+import { createTaskSchema } from '@/lib/api/schemas'
 
-export async function GET(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (request, { supabase, user }) => {
   const { searchParams } = new URL(request.url)
   const scope = searchParams.get('scope')
   const targetDate = searchParams.get('target_date')
@@ -52,22 +48,20 @@ export async function GET(request: NextRequest) {
   }
 
   const { data, error } = await query
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return Response.json(data ?? [])
-}
+})
 
-export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+export const POST = withAuth(async (request, { supabase, user }) => {
+  const parsed = await parseBody(request, createTaskSchema)
+  if (!parsed.ok) return parsed.response
 
-  const body = await request.json()
   const { data, error } = await supabase
     .from('tasks')
-    .insert({ ...body, user_id: user.id })
+    .insert({ ...parsed.data, user_id: user.id })
     .select()
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return Response.json(data, { status: 201 })
-}
+})

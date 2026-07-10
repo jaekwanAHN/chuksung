@@ -1,34 +1,28 @@
-import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { dbError, parseBody, withAuth } from '@/lib/api/route-helpers'
+import { updateProfileSchema } from '@/lib/api/schemas'
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_request, { supabase, user }) => {
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
     .eq('id', user.id)
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return Response.json(data)
-}
+})
 
-export async function PATCH(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+export const PATCH = withAuth(async (request, { supabase, user }) => {
+  const parsed = await parseBody(request, updateProfileSchema)
+  if (!parsed.ok) return parsed.response
 
-  const body = await request.json()
   const { data, error } = await supabase
     .from('profiles')
-    .update(body)
+    .update(parsed.data)
     .eq('id', user.id)
     .select()
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return Response.json(data)
-}
+})

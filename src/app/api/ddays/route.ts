@@ -1,32 +1,26 @@
-import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { dbError, parseBody, withAuth } from '@/lib/api/route-helpers'
+import { createDdaySchema } from '@/lib/api/schemas'
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_request, { supabase }) => {
   const { data, error } = await supabase
     .from('ddays')
     .select('*')
     .order('target_date', { ascending: true })
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return Response.json(data ?? [])
-}
+})
 
-export async function POST(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+export const POST = withAuth(async (request, { supabase, user }) => {
+  const parsed = await parseBody(request, createDdaySchema)
+  if (!parsed.ok) return parsed.response
 
-  const body = await request.json()
   const { data, error } = await supabase
     .from('ddays')
-    .insert({ ...body, user_id: user.id })
+    .insert({ ...parsed.data, user_id: user.id })
     .select()
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return Response.json(data, { status: 201 })
-}
+})

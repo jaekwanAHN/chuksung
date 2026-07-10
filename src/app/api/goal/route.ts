@@ -1,37 +1,27 @@
-import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { dbError, parseBody, withAuth } from '@/lib/api/route-helpers'
+import { upsertGoalSchema } from '@/lib/api/schemas'
 
-export async function GET() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-
+export const GET = withAuth(async (_request, { supabase, user }) => {
   const { data, error } = await supabase
     .from('goals')
     .select('*')
     .eq('user_id', user.id)
     .maybeSingle()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return Response.json(data)
-}
+})
 
-export async function PUT(request: NextRequest) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
-
-  const { content } = await request.json()
-  if (typeof content !== 'string') {
-    return Response.json({ error: 'content must be a string' }, { status: 400 })
-  }
+export const PUT = withAuth(async (request, { supabase, user }) => {
+  const parsed = await parseBody(request, upsertGoalSchema)
+  if (!parsed.ok) return parsed.response
 
   const { data, error } = await supabase
     .from('goals')
-    .upsert({ user_id: user.id, content }, { onConflict: 'user_id' })
+    .upsert({ user_id: user.id, content: parsed.data.content }, { onConflict: 'user_id' })
     .select()
     .single()
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
+  if (error) return dbError(error)
   return Response.json(data)
-}
+})

@@ -1,39 +1,36 @@
-import { NextRequest } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { dbError, parseBody, withAuth } from '@/lib/api/route-helpers'
+import { updateJobPostingSchema } from '@/lib/api/schemas'
 
-export async function PATCH(request: NextRequest, ctx: RouteContext<'/api/job-postings/[id]'>) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+export const PATCH = withAuth<RouteContext<'/api/job-postings/[id]'>>(
+  async (request, { supabase, user }, ctx) => {
+    const { id } = await ctx.params
+    const parsed = await parseBody(request, updateJobPostingSchema)
+    if (!parsed.ok) return parsed.response
 
-  const { id } = await ctx.params
-  const body = await request.json()
+    const { data, error } = await supabase
+      .from('job_postings')
+      .update(parsed.data)
+      .eq('id', id)
+      .eq('user_id', user.id)
+      .select()
+      .single()
 
-  const { data, error } = await supabase
-    .from('job_postings')
-    .update(body)
-    .eq('id', id)
-    .eq('user_id', user.id)
-    .select()
-    .single()
+    if (error) return dbError(error)
+    return Response.json(data)
+  }
+)
 
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return Response.json(data)
-}
+export const DELETE = withAuth<RouteContext<'/api/job-postings/[id]'>>(
+  async (_request, { supabase, user }, ctx) => {
+    const { id } = await ctx.params
 
-export async function DELETE(_request: NextRequest, ctx: RouteContext<'/api/job-postings/[id]'>) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+    const { error } = await supabase
+      .from('job_postings')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id)
 
-  const { id } = await ctx.params
-
-  const { error } = await supabase
-    .from('job_postings')
-    .delete()
-    .eq('id', id)
-    .eq('user_id', user.id)
-
-  if (error) return Response.json({ error: error.message }, { status: 500 })
-  return new Response(null, { status: 204 })
-}
+    if (error) return dbError(error)
+    return new Response(null, { status: 204 })
+  }
+)
