@@ -122,6 +122,10 @@ CREATE TRIGGER set_tasks_updated_at
   BEFORE UPDATE ON public.tasks
   FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
 
+CREATE TRIGGER set_profiles_updated_at
+  BEFORE UPDATE ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.handle_updated_at();
+
 -- 9. 취업공고 테이블
 CREATE TABLE public.job_postings (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -295,6 +299,26 @@ CREATE POLICY "Users can insert own quiz_histories" ON public.quiz_histories
 
 CREATE POLICY "Users can update own quiz_histories" ON public.quiz_histories
   FOR UPDATE USING (auth.uid() = user_id);
+
+-- 14. 인덱스 (조회 패턴·FK 기반 — migrations 0007 반영)
+-- RLS가 모든 쿼리에 user_id 필터를 붙이므로 user_id 선두 복합 인덱스를 기본으로 한다.
+CREATE INDEX tasks_user_scope_target_date_idx
+  ON public.tasks (user_id, scope, target_date);
+CREATE INDEX tasks_user_completed_at_idx
+  ON public.tasks (user_id, completed_at DESC)
+  WHERE is_completed = TRUE;
+CREATE INDEX ddays_user_target_date_idx
+  ON public.ddays (user_id, target_date);
+CREATE INDEX job_postings_user_deadline_idx
+  ON public.job_postings (user_id, deadline);
+CREATE INDEX task_templates_user_id_idx
+  ON public.task_templates (user_id);
+CREATE INDEX task_template_applications_user_applied_date_idx
+  ON public.task_template_applications (user_id, applied_date);
+CREATE INDEX quiz_questions_category_id_idx
+  ON public.quiz_questions (category_id);
+CREATE INDEX quiz_follow_ups_question_id_idx
+  ON public.quiz_follow_ups (question_id);
 
 -- 카테고리 초기 데이터
 INSERT INTO public.quiz_categories (id, label, "order") VALUES
