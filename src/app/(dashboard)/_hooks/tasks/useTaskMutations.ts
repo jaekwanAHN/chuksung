@@ -28,11 +28,23 @@ export function useCreateTask(scope: TaskScope) {
   })
 }
 
+const TOGGLE_TASK_MUTATION_KEY = ['toggle-task'] as const
+
 export function useToggleTask(scope: TaskScope, date: Date) {
   const queryClient = useQueryClient()
   const targetDate = getTargetDateForScope(scope, date)
 
+  // 같은 태스크에 대해 진행 중인 토글이 자기 자신뿐인지 (= 내가 최신 토글인지).
+  // 콜백 시점에는 자기 뮤테이션도 pending으로 집계되므로 1이면 마지막이다.
+  const isLatestToggleFor = (id: string) =>
+    queryClient.isMutating({
+      mutationKey: TOGGLE_TASK_MUTATION_KEY,
+      predicate: (m) =>
+        (m.state.variables as { id?: string } | undefined)?.id === id,
+    }) === 1
+
   return useMutation({
+    mutationKey: TOGGLE_TASK_MUTATION_KEY,
     mutationFn: async ({
       id,
       is_completed,
@@ -62,8 +74,10 @@ export function useToggleTask(scope: TaskScope, date: Date) {
       )
       return { previous }
     },
-    onError: (_err, _vars, context) => {
-      if (context?.previous) {
+    onError: (_err, vars, context) => {
+      // 더 새로운 토글이 진행 중이면 그쪽의 낙관적 상태가 최신 의도이므로
+      // 이 스냅샷으로 되돌리지 않는다 (되돌리면 최신 의도를 덮어쓴다).
+      if (context?.previous && isLatestToggleFor(vars.id)) {
         queryClient.setQueryData(
           taskKeys.byScope(scope, targetDate),
           context.previous
@@ -74,16 +88,23 @@ export function useToggleTask(scope: TaskScope, date: Date) {
       // 서버가 확정한 task(completed_at 포함)로 해당 항목만 교체한다.
       // 리스트 전체를 invalidate 하면 daily 재조회 시 서버 템플릿 시딩까지
       // 매 토글마다 다시 도므로, 응답 데이터를 재사용해 왕복을 최소화한다.
+      //
+      // 단, 같은 태스크의 더 새로운 토글이 진행 중이면 이 응답은 이미 낡은
+      // 값이므로 버린다. (완료→취소를 연타하면 먼저 온 "완료" 응답이 취소의
+      // 낙관적 상태를 덮어써 체크박스가 완료로 깜빡였다가 돌아오는 문제)
+      if (!isLatestToggleFor(updated.id)) return
       queryClient.setQueryData<Task[]>(
         taskKeys.byScope(scope, targetDate),
         (old) =>
           (old ?? []).map((task) => (task.id === updated.id ? updated : task))
       )
     },
-    onSettled: () => {
+    onSettled: (_data, _err, vars) => {
       // 완료/취소는 완료 기록 목록에 영향을 주지만 그 데이터는 응답에 없으므로
-      // history 만 무효화한다.
-      queryClient.invalidateQueries({ queryKey: taskKeys.history() })
+      // history 만 무효화한다. 연타 중에는 마지막 토글만 무효화하면 충분하다.
+      if (isLatestToggleFor(vars.id)) {
+        queryClient.invalidateQueries({ queryKey: taskKeys.history() })
+      }
     },
   })
 }
