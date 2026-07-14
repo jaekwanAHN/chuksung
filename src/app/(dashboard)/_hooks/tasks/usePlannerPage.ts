@@ -20,7 +20,7 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   const { data: tasks = [], isLoading, error } = useTasks(scope, anchor)
-  const createTask = useCreateTask(scope, anchor)
+  const createTask = useCreateTask(scope)
   const toggleTask = useToggleTask(scope, anchor)
   const deleteTask = useDeleteTask(scope, anchor)
   const updateTask = useUpdateTask(scope, anchor)
