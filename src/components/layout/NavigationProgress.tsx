@@ -1,44 +1,21 @@
 'use client'
 
-import { createContext, useCallback, useContext, useState } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
-import { Loader2 } from 'lucide-react'
+import { useLinkStatus } from 'next/link'
 
-const NavigationContext = createContext<{
-  navigate: (href: string) => void
-  isNavigating: boolean
-}>({ navigate: () => {}, isNavigating: false })
-
-export function useNavigation() {
-  return useContext(NavigationContext)
-}
-
-export function NavigationProgressProvider({ children }: { children: React.ReactNode }) {
-  const [pendingHref, setPendingHref] = useState<string | null>(null)
-  const pathname = usePathname()
-  const router = useRouter()
-  const isNavigating = pendingHref !== null && pendingHref !== pathname
-
-  const navigate = useCallback(
-    (href: string) => {
-      if (href === pathname) return
-      setPendingHref(href)
-      router.push(href)
-    },
-    [router, pathname]
-  )
-
+/**
+ * 상단 얇은 네비게이션 프로그레스 바.
+ * `<Link>`의 자식으로 넣으면 해당 링크의 pending 동안만 화면 최상단에 표시된다.
+ * (useLinkStatus는 Link 하위에서만 동작 — prefetch가 끝난 경로는 pending 없이 즉시 전환)
+ */
+export function NavigationProgress() {
+  const { pending } = useLinkStatus()
+  if (!pending) return null
   return (
-    <NavigationContext.Provider value={{ navigate, isNavigating }}>
-      {children}
-      {isNavigating && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 animate-fade-in">
-          <div className="flex flex-col items-center gap-3 rounded-2xl bg-white px-10 py-7 shadow-xl">
-            <Loader2 className="size-8 animate-spin text-zinc-700" />
-            <span className="text-sm font-medium text-zinc-500">페이지 이동 중...</span>
-          </div>
-        </div>
-      )}
-    </NavigationContext.Provider>
+    <span
+      aria-hidden
+      className="fixed inset-x-0 top-0 z-50 h-0.5"
+    >
+      <span className="block h-full animate-nav-progress bg-emerald-500" />
+    </span>
   )
 }

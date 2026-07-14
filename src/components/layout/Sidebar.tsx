@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Briefcase, BrainCircuit, CalendarDays, CalendarRange, History, LayoutGrid, Settings, Target, Timer } from 'lucide-react'
 import { differenceInDays, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useDdays } from '@/app/(dashboard)/_hooks/dday/useDdays'
 import { DdayManager } from '@/app/(dashboard)/_components/dday/DdayManager'
-import { useNavigation } from '@/components/layout/NavigationProgress'
+import { NavigationProgress } from '@/components/layout/NavigationProgress'
 
 const nav = [
   { href: '/daily', label: '일간', icon: CalendarDays },
@@ -80,19 +81,15 @@ export function Sidebar() {
   const pathname = usePathname()
   const [managerOpen, setManagerOpen] = useState(false)
   const { ddays, loading, add, update, remove } = useDdays()
-  const { navigate } = useNavigation()
 
   return (
     <>
       <aside className="hidden w-52 shrink-0 flex-col border-r border-zinc-200 bg-background md:flex">
         <div className="border-b border-zinc-100 px-4 py-4">
-          <button
-            type="button"
-            onClick={() => navigate('/daily')}
-            className="cursor-pointer text-lg font-bold text-zinc-900"
-          >
+          <Link href="/daily" className="text-lg font-bold text-zinc-900">
             chuksung
-          </button>
+            <NavigationProgress />
+          </Link>
           <p className="mt-1 text-xs text-zinc-500">취업 준비 플래너</p>
         </div>
         <nav className="flex flex-1 flex-col gap-1 p-3">
@@ -100,12 +97,11 @@ export function Sidebar() {
             const active =
               pathname === href || pathname.startsWith(`${href}/`)
             return (
-              <button
+              <Link
                 key={href}
-                type="button"
-                onClick={() => navigate(href)}
+                href={href}
                 className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition',
+                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition',
                   active
                     ? 'bg-zinc-900 text-white'
                     : 'text-zinc-600 hover:bg-zinc-100'
@@ -113,7 +109,8 @@ export function Sidebar() {
               >
                 <Icon className="size-4 shrink-0" aria-hidden />
                 {label}
-              </button>
+                <NavigationProgress />
+              </Link>
             )
           })}
           <DdaySidebar onOpen={() => setManagerOpen(true)} ddays={ddays} />
@@ -125,18 +122,18 @@ export function Sidebar() {
         {nav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`)
           return (
-            <button
+            <Link
               key={href}
-              type="button"
-              onClick={() => navigate(href)}
+              href={href}
               className={cn(
-                'flex flex-1 cursor-pointer flex-col items-center gap-0.5 py-2 text-[10px] font-medium',
+                'flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-medium',
                 active ? 'text-zinc-900' : 'text-zinc-400'
               )}
             >
               <Icon className="size-5" aria-hidden />
               {label}
-            </button>
+              <NavigationProgress />
+            </Link>
           )
         })}
         <button

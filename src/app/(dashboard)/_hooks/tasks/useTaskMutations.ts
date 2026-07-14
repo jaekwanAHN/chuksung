@@ -6,9 +6,8 @@ import type { CreateTaskInput, Task, TaskScope } from '@/types'
 import { taskKeys } from './useTasks'
 import { getTargetDateForScope, normalizeTaskTargetDate } from '@/lib/task-dates'
 
-export function useCreateTask(scope: TaskScope, date: Date) {
+export function useCreateTask(scope: TaskScope) {
   const queryClient = useQueryClient()
-  const targetKey = getTargetDateForScope(scope, date)
 
   return useMutation({
     mutationFn: async (input: CreateTaskInput) => {
@@ -18,9 +17,12 @@ export function useCreateTask(scope: TaskScope, date: Date) {
       })
       return data
     },
-    onSuccess: () => {
+    onSuccess: (created) => {
+      // 폼에서 앵커와 다른 날짜를 골라 생성할 수 있으므로 앵커 키가 아니라
+      // 생성된 태스크의 날짜 키를 무효화한다. (target_date는 정규화되어
+      // weekly/monthly에서도 그대로 캐시 키 날짜와 일치한다)
       queryClient.invalidateQueries({
-        queryKey: taskKeys.byScope(scope, targetKey),
+        queryKey: taskKeys.byScope(scope, created.target_date),
       })
     },
   })
@@ -127,10 +129,16 @@ export function useUpdateTask(scope: TaskScope, date: Date) {
       })
       return data
     },
-    onSuccess: () => {
+    onSuccess: (updated) => {
       queryClient.invalidateQueries({
         queryKey: taskKeys.byScope(scope, targetDate),
       })
+      // 수정으로 날짜를 옮긴 경우 이동한 날짜의 캐시도 무효화한다
+      if (updated.target_date !== targetDate) {
+        queryClient.invalidateQueries({
+          queryKey: taskKeys.byScope(scope, updated.target_date),
+        })
+      }
       queryClient.invalidateQueries({ queryKey: taskKeys.history() })
     },
   })
