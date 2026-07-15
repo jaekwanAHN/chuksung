@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils'
 import type { TaskCategory, TaskPriority } from '@/types'
 import { TASK_CATEGORY_OPTIONS, TASK_PRIORITY_OPTIONS } from '../../_constants/task'
 import { useTaskTemplates } from '../../_hooks/templates/useTaskTemplates'
-import { useProfile } from '../../_hooks/profile/useProfile'
 import { useTemplateManager } from './useTemplateManager'
 
 const categoryLabel = (value: TaskCategory) =>
@@ -26,7 +25,6 @@ export function TemplateManager({
   onClose: () => void
 }) {
   const { templates, loading, add, update, remove } = useTaskTemplates()
-  const { profile, updateDayStartTime } = useProfile()
   const {
     title,
     setTitle,
@@ -55,25 +53,10 @@ export function TemplateManager({
   return (
     <Modal open={open} title="템플릿 관리" onClose={onClose} className="max-w-md">
       <div className="space-y-5">
-        {/* 하루 시작 시각 */}
-        <div className="space-y-1.5 rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-3">
-          <label
-            htmlFor="day-start-time"
-            className="block text-xs font-semibold text-zinc-700"
-          >
-            하루 시작 시각
-          </label>
-          <input
-            id="day-start-time"
-            type="time"
-            value={(profile?.day_start_time ?? '06:00:00').slice(0, 5)}
-            onChange={(e) => updateDayStartTime(e.target.value)}
-            className={cn(inputClass, 'bg-white [color-scheme:light]')}
-          />
-          <p className="text-xs text-zinc-500">
-            이 시각이 되면 템플릿이 그날 일간 목록에 자동으로 추가됩니다.
-          </p>
-        </div>
+        <p className="text-xs text-zinc-500">
+          활성 템플릿은 하루 시작 시각이 되면 그날 일간 목록에 자동으로
+          추가됩니다. (시각 설정은 목록 상단의 &ldquo;하루 시작&rdquo; 버튼)
+        </p>
 
         {/* 추가 폼 */}
         <div className="space-y-2">
