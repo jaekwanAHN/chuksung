@@ -20,7 +20,9 @@ export default defineConfig({
   // CI에서는 test.only 가 남아있으면 실패 처리
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // 모든 스펙이 단일 테스트 계정의 실 데이터를 조작하므로 병렬 워커 간
+  // 간섭(시딩·설정 변경·목록 조작)이 발생함 — 항상 직렬 실행한다.
+  workers: 1,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL,

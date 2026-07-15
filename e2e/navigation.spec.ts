@@ -12,9 +12,10 @@ function hasAuthState(): boolean {
   }
 }
 
-/** 데스크톱 사이드바(aside)로 스코프 — 모바일 하단 탭과 라벨이 겹치므로 필요 */
+/** 데스크톱 사이드바(aside)로 스코프 — 모바일 하단 탭과 라벨이 겹치므로 필요.
+ *  내비게이션은 PR #40에서 button → Link 로 전환됨 */
 function sidebarNav(page: Page, label: string) {
-  return page.locator('aside').getByRole('button', { name: label, exact: true })
+  return page.locator('aside').getByRole('link', { name: label, exact: true })
 }
 
 test.describe('주간/월간 뷰 전환', () => {
