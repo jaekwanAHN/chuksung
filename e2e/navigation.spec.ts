@@ -96,3 +96,52 @@ test.describe('주간/월간 뷰 전환', () => {
     await expect(title).toHaveText(initial)
   })
 })
+
+test.describe('일간 날짜 이동', () => {
+  test.skip(
+    () => !hasAuthState(),
+    'E2E_TEST_USER_EMAIL/PASSWORD 미설정 — 인증 테스트 건너뜀'
+  )
+  test.use({ storageState: STORAGE_STATE })
+
+  test('전날로 이동하면 해당 날짜 태스크만 보이고, 오늘로 복귀한다', async ({
+    page,
+  }) => {
+    const title = `E2E 날짜이동 ${Date.now()}`
+
+    await page.goto('/daily')
+
+    // 오늘 날짜 헤딩 확보 후 오늘 태스크 생성
+    const heading = page.locator('h1')
+    await expect(heading).toHaveText(/./) // 프로필 로드 후 렌더 대기
+    const todayLabel = await heading.innerText()
+
+    await page.getByRole('button', { name: '새 태스크' }).click()
+    await page.getByLabel('제목').fill(title)
+    await page.getByRole('button', { name: '저장' }).click()
+    const card = page.locator('li').filter({ hasText: title })
+    await expect(card).toBeVisible()
+
+    // 전날로 이동 — 헤딩이 바뀌고 오늘 태스크는 보이지 않는다
+    await page.getByRole('button', { name: '전날' }).click()
+    await expect(heading).not.toHaveText(todayLabel)
+    await expect(card).not.toBeVisible()
+    await expect(page.getByRole('button', { name: '오늘로 이동' })).toBeVisible()
+
+    // 다음날 버튼으로 오늘 복귀 — 태스크가 다시 보인다
+    await page.getByRole('button', { name: '다음날' }).click()
+    await expect(heading).toHaveText(todayLabel)
+    await expect(card).toBeVisible()
+
+    // '오늘로 이동' 바로가기로도 복귀된다
+    await page.getByRole('button', { name: '전날' }).click()
+    await expect(heading).not.toHaveText(todayLabel)
+    await page.getByRole('button', { name: '오늘로 이동' }).click()
+    await expect(heading).toHaveText(todayLabel)
+
+    // 정리
+    page.on('dialog', (dialog) => dialog.accept())
+    await card.getByRole('button', { name: '삭제' }).click()
+    await expect(card).not.toBeVisible()
+  })
+})

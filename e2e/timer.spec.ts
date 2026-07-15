@@ -41,4 +41,26 @@ test.describe('타이머', () => {
     await page.getByRole('button', { name: '초기화' }).click()
     await expect(afterReload).toHaveText('00:00:00')
   })
+
+  test('카운트다운이 끝나면 완료 표시와 토스트가 나타난다', async ({
+    page,
+  }) => {
+    await page.goto('/timer')
+
+    // 타이머(카운트다운) 모드로 전환 — 사이드바 '타이머'는 link 라 충돌 없음
+    await page.getByRole('button', { name: '타이머', exact: true }).click()
+
+    await page.getByLabel('초').fill('2')
+    await page.getByRole('button', { name: '시작' }).click()
+
+    // 완료 문구(본문)와 토스트(role=status) 확인 — 2초 카운트다운 + 여유
+    await expect(
+      page.getByText('타이머 완료! 🎉').first()
+    ).toBeVisible({ timeout: 10_000 })
+    await expect(page.locator('[role="status"]')).toContainText('타이머 완료')
+
+    // 정리: 초기화하면 입력이 다시 활성화되고 시작 가능 상태로 돌아온다
+    await page.getByRole('button', { name: '초기화' }).click()
+    await expect(page.getByLabel('초')).toBeEnabled()
+  })
 })

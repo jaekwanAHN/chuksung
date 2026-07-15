@@ -55,4 +55,40 @@ test.describe('취업공고 CRUD', () => {
     await deleteModal.getByRole('button', { name: '삭제', exact: true }).click()
     await expect(updated).not.toBeVisible()
   })
+
+  test('상태를 지정해 추가하고 수정으로 변경하면 배지가 갱신된다', async ({
+    page,
+  }) => {
+    const title = `E2E 상태 공고 ${Date.now()}`
+
+    await page.goto('/jobs')
+
+    // '면접중' 상태로 추가 — 모달의 select 는 상태 하나뿐
+    await page.getByRole('button', { name: '공고 추가' }).click()
+    const modal = page.getByRole('dialog')
+    await expect(modal).toBeVisible()
+    await modal.getByPlaceholder('공고 제목').fill(title)
+    await modal.getByPlaceholder('회사명').fill('E2E 주식회사')
+    await modal.locator('select').selectOption('interviewing')
+    await modal.getByRole('button', { name: '저장' }).click()
+
+    const card = page.locator('li').filter({ hasText: title })
+    await expect(card).toBeVisible()
+    await expect(card.getByText('면접중')).toBeVisible()
+
+    // 수정: 상태 프리필 확인 후 '합격'으로 전이
+    await card.getByRole('button', { name: '수정' }).click()
+    await expect(modal.locator('select')).toHaveValue('interviewing')
+    await modal.locator('select').selectOption('passed')
+    await modal.getByRole('button', { name: '저장' }).click()
+    // '불합격'에 '합격'이 포함되므로 exact 매칭
+    await expect(card.getByText('합격', { exact: true })).toBeVisible()
+    await expect(card.getByText('면접중')).not.toBeVisible()
+
+    // 정리 (전용 DeleteModal)
+    await card.getByRole('button', { name: '삭제' }).click()
+    const deleteModal = page.getByRole('dialog')
+    await deleteModal.getByRole('button', { name: '삭제', exact: true }).click()
+    await expect(card).not.toBeVisible()
+  })
 })
