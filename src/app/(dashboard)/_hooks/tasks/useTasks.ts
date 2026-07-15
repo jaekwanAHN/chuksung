@@ -9,6 +9,8 @@ import { DAILY_QUERY_OPTIONS, STABLE_QUERY_OPTIONS } from '@/lib/query'
 
 export const taskKeys = {
   all: ['tasks'] as const,
+  // scope 전체(모든 날짜)를 프리픽스 매칭으로 무효화할 때 사용
+  scope: (scope: TaskScope) => ['tasks', scope] as const,
   byScope: (scope: TaskScope, date: string) =>
     ['tasks', scope, date] as const,
   history: () => ['tasks', 'history'] as const,

@@ -9,7 +9,6 @@ import type {
   UpdateTaskTemplateInput,
 } from '@/types'
 import { taskKeys } from '../tasks/useTasks'
-import { getTargetDateForScope } from '@/lib/task-dates'
 
 const templateKeys = {
   all: ['task-templates'] as const,
@@ -18,11 +17,10 @@ const templateKeys = {
 export function useTaskTemplates() {
   const queryClient = useQueryClient()
 
-  // 템플릿 변경 후, 오늘 일간 태스크를 다시 불러와(게이트 통과 시) 즉시 시딩되게 한다.
+  // 템플릿 변경 후 일간 목록을 다시 불러와(게이트 통과 시) 즉시 시딩되게 한다.
+  // "유효 오늘"은 하루 시작 시각에 따라 달라지므로 날짜를 특정하지 않고 무효화한다.
   const invalidateToday = useCallback(() => {
-    queryClient.invalidateQueries({
-      queryKey: taskKeys.byScope('daily', getTargetDateForScope('daily', new Date())),
-    })
+    queryClient.invalidateQueries({ queryKey: taskKeys.scope('daily') })
   }, [queryClient])
 
   const {

@@ -3,18 +3,42 @@
 import { useState } from 'react'
 import { addDays, format, isSameDay } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight, LayoutTemplate, Plus } from 'lucide-react'
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  LayoutTemplate,
+  Plus,
+} from 'lucide-react'
 import { usePlannerPage } from '../_hooks/tasks/usePlannerPage'
+import { useEffectiveToday } from '../_hooks/profile/useEffectiveToday'
 import { TaskList } from '../_components/tasks/TaskList'
 import { TaskFilters } from '../_components/tasks/TaskFilters'
 import { TaskForm } from '../_components/tasks/TaskForm'
 import { Button } from '@/components/ui/Button'
 import { PlannerProgress } from '../_components/tasks/PlannerProgress'
 import { TemplateManager } from '../_components/templates/TemplateManager'
+import { DayStartTimeModal } from '../_components/settings/DayStartTimeModal'
 
 export default function DailyPlannerPage() {
-  const [date, setDate] = useState(() => new Date())
+  // 앵커의 초기값이 "유효 오늘"(하루 시작 시각 반영)이어야 하므로
+  // 프로필 로드를 기다린 뒤 초기 날짜를 주입한다.
+  const { ready, effectiveToday } = useEffectiveToday()
+  if (!ready) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <p className="text-sm text-zinc-500">불러오는 중…</p>
+      </div>
+    )
+  }
+  return <DailyPlanner initialDate={effectiveToday()} />
+}
+
+function DailyPlanner({ initialDate }: { initialDate: Date }) {
+  const [date, setDate] = useState(initialDate)
   const [managerOpen, setManagerOpen] = useState(false)
+  const [dayStartOpen, setDayStartOpen] = useState(false)
+  const { dayStartTime, effectiveToday } = useEffectiveToday()
   const {
     tasks,
     isLoading,
@@ -37,7 +61,7 @@ export default function DailyPlannerPage() {
   } = usePlannerPage('daily', date)
 
   const targetLabel = format(date, 'PPP (EEE)', { locale: ko })
-  const isToday = isSameDay(date, new Date())
+  const isToday = isSameDay(date, effectiveToday())
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -72,7 +96,7 @@ export default function DailyPlannerPage() {
             <button
               type="button"
               className="cursor-pointer font-medium text-emerald-600 hover:underline"
-              onClick={() => setDate(new Date())}
+              onClick={() => setDate(effectiveToday())}
             >
               오늘로 이동
             </button>
@@ -80,7 +104,15 @@ export default function DailyPlannerPage() {
         </div>
       </div>
 
-      <div className="flex justify-end gap-2">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button
+          type="button"
+          variant="secondary"
+          onClick={() => setDayStartOpen(true)}
+        >
+          <Clock className="size-4" />
+          하루 시작 {dayStartTime.slice(0, 5)}
+        </Button>
         <Button
           type="button"
           variant="secondary"
@@ -139,6 +171,11 @@ export default function DailyPlannerPage() {
       <TemplateManager
         open={managerOpen}
         onClose={() => setManagerOpen(false)}
+      />
+
+      <DayStartTimeModal
+        open={dayStartOpen}
+        onClose={() => setDayStartOpen(false)}
       />
     </div>
   )

@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { Profile } from '@/types'
 import { taskKeys } from '../tasks/useTasks'
-import { getTargetDateForScope } from '@/lib/task-dates'
 
 const profileKeys = {
   all: ['profile'] as const,
@@ -34,10 +33,9 @@ export function useProfile() {
     },
     onSuccess: (data) => {
       queryClient.setQueryData<Profile>(profileKeys.all, data)
-      // 시작 시각 변경이 오늘 시딩에 즉시 반영되도록 재조회.
-      queryClient.invalidateQueries({
-        queryKey: taskKeys.byScope('daily', getTargetDateForScope('daily', new Date())),
-      })
+      // 시작 시각 변경은 "유효 오늘" 자체를 바꿀 수 있으므로 특정 날짜가 아닌
+      // 일간 목록 전체를 재조회해 새 기준의 시딩이 즉시 반영되게 한다.
+      queryClient.invalidateQueries({ queryKey: taskKeys.scope('daily') })
     },
   })
 
