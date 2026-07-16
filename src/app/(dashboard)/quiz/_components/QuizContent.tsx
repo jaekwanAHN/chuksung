@@ -13,9 +13,10 @@ interface Props {
   questions: QuizQuestion[]
   selected: string
   initialFavoriteIds: string[]
+  shuffleSeed: number
 }
 
-export function QuizContent({ categories, questions, selected, initialFavoriteIds }: Props) {
+export function QuizContent({ categories, questions, selected, initialFavoriteIds, shuffleSeed }: Props) {
   const { isFavorite, toggle } = useFavorites(initialFavoriteIds)
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
@@ -42,6 +43,7 @@ export function QuizContent({ categories, questions, selected, initialFavoriteId
         <QuizCard
           key={selected}
           questions={displayed}
+          shuffleSeed={shuffleSeed}
           isFavorite={isFavorite}
           onToggleFavorite={toggle}
           emptyMessage={

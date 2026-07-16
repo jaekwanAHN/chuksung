@@ -33,6 +33,12 @@ export default async function QuizPage({
 
   const initialFavoriteIds = (bookmarks ?? []).map((r) => r.question_id as string)
 
+  // 서버에서 시드를 생성해 내려주면 서버/클라이언트가 같은 셔플 순서를
+  // 만들어 hydration 불일치가 발생하지 않는다 (useQuiz 참조).
+  // 서버 컴포넌트는 요청당 1회 실행이라 렌더 중 난수 생성이 안전하다.
+  // eslint-disable-next-line react-hooks/purity
+  const shuffleSeed = Math.floor(Math.random() * 0x7fffffff)
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <h1 className="text-xl font-bold text-zinc-900">CS 퀴즈</h1>
@@ -41,6 +47,7 @@ export default async function QuizPage({
         questions={(questions ?? []) as QuizQuestion[]}
         selected={selected}
         initialFavoriteIds={initialFavoriteIds}
+        shuffleSeed={shuffleSeed}
       />
     </div>
   )
