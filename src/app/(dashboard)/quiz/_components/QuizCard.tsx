@@ -21,6 +21,7 @@ const DIFFICULTY_CLASS: Record<string, string> = {
 
 interface Props {
   questions: QuizQuestion[]
+  shuffleSeed: number
   isFavorite: (id: string) => boolean
   onToggleFavorite: (id: string) => void
   emptyMessage?: string
@@ -28,11 +29,12 @@ interface Props {
 
 export function QuizCard({
   questions,
+  shuffleSeed,
   isFavorite,
   onToggleFavorite,
   emptyMessage = '해당 카테고리에 문항이 없습니다.',
 }: Props) {
-  const { current, index, total, done, next, prev, restart } = useQuiz(questions)
+  const { current, index, total, done, next, prev, restart } = useQuiz(questions, shuffleSeed)
 
   if (total === 0) {
     return (
