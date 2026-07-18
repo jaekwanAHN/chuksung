@@ -54,6 +54,15 @@ body {
   animation: slide-up 0.25s ease-out;
 }
 
+@keyframes slide-down {
+  from { transform: translateY(-0.75rem); opacity: 0; }
+  to   { transform: translateY(0);        opacity: 1; }
+}
+
+@utility animate-slide-down {
+  animation: slide-down 0.25s ease-out;
+}
+
 /* 상단 네비게이션 프로그레스 바 — 끝을 알 수 없어 90%에서 수렴하는 형태 */
 @keyframes nav-progress {
   0%   { width: 0; }

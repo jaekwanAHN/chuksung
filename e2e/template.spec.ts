@@ -77,8 +77,11 @@ test.describe('템플릿 관리 · 하루 시작 시각', () => {
       await expect(input).toHaveValue(original)
 
       await input.fill(changed)
-      // PATCH → 프로필 캐시 갱신 → 버튼 라벨 반영
-      await page.keyboard.press('Escape')
+      // 확인 버튼 클릭 → PATCH → 성공 토스트 + 모달 자동 닫힘 → 버튼 라벨 반영
+      await page.getByRole('button', { name: '확인' }).click()
+      await expect(page.locator('[role="status"]')).toContainText(
+        `하루 시작 시각이 ${changed}로 변경되었습니다`
+      )
       await expect(
         page.getByRole('button', { name: `하루 시작 ${changed}` })
       ).toBeVisible()
