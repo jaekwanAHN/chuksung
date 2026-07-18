@@ -24,7 +24,7 @@ export function useProfile() {
     },
   })
 
-  const { mutateAsync: updateDayStartTime } = useMutation({
+  const { mutateAsync: updateDayStartTime, isPending: savingDayStartTime } = useMutation({
     mutationFn: async (dayStartTime: string) => {
       const { data } = await apiClient.patch<Profile>('/profile', {
         day_start_time: dayStartTime,
@@ -39,5 +39,5 @@ export function useProfile() {
     },
   })
 
-  return { profile, loading, error, updateDayStartTime }
+  return { profile, loading, error, updateDayStartTime, savingDayStartTime }
 }
