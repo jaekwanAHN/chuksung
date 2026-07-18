@@ -23,7 +23,8 @@ import { DayStartTimeModal } from '../_components/settings/DayStartTimeModal'
 export default function DailyPlannerPage() {
   // 앵커의 초기값이 "유효 오늘"(하루 시작 시각 반영)이어야 하므로
   // 프로필 로드를 기다린 뒤 초기 날짜를 주입한다.
-  const { ready, effectiveToday } = useEffectiveToday()
+  // (layout의 서버 프리페치로 프로필이 캐시에 미리 실려 이 게이트는 사실상 즉시 통과)
+  const { ready, failed, retryProfile, effectiveToday } = useEffectiveToday()
   if (!ready) {
     return (
       <div className="mx-auto max-w-3xl">
@@ -31,7 +32,30 @@ export default function DailyPlannerPage() {
       </div>
     )
   }
-  return <DailyPlanner initialDate={effectiveToday()} />
+  return (
+    <>
+      {failed && (
+        <div className="mx-auto mb-4 flex max-w-3xl items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span>
+            하루 시작 시각 설정을 불러오지 못해 달력 기준 &lsquo;오늘&rsquo;로
+            표시하고 있습니다.
+          </span>
+          <button
+            type="button"
+            onClick={() => void retryProfile()}
+            className="shrink-0 cursor-pointer font-semibold underline hover:text-amber-900"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+      {/* 실패 → 복구 시 올바른 유효 오늘로 앵커를 다시 잡도록 리마운트 */}
+      <DailyPlanner
+        key={failed ? 'calendar-fallback' : 'effective'}
+        initialDate={effectiveToday()}
+      />
+    </>
+  )
 }
 
 function DailyPlanner({ initialDate }: { initialDate: Date }) {
