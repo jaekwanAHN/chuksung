@@ -54,3 +54,31 @@ npm run test:e2e:report   # 마지막 HTML 리포트 열기
 | `e2e/auth.setup.ts` | 세션 발급 → storageState 저장 (인증 셋업 프로젝트) |
 | `e2e/constants.ts` | storageState 경로 등 공유 상수 |
 | `e2e/login.spec.ts` | 로그인 / 인증 리다이렉트 시나리오 |
+| `e2e/navigation.spec.ts` | 사이드바 뷰 전환 · 기간 이동 · 일간 날짜 이동 |
+| `e2e/task.spec.ts` | 일간 태스크 CRUD (설명·카테고리·우선순위 포함) · 완료 토글 |
+| `e2e/task-filters.spec.ts` | 일간 카테고리·우선순위 필터 |
+| `e2e/progress.spec.ts` | 일간 진행률 토글 반영 · 주간/월간 달성률 · 미니 캘린더 |
+| `e2e/template.spec.ts` | 템플릿 CRUD + 일간 시딩 · 하루 시작 시각 설정 |
+| `e2e/weekly-monthly.spec.ts` | 주간/월간 목표 CRUD |
+| `e2e/dday.spec.ts` | D-day 추가/수정/삭제 |
+| `e2e/jobs.spec.ts` | 취업공고 CRUD · 상태 전이 배지 |
+| `e2e/goal.spec.ts` | 최종목표 수정 (원본 API 백업 → afterEach 복원) |
+| `e2e/history.spec.ts` | 완료 → 기록 반영/제거 · 통계·히트맵 스모크 · 기간/카테고리 필터 |
+| `e2e/timer.spec.ts` | 스톱워치 새로고침 영속 (localStorage) · 카운트다운 완료 토스트 |
+| `e2e/quiz.spec.ts` | 퀴즈 조회 스모크 · 즐겨찾기 토글 (풀이 채점은 삭제 API가 없어 제외) |
+| `e2e/theme.spec.ts` | 테마 전환 · 새로고침 영속 (localStorage) |
+
+## 데이터 취급 원칙
+
+테스트는 **단일 공유 계정의 실 DB**를 조작합니다.
+
+- **직렬 실행**: `workers: 1` 고정. 병렬 워커가 같은 계정의 시딩·설정·목록을
+  동시에 건드리면 간섭으로 오탐이 발생합니다.
+- **마커 + 자체 정리**: 생성 데이터는 `E2E <기능> ${Date.now()}` 제목을 쓰고
+  테스트가 스스로 삭제합니다. 실패로 잔여물이 남아도 마커로 식별 가능합니다.
+- **덮어쓰기 값 복원은 API 로**: goal(PUT 전체 덮어쓰기)·하루 시작 시각처럼
+  기존 값을 변경하는 테스트는 원본을 **API 로 먼저 읽어 두고** `afterEach`
+  또는 `finally`에서 **API 로 복원**합니다. UI 흐름으로만 원복하면 테스트가
+  타임아웃으로 중단될 때 원복이 실행되지 않아 원본이 유실됩니다.
+- **삭제 confirm**: 태스크 삭제는 네이티브 `confirm()` — `page.on('dialog')`
+  수락이 필요합니다. (템플릿/D-day 는 confirm 없음, 공고는 전용 모달)

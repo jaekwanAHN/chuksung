@@ -10,6 +10,8 @@
     "lint": "eslint",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "test:e2e:trace": "playwright test --trace on",
+    "test:e2e:view": "playwright show-report --host 0.0.0.0 --port 9323",
     "test:e2e:report": "playwright show-report",
     "db:link": "supabase link --project-ref ywwsdezbttlwhiikasjq",
     "db:new": "supabase migration new",
