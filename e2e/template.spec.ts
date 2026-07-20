@@ -36,8 +36,10 @@ test.describe('템플릿 관리 · 하루 시작 시각', () => {
     await page.keyboard.press('Escape')
 
     // 일간 목록에 시딩된 태스크 확인 (템플릿 변경 → 일간 재조회 → 서버 시딩)
+    // 시딩은 서버에서 프로필 조회 + 템플릿 insert + 목록 select 의 다중 왕복이라
+    // CI(원격 Supabase 지연)에서는 기본 5s 를 넘길 수 있어 넉넉히 대기한다.
     const seeded = page.locator('li').filter({ hasText: title })
-    await expect(seeded).toBeVisible()
+    await expect(seeded).toBeVisible({ timeout: 20000 })
 
     // 정리 1: 시딩된 태스크 삭제 (confirm 수락)
     page.on('dialog', (dialog) => dialog.accept())
