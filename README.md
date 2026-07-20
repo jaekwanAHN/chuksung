@@ -69,8 +69,10 @@ supabase/
 
 ## 설치 및 실행
 
+> 패키지 매니저는 **pnpm**을 사용합니다 (npm 사용 금지).
+
 ```bash
-npm install
+pnpm install
 ```
 
 ### 환경 변수
@@ -87,19 +89,27 @@ NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ### 개발 서버
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 브라우저에서 [http://localhost:3000](http://localhost:3000) — 로그인된 사용자는 `/daily`로, 비로그인 시 `/login`으로 흐름이 이어집니다.
 
 ## 스크립트
 
-| 명령            | 설명                         |
-| --------------- | ---------------------------- |
-| `npm run dev`   | 개발 서버                    |
-| `npm run build` | 프로덕션 빌드                |
-| `npm run start` | 프로덕션 서버 (`next start`) |
-| `npm run lint`  | ESLint                       |
+| 명령                   | 설명                                    |
+| ---------------------- | --------------------------------------- |
+| `pnpm dev`             | 개발 서버                               |
+| `pnpm build`           | 프로덕션 빌드                           |
+| `pnpm start`           | 프로덕션 서버 (`next start`)            |
+| `pnpm lint`            | ESLint                                  |
+| `pnpm test:e2e`        | Playwright E2E 테스트 (헤드리스)        |
+| `pnpm test:e2e:ui`     | Playwright UI 모드 (디버깅)             |
+| `pnpm test:e2e:report` | 마지막 E2E HTML 리포트 열기             |
+
+## 테스트 · CI
+
+- **E2E**: [Playwright](https://playwright.dev) 기반. `pnpm dev` 서버를 자동으로 띄우고 실제 브라우저로 시나리오를 검증합니다. 인증 테스트는 Supabase 테스트 계정으로 세션을 발급해 재사용합니다. 상세는 [`e2e/README.md`](e2e/README.md) 참조.
+- **CI 게이트**: `main`으로의 Pull Request는 GitHub Actions에서 **`lint` · `build` · `e2e`** 를 모두 통과해야 병합할 수 있습니다 (`e2e`는 필수 상태 체크). 설정은 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) 참조.
 
 ## 데이터 모델 (요약)
 
