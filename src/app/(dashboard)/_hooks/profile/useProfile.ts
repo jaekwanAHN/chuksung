@@ -4,10 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { Profile } from '@/types'
 import { taskKeys } from '../tasks/useTasks'
-
-const profileKeys = {
-  all: ['profile'] as const,
-}
+import { profileKeys } from './profileKeys'
 
 export function useProfile() {
   const queryClient = useQueryClient()
@@ -16,6 +13,7 @@ export function useProfile() {
     data: profile,
     isLoading: loading,
     error,
+    refetch,
   } = useQuery({
     queryKey: profileKeys.all,
     queryFn: async (): Promise<Profile> => {
@@ -39,5 +37,5 @@ export function useProfile() {
     },
   })
 
-  return { profile, loading, error, updateDayStartTime, savingDayStartTime }
+  return { profile, loading, error, refetch, updateDayStartTime, savingDayStartTime }
 }
