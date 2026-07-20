@@ -87,6 +87,18 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
   const targetLabel = format(date, 'PPP (EEE)', { locale: ko })
   const isToday = isSameDay(date, effectiveToday())
 
+  // "오늘"이 실제로 가리키는 구간: [앵커일 dayStart, 다음날 dayStart).
+  // 00:00이면 달력 하루와 같아 군더더기이므로 표기하지 않는다.
+  const dayStart = dayStartTime.slice(0, 5)
+  const todayRangeLabel =
+    dayStart === '00:00'
+      ? null
+      : `${format(date, 'd일', { locale: ko })} ${dayStart} ~ ${format(
+          addDays(date, 1),
+          'd일',
+          { locale: ko }
+        )} ${dayStart}`
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex flex-col gap-2">
@@ -115,7 +127,12 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
         </div>
         <div className="text-center text-sm text-zinc-500">
           {isToday ? (
-            <span>오늘</span>
+            <span>
+              오늘
+              {todayRangeLabel && (
+                <span className="text-zinc-400"> · {todayRangeLabel}</span>
+              )}
+            </span>
           ) : (
             <button
               type="button"
