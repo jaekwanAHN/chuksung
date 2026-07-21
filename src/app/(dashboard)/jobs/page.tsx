@@ -2,6 +2,7 @@
 
 import { Plus } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Toast } from '@/components/ui/Toast'
 import { PostingCard } from './_components/PostingCard'
 import { JobPostingModal } from './_components/JobPostingModal'
 import { DeleteModal } from './_components/DeleteModal'
@@ -26,6 +27,8 @@ export default function JobsPage() {
     closeModal,
     handleSubmit,
     handleDelete,
+    toast,
+    closeToast,
   } = useJobsPage()
 
   return (
@@ -84,6 +87,13 @@ export default function JobsPage() {
         deleting={deleting}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleDelete}
+      />
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={closeToast}
       />
     </div>
   )

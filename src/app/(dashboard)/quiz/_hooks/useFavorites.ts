@@ -3,9 +3,11 @@
 import { useCallback, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
+import { useToast } from '@/components/ui/useToast'
 
 export function useFavorites(initialIds: string[] = []) {
   const [favorites, setFavorites] = useState<Set<string>>(new Set(initialIds))
+  const { toast, showError, close: closeToast } = useToast()
 
   const setFavorite = useCallback((id: string, isFavorite: boolean) => {
     setFavorites((prev) => {
@@ -23,9 +25,10 @@ export function useFavorites(initialIds: string[] = []) {
         is_bookmarked: willBeFavorite,
       })
     },
-    // 요청 실패 시 낙관적으로 바꿔둔 즐겨찾기 상태를 되돌린다
+    // 요청 실패 시 낙관적으로 바꿔둔 즐겨찾기 상태를 되돌리고 실패를 알린다
     onError: (_err, { id, willBeFavorite }) => {
       setFavorite(id, !willBeFavorite)
+      showError('즐겨찾기를 변경하지 못했습니다. 다시 시도해 주세요.')
     },
   })
 
@@ -40,5 +43,5 @@ export function useFavorites(initialIds: string[] = []) {
 
   const isFavorite = useCallback((id: string) => favorites.has(id), [favorites])
 
-  return { favorites, toggle, isFavorite }
+  return { favorites, toggle, isFavorite, toast, closeToast }
 }

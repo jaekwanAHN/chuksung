@@ -16,7 +16,9 @@ import { TaskList } from '../_components/tasks/TaskList'
 import { TaskFilters } from '../_components/tasks/TaskFilters'
 import { TaskForm } from '../_components/tasks/TaskForm'
 import { Button } from '@/components/ui/Button'
+import { Toast } from '@/components/ui/Toast'
 import { PlannerProgress } from '../_components/tasks/PlannerProgress'
+import { QueryErrorRetry } from '../_components/QueryErrorRetry'
 import { TemplateManager } from '../_components/templates/TemplateManager'
 import { DayStartTimeModal } from '../_components/settings/DayStartTimeModal'
 
@@ -67,6 +69,7 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
     tasks,
     isLoading,
     error,
+    refetch,
     filterMode,
     setFilterMode,
     categoryFilter,
@@ -82,6 +85,8 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
     handleToggle,
     handleDelete,
     handleSave,
+    toast,
+    closeToast,
   } = usePlannerPage('daily', date)
 
   const targetLabel = format(date, 'PPP (EEE)', { locale: ko })
@@ -180,9 +185,10 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
       {isLoading ? (
         <p className="text-sm text-zinc-500">불러오는 중…</p>
       ) : error ? (
-        <p className="text-sm text-red-600">
-          태스크를 불러오지 못했습니다. Supabase 설정과 테이블을 확인해 주세요.
-        </p>
+        <QueryErrorRetry
+          message="태스크를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+          onRetry={() => refetch()}
+        />
       ) : (
         <>
           <TaskList
@@ -217,6 +223,13 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
       <DayStartTimeModal
         open={dayStartOpen}
         onClose={() => setDayStartOpen(false)}
+      />
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={closeToast}
       />
     </div>
   )

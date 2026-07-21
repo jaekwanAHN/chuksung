@@ -6,6 +6,7 @@ import { Loader2 } from 'lucide-react'
 import { useFavorites } from '../_hooks/useFavorites'
 import { CategoryFilter } from './CategoryFilter'
 import { QuizCard } from './QuizCard'
+import { Toast } from '@/components/ui/Toast'
 import type { QuizCategory, QuizQuestion } from '@/types/quiz'
 
 interface Props {
@@ -17,7 +18,7 @@ interface Props {
 }
 
 export function QuizContent({ categories, questions, selected, initialFavoriteIds, shuffleSeed }: Props) {
-  const { isFavorite, toggle } = useFavorites(initialFavoriteIds)
+  const { isFavorite, toggle, toast, closeToast } = useFavorites(initialFavoriteIds)
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
 
@@ -58,6 +59,13 @@ export function QuizContent({ categories, questions, selected, initialFavoriteId
           </div>
         )}
       </div>
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={closeToast}
+      />
     </>
   )
 }

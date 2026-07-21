@@ -5,12 +5,14 @@ import { HistoryStats } from './_components/HistoryStats'
 import { HistoryCalendar } from './_components/HistoryCalendar'
 import { HistoryFilter } from './_components/HistoryFilter'
 import { HistoryRow } from './_components/HistoryRow'
+import { QueryErrorRetry } from '../_components/QueryErrorRetry'
 
 export default function HistoryPage() {
   const {
     tasks,
     isLoading,
     error,
+    refetch,
     month,
     category,
     filtered,
@@ -28,7 +30,10 @@ export default function HistoryPage() {
       {isLoading ? (
         <p className="text-sm text-zinc-500">불러오는 중…</p>
       ) : error ? (
-        <p className="text-sm text-red-600">기록을 불러오지 못했습니다.</p>
+        <QueryErrorRetry
+          message="기록을 불러오지 못했습니다."
+          onRetry={() => refetch()}
+        />
       ) : (
         <>
           <HistoryStats tasks={tasks} />

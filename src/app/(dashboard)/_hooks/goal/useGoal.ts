@@ -16,6 +16,7 @@ export function useGoal() {
     data: goal = null,
     isLoading: loading,
     error,
+    refetch,
   } = useQuery({
     queryKey: goalKeys.all,
     queryFn: async (): Promise<Goal | null> => {
@@ -35,5 +36,5 @@ export function useGoal() {
     },
   })
 
-  return { goal, loading, error, save }
+  return { goal, loading, error, refetch, save }
 }

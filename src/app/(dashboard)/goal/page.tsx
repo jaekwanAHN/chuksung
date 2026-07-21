@@ -7,9 +7,10 @@ import { Pencil, Target } from 'lucide-react'
 import { useGoal } from '../_hooks/goal/useGoal'
 import { Button } from '@/components/ui/Button'
 import { Toast, type ToastVariant } from '@/components/ui/Toast'
+import { QueryErrorRetry } from '../_components/QueryErrorRetry'
 
 export default function GoalPage() {
-  const { goal, loading, error, save } = useGoal()
+  const { goal, loading, error, refetch, save } = useGoal()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)
@@ -58,9 +59,10 @@ export default function GoalPage() {
       {loading ? (
         <p className="text-sm text-zinc-500">불러오는 중…</p>
       ) : error ? (
-        <p className="text-sm text-red-600">
-          목표를 불러오지 못했습니다. Supabase 설정과 테이블을 확인해 주세요.
-        </p>
+        <QueryErrorRetry
+          message="목표를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요."
+          onRetry={() => refetch()}
+        />
       ) : editing ? (
         <div className="space-y-3">
           <textarea

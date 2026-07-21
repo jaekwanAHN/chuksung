@@ -15,7 +15,9 @@ import { TaskList } from '../_components/tasks/TaskList'
 import { TaskFilters } from '../_components/tasks/TaskFilters'
 import { TaskForm } from '../_components/tasks/TaskForm'
 import { Button } from '@/components/ui/Button'
+import { Toast } from '@/components/ui/Toast'
 import { PlannerProgress } from '../_components/tasks/PlannerProgress'
+import { QueryErrorRetry } from '../_components/QueryErrorRetry'
 
 export default function WeeklyPlannerPage() {
   const [weekAnchor, setWeekAnchor] = useState(() => new Date())
@@ -23,6 +25,7 @@ export default function WeeklyPlannerPage() {
     tasks,
     isLoading,
     error,
+    refetch,
     filterMode,
     setFilterMode,
     categoryFilter,
@@ -38,6 +41,8 @@ export default function WeeklyPlannerPage() {
     handleToggle,
     handleDelete,
     handleSave,
+    toast,
+    closeToast,
   } = usePlannerPage('weekly', weekAnchor)
 
   const weekStart = startOfWeek(weekAnchor, { weekStartsOn: 1 })
@@ -95,7 +100,10 @@ export default function WeeklyPlannerPage() {
       {isLoading ? (
         <p className="text-sm text-zinc-500">불러오는 중…</p>
       ) : error ? (
-        <p className="text-sm text-red-600">목표를 불러오지 못했습니다.</p>
+        <QueryErrorRetry
+          message="목표를 불러오지 못했습니다."
+          onRetry={() => refetch()}
+        />
       ) : (
         <>
           <TaskList
@@ -120,6 +128,13 @@ export default function WeeklyPlannerPage() {
         initial={editing}
         loading={isMutating}
         onSubmit={handleSave}
+      />
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={closeToast}
       />
     </div>
   )
