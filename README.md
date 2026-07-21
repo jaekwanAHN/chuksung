@@ -20,6 +20,7 @@
 
 - **Google / 카카오** OAuth 로그인 (Supabase Auth)
 - **일간** (`/daily`): 날짜 이동, 태스크 CRUD, 완료 체크(낙관적 업데이트), 카테고리·우선순위 필터, 진행률 표시
+- **템플릿 자동 시딩**: 활성 템플릿을 "하루 시작 시각"이 지나면 그날 일간 목록에 자동 추가 (단일 RPC로 처리)
 - **주간** (`/weekly`): ISO 주 기준 목표, 주간 달성률
 - **월간** (`/monthly`): 월 목표, 일별 완료 건수 미니 캘린더, 월간 달성률
 - **기록** (`/history`): 통계 카드, 최근 12주 GitHub 스타일 히트맵, 기간·카테고리 필터, 완료 목록
@@ -44,12 +45,14 @@ src/
 │   │   ├── ddays/[id]/
 │   │   ├── job-postings/[id]/
 │   │   ├── quiz-histories/     # 퀴즈 즐겨찾기 toggle
-│   │   └── templates/apply/    # 태스크 템플릿 적용
+│   │   ├── task-templates/[id]/ # 일간 태스크 템플릿 CRUD
+│   │   ├── goal/               # 최종목표
+│   │   └── profile/            # 하루 시작 시각 등 프로필
 │   ├── auth/callback/          # OAuth 코드 교환
 │   ├── layout.tsx, providers.tsx, page.tsx
 ├── components/
 │   ├── layout/                 # Sidebar, Header, Footer, NavigationProgress
-│   └── ui/                     # Button, Modal, Badge, EmptyState, Toast
+│   └── ui/                     # Button, Modal, Badge, EmptyState, Toast, useToast
 ├── hooks/
 │   ├── auth/useAuth.ts
 │   └── theme/useTheme.tsx
@@ -64,8 +67,11 @@ src/
 │   └── quiz.ts                 # QuizCategory, QuizQuestion, QuizHistory 등
 └── proxy.ts                    # 세션 갱신 + 인증 리다이렉트
 supabase/
-└── schema.sql                  # DB 스키마·RLS·트리거 (SQL Editor용)
+├── schema.sql                  # DB 스키마·RLS·트리거·RPC (소스 오브 트루스)
+└── migrations/                 # 순번 마이그레이션 (0000~, `pnpm db:push`로 적용)
 ```
+
+> 일간·주간·월간 페이지는 공통 로직을 `usePlannerPage` 훅으로 공유하며, 로드 실패 시 `_components/QueryErrorRetry`로 재시도를, 뮤테이션 실패 시 `useToast`로 에러를 안내합니다.
 
 ## 설치 및 실행
 
@@ -113,11 +119,15 @@ pnpm dev
 
 ## 데이터 모델 (요약)
 
-- **`profiles`**: `auth.users`와 1:1, 가입 시 트리거로 생성
+- **`profiles`**: `auth.users`와 1:1, 가입 시 트리거로 생성. `day_start_time`(하루 시작 시각 게이트 기준)
 - **`tasks`**: `scope` (`daily` | `weekly` | `monthly`), `target_date`, `category`, `priority`, 완료 시 `completed_at`
+- **`goals`**: 사용자별 최종목표 (`content`, 1:1)
+- **`task_templates`**: 매일 자동 추가할 일간 태스크 템플릿 (`title`, `category`, `priority`, `is_active`)
+- **`task_template_applications`**: 템플릿 적용 기록. `UNIQUE(template_id, applied_date)`로 (템플릿, 날짜)당 1회 시딩을 원자적으로 보장
 - **`ddays`**: D-day 항목 (`label`, `target_date`)
 - **`job_postings`**: 취업공고 (`title`, `company`, `url`, `status`, `deadline`, `notes`)
 - **`quiz_categories`**: 퀴즈 카테고리 (`frontend`, `network`, `os` 등)
 - **`quiz_questions`**: 퀴즈 문제 (`question`, `answer`, `difficulty`, `tags`)
 - **`quiz_histories`**: 퀴즈 히스토리·즐겨찾기 (`is_bookmarked`)
+- **RPC `seed_daily_templates(date)`**: 활성 템플릿을 그날 일간 태스크로 시딩. 선점(`ON CONFLICT DO NOTHING`)과 삽입을 CTE 한 문에 묶어 단일 왕복·멱등·동시성 안전 (migration 0009)
 - **RLS**: 본인 `user_id` 데이터만 조회·수정·삭제 가능
