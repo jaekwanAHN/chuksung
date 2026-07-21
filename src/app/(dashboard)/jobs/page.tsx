@@ -11,6 +11,8 @@ export default function JobsPage() {
   const {
     postings,
     loading,
+    error,
+    refetch,
     modalOpen,
     editing,
     form,
@@ -38,6 +40,18 @@ export default function JobsPage() {
 
       {loading ? (
         <p className="text-sm text-zinc-500">불러오는 중…</p>
+      ) : error ? (
+        <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center">
+          <p className="text-sm text-zinc-500">공고를 불러오지 못했습니다.</p>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => refetch()}
+            className="mt-4"
+          >
+            다시 시도
+          </Button>
+        </div>
       ) : postings.length === 0 ? (
         <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center text-sm text-zinc-400">
           저장된 공고가 없습니다. 공고를 추가해 보세요.

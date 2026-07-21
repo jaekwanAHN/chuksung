@@ -33,7 +33,17 @@ function DdayLabel({ days }: { days: number }) {
   return <span className="text-xs font-bold text-zinc-400">D+{Math.abs(days)}</span>
 }
 
-function DdaySidebar({ onOpen, ddays }: { onOpen: () => void; ddays: ReturnType<typeof useDdays>['ddays'] }) {
+function DdaySidebar({
+  onOpen,
+  ddays,
+  error,
+  onRetry,
+}: {
+  onOpen: () => void
+  ddays: ReturnType<typeof useDdays>['ddays']
+  error: unknown
+  onRetry: () => void
+}) {
   return (
     <div className="mt-1 border-t border-zinc-100 px-1 pt-3">
       <div className="mb-2 flex items-center justify-between">
@@ -49,7 +59,18 @@ function DdaySidebar({ onOpen, ddays }: { onOpen: () => void; ddays: ReturnType<
           <Settings className="size-3.5" />
         </button>
       </div>
-      {ddays.length === 0 ? (
+      {error ? (
+        <div className="space-y-1">
+          <p className="text-xs text-zinc-400">불러오지 못했어요.</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="cursor-pointer text-xs font-medium text-zinc-500 hover:text-zinc-700"
+          >
+            다시 시도
+          </button>
+        </div>
+      ) : ddays.length === 0 ? (
         <button
           type="button"
           onClick={onOpen}
@@ -80,7 +101,7 @@ function DdaySidebar({ onOpen, ddays }: { onOpen: () => void; ddays: ReturnType<
 export function Sidebar() {
   const pathname = usePathname()
   const [managerOpen, setManagerOpen] = useState(false)
-  const { ddays, loading, add, update, remove } = useDdays()
+  const { ddays, loading, error, refetch, add, update, remove } = useDdays()
 
   return (
     <>
@@ -113,7 +134,12 @@ export function Sidebar() {
               </Link>
             )
           })}
-          <DdaySidebar onOpen={() => setManagerOpen(true)} ddays={ddays} />
+          <DdaySidebar
+            onOpen={() => setManagerOpen(true)}
+            ddays={ddays}
+            error={error}
+            onRetry={() => refetch()}
+          />
         </nav>
       </aside>
 

@@ -21,6 +21,7 @@ export function useDdays() {
     data: ddays = [],
     isLoading: loading,
     error,
+    refetch,
   } = useQuery({
     queryKey: ddayKeys.all,
     queryFn: async (): Promise<Dday[]> => {
@@ -91,5 +92,5 @@ export function useDdays() {
     [removeAsync],
   )
 
-  return { ddays, loading, error, add, update, remove }
+  return { ddays, loading, error, refetch, add, update, remove }
 }

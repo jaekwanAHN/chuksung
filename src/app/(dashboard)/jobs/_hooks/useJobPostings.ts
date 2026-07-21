@@ -26,6 +26,7 @@ export function useJobPostings() {
     data: postings = [],
     isLoading: loading,
     error,
+    refetch,
   } = useQuery({
     queryKey: jobPostingKeys.all,
     queryFn: async (): Promise<JobPosting[]> => {
@@ -79,5 +80,5 @@ export function useJobPostings() {
     [mutateUpdate],
   )
 
-  return { postings, loading, error, add, update, remove }
+  return { postings, loading, error, refetch, add, update, remove }
 }

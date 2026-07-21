@@ -6,7 +6,7 @@ import { EMPTY_FORM } from '../_components/constants'
 import type { CreateJobPostingInput, JobPosting, UpdateJobPostingInput } from '@/types'
 
 export function useJobsPage() {
-  const { postings, loading, add, update, remove } = useJobPostings()
+  const { postings, loading, error, refetch, add, update, remove } = useJobPostings()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<JobPosting | null>(null)
   const [form, setForm] = useState<CreateJobPostingInput>(EMPTY_FORM)
@@ -76,6 +76,8 @@ export function useJobsPage() {
   return {
     postings,
     loading,
+    error,
+    refetch,
     modalOpen,
     editing,
     form,

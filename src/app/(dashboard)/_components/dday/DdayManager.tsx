@@ -4,6 +4,7 @@ import { differenceInDays, parseISO } from 'date-fns'
 import { Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { Toast } from '@/components/ui/Toast'
 import { useDdayManager } from './useDdayManager'
 import type { Dday, CreateDdayInput, UpdateDdayInput } from '@/types'
 
@@ -43,11 +44,16 @@ export function DdayManager({
     editingId,
     editLabel, setEditLabel,
     editDate, setEditDate,
+    savingEdit,
+    deletingId,
     handleAdd,
     startEdit,
     cancelEdit,
     handleUpdate,
-  } = useDdayManager({ add, update })
+    handleRemove,
+    toast,
+    closeToast,
+  } = useDdayManager({ add, update, remove })
 
   return (
     <Modal
@@ -121,7 +127,7 @@ export function DdayManager({
                       <button
                         type="button"
                         onClick={() => handleUpdate(d.id)}
-                        disabled={!editLabel.trim() || !editDate}
+                        disabled={!editLabel.trim() || !editDate || savingEdit}
                         className="flex cursor-pointer items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-40"
                       >
                         <Check className="size-3" />
@@ -163,8 +169,9 @@ export function DdayManager({
                     </button>
                     <button
                       type="button"
-                      onClick={() => remove(d.id)}
-                      className="cursor-pointer text-zinc-400 hover:text-red-500"
+                      onClick={() => handleRemove(d.id)}
+                      disabled={deletingId === d.id}
+                      className="cursor-pointer text-zinc-400 hover:text-red-500 disabled:opacity-40 disabled:pointer-events-none"
                       aria-label="삭제"
                     >
                       <Trash2 className="size-4" />
@@ -176,6 +183,13 @@ export function DdayManager({
           )}
         </div>
       </div>
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={closeToast}
+      />
     </Modal>
   )
 }
