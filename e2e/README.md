@@ -67,6 +67,7 @@ npm run test:e2e:report   # 마지막 HTML 리포트 열기
 | `e2e/timer.spec.ts` | 스톱워치 새로고침 영속 (localStorage) · 카운트다운 완료 토스트 |
 | `e2e/quiz.spec.ts` | 퀴즈 조회 스모크 · 즐겨찾기 토글 (풀이 채점은 삭제 API가 없어 제외) |
 | `e2e/theme.spec.ts` | 테마 전환 · 새로고침 영속 (localStorage) |
+| `e2e/async-feedback.spec.ts` | 비동기 실패 주입(P1) — 진행/실패/재시도 피드백 회귀 방지 |
 
 ## 데이터 취급 원칙
 
