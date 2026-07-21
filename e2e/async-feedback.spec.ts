@@ -173,3 +173,108 @@ test.describe('비동기 피드백 (P1)', () => {
     await expect(retry).toBeHidden({ timeout: 10_000 })
   })
 })
+
+test.describe('비동기 피드백 (P2·P3·P4)', () => {
+  test.skip(
+    () => !hasAuthState(),
+    'E2E_TEST_USER_EMAIL/PASSWORD 미설정 — 인증 테스트 건너뜀'
+  )
+  test.use({ storageState: STORAGE_STATE })
+
+  test('P4 주간 로드 실패 시 재시도 버튼을 노출하고 복구된다', async ({ page }) => {
+    // 주간 태스크 조회만 실패시킨다 (다른 요청은 통과)
+    await page.route('**/api/tasks**', async (route) => {
+      const req = route.request()
+      if (req.method() === 'GET' && req.url().includes('scope=weekly')) {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'e2e injected failure' }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+    await page.goto('/weekly')
+
+    const retry = page.getByRole('button', { name: '다시 시도' })
+    await expect(retry).toBeVisible({ timeout: 10_000 })
+
+    // 성공 시 재시도 버튼이 사라진다
+    await page.unroute('**/api/tasks**')
+    await retry.click()
+    await expect(retry).toBeHidden({ timeout: 10_000 })
+  })
+
+  test('P4 최종목표 로드 실패 시 재시도 버튼을 노출한다', async ({ page }) => {
+    await failMethod(page, '**/api/goal', 'GET')
+    await page.goto('/goal')
+
+    const retry = page.getByRole('button', { name: '다시 시도' })
+    await expect(retry).toBeVisible({ timeout: 10_000 })
+
+    await page.unroute('**/api/goal')
+    await retry.click()
+    await expect(retry).toBeHidden({ timeout: 10_000 })
+  })
+
+  test('P4 기록 로드 실패 시 재시도 버튼을 노출한다', async ({ page }) => {
+    await page.route('**/api/tasks**', async (route) => {
+      const req = route.request()
+      if (req.method() === 'GET' && req.url().includes('completed=true')) {
+        await route.fulfill({
+          status: 500,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'e2e injected failure' }),
+        })
+      } else {
+        await route.continue()
+      }
+    })
+    await page.goto('/history')
+
+    await expect(
+      page.getByRole('button', { name: '다시 시도' })
+    ).toBeVisible({ timeout: 10_000 })
+  })
+
+  test('P3 공고 저장 실패 시 에러 토스트가 뜨고 모달이 유지된다', async ({
+    page,
+  }) => {
+    await page.goto('/jobs')
+    await page.getByRole('button', { name: '공고 추가' }).click()
+    const modal = page.getByRole('dialog')
+    await expect(modal).toBeVisible()
+    await modal.getByPlaceholder('공고 제목').fill(`E2E jobfail ${Date.now()}`)
+
+    await failMethod(page, '**/api/job-postings', 'POST')
+    await modal.getByRole('button', { name: '저장' }).click()
+
+    await expect(
+      page.getByRole('status').filter({ hasText: /저장.*(못했|실패)/ })
+    ).toBeVisible({ timeout: 10_000 })
+    // 저장 실패 시 모달은 닫히지 않아야 한다
+    await expect(modal).toBeVisible()
+    await page.keyboard.press('Escape')
+  })
+
+  test('P3 태스크 저장 실패 시 에러 토스트가 뜨고 폼이 유지된다', async ({
+    page,
+  }) => {
+    await page.goto('/daily')
+    await page.getByRole('button', { name: '새 태스크' }).click()
+    const dialog = page.getByRole('dialog')
+    await expect(dialog).toBeVisible()
+    await page.getByLabel('제목').fill(`E2E taskfail ${Date.now()}`)
+
+    await failMethod(page, '**/api/tasks', 'POST')
+    await page.getByRole('button', { name: '저장' }).click()
+
+    await expect(
+      page.getByRole('status').filter({ hasText: /저장.*(못했|실패)/ })
+    ).toBeVisible({ timeout: 10_000 })
+    // 저장 실패 시 폼은 닫히지 않아야 한다
+    await expect(dialog).toBeVisible()
+    await page.keyboard.press('Escape')
+  })
+})

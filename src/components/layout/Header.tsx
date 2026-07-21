@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from 'react'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { Check, ChevronDown, LogOut } from 'lucide-react'
+import { Check, ChevronDown, LogOut, Loader2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/auth/useAuth'
 import { useTheme } from '@/hooks/theme/useTheme'
 import { THEME_IDS, THEMES } from '@/lib/themes'
 import { Button } from '@/components/ui/Button'
+import { Toast } from '@/components/ui/Toast'
+import { useToast } from '@/components/ui/useToast'
 
 export function Header() {
   const { user, loading } = useAuth()
@@ -16,7 +18,9 @@ export function Header() {
   const currentTheme = THEMES[themeId]
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [signingOut, setSigningOut] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const { toast, showError, close: closeToast } = useToast()
 
   // 현재 시간 (클라이언트에서만 설정해 하이드레이션 불일치 방지)
   const [now, setNow] = useState<Date | null>(null)
@@ -51,9 +55,19 @@ export function Header() {
   }, [])
 
   const signOut = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
-    window.location.href = '/login'
+    if (signingOut) return
+    setSigningOut(true)
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      // 성공 시 페이지가 이동하며 언마운트되므로 진행 상태를 유지한다
+      window.location.href = '/login'
+    } catch {
+      // 실패 시에만 상태를 풀어 재시도할 수 있게 한다
+      showError('로그아웃하지 못했습니다. 다시 시도해 주세요.')
+      setSigningOut(false)
+    }
   }
 
   const todayLabel = format(new Date(), 'PPP (EEE)', { locale: ko })
@@ -126,14 +140,28 @@ export function Header() {
               variant="ghost"
               className="!px-2"
               onClick={signOut}
+              disabled={signingOut}
               title="로그아웃"
             >
-              <LogOut className="size-4" />
-              <span className="hidden sm:inline">로그아웃</span>
+              {signingOut ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <LogOut className="size-4" />
+              )}
+              <span className="hidden sm:inline">
+                {signingOut ? '로그아웃 중…' : '로그아웃'}
+              </span>
             </Button>
           </>
         ) : null}
       </div>
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={closeToast}
+      />
     </header>
   )
 }

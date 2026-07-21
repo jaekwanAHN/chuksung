@@ -3,6 +3,7 @@
 import { Plus, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { Toast } from '@/components/ui/Toast'
 import { cn } from '@/lib/utils'
 import type { TaskCategory, TaskPriority } from '@/types'
 import { TASK_CATEGORY_OPTIONS, TASK_PRIORITY_OPTIONS } from '../../_constants/task'
@@ -43,11 +44,15 @@ export function TemplateManager({
     setEditCategory,
     editPriority,
     setEditPriority,
+    savingEdit,
     handleAdd,
     startEdit,
     cancelEdit,
     handleUpdate,
     handleRemove,
+    toggleActive,
+    toast,
+    closeToast,
   } = useTemplateManager({ add, update, remove })
 
   return (
@@ -167,7 +172,7 @@ export function TemplateManager({
                       <button
                         type="button"
                         onClick={() => handleUpdate(t.id)}
-                        disabled={!editTitle.trim()}
+                        disabled={!editTitle.trim() || savingEdit}
                         className="flex cursor-pointer items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-40"
                       >
                         <Check className="size-3" />
@@ -210,7 +215,7 @@ export function TemplateManager({
                       <input
                         type="checkbox"
                         checked={t.is_active}
-                        onChange={(e) => update(t.id, { is_active: e.target.checked })}
+                        onChange={(e) => toggleActive(t.id, e.target.checked)}
                         disabled={isDeleting}
                         className="size-3.5 accent-zinc-800 [color-scheme:light]"
                       />
@@ -245,6 +250,13 @@ export function TemplateManager({
           )}
         </div>
       </div>
+
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={closeToast}
+      />
     </Modal>
   )
 }

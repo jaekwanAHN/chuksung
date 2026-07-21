@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useToast } from '@/components/ui/useToast'
 import type {
   CreateTaskTemplateInput,
   TaskCategory,
@@ -27,6 +28,9 @@ export function useTemplateManager({ add, update, remove }: UseTemplateManagerOp
   const [editTitle, setEditTitle] = useState('')
   const [editCategory, setEditCategory] = useState<TaskCategory>('general')
   const [editPriority, setEditPriority] = useState<TaskPriority>(2)
+  const [savingEdit, setSavingEdit] = useState(false)
+
+  const { toast, showError, close: closeToast } = useToast()
 
   const handleAdd = async () => {
     if (!title.trim()) return
@@ -42,6 +46,8 @@ export function useTemplateManager({ add, update, remove }: UseTemplateManagerOp
       setDescription('')
       setCategory('general')
       setPriority(2)
+    } catch {
+      showError('템플릿을 추가하지 못했습니다. 다시 시도해 주세요.')
     } finally {
       setSaving(false)
     }
@@ -63,12 +69,19 @@ export function useTemplateManager({ add, update, remove }: UseTemplateManagerOp
 
   const handleUpdate = async (id: string) => {
     if (!editTitle.trim()) return
-    await update(id, {
-      title: editTitle.trim(),
-      category: editCategory,
-      priority: editPriority,
-    })
-    cancelEdit()
+    setSavingEdit(true)
+    try {
+      await update(id, {
+        title: editTitle.trim(),
+        category: editCategory,
+        priority: editPriority,
+      })
+      cancelEdit()
+    } catch {
+      showError('템플릿을 수정하지 못했습니다. 다시 시도해 주세요.')
+    } finally {
+      setSavingEdit(false)
+    }
   }
 
   const handleRemove = async (id: string) => {
@@ -76,8 +89,19 @@ export function useTemplateManager({ add, update, remove }: UseTemplateManagerOp
     setDeletingId(id)
     try {
       await remove(id)
+    } catch {
+      showError('템플릿을 삭제하지 못했습니다. 다시 시도해 주세요.')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  // 활성 토글은 목록에서 직접 update 를 호출하므로, 실패 안내를 위해 래핑한다
+  const toggleActive = async (id: string, isActive: boolean) => {
+    try {
+      await update(id, { is_active: isActive })
+    } catch {
+      showError('활성 상태를 변경하지 못했습니다. 다시 시도해 주세요.')
     }
   }
 
@@ -99,10 +123,14 @@ export function useTemplateManager({ add, update, remove }: UseTemplateManagerOp
     setEditCategory,
     editPriority,
     setEditPriority,
+    savingEdit,
     handleAdd,
     startEdit,
     cancelEdit,
     handleUpdate,
     handleRemove,
+    toggleActive,
+    toast,
+    closeToast,
   }
 }

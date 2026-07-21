@@ -2,11 +2,13 @@
 
 import { useCallback, useState } from 'react'
 import { useJobPostings } from './useJobPostings'
+import { useToast } from '@/components/ui/useToast'
 import { EMPTY_FORM } from '../_components/constants'
 import type { CreateJobPostingInput, JobPosting, UpdateJobPostingInput } from '@/types'
 
 export function useJobsPage() {
   const { postings, loading, error, refetch, add, update, remove } = useJobPostings()
+  const { toast, showError, close: closeToast } = useToast()
   const [modalOpen, setModalOpen] = useState(false)
   const [editing, setEditing] = useState<JobPosting | null>(null)
   const [form, setForm] = useState<CreateJobPostingInput>(EMPTY_FORM)
@@ -57,10 +59,12 @@ export function useJobsPage() {
         await add(payload)
       }
       closeModal()
+    } catch {
+      showError('공고를 저장하지 못했습니다. 다시 시도해 주세요.')
     } finally {
       setSaving(false)
     }
-  }, [add, closeModal, editing, form, update])
+  }, [add, closeModal, editing, form, showError, update])
 
   const handleDelete = useCallback(async () => {
     if (!deleteTarget) return
@@ -68,10 +72,12 @@ export function useJobsPage() {
     try {
       await remove(deleteTarget.id)
       setDeleteTarget(null)
+    } catch {
+      showError('공고를 삭제하지 못했습니다. 다시 시도해 주세요.')
     } finally {
       setDeleting(false)
     }
-  }, [deleteTarget, remove])
+  }, [deleteTarget, remove, showError])
 
   return {
     postings,
@@ -91,5 +97,7 @@ export function useJobsPage() {
     closeModal,
     handleSubmit,
     handleDelete,
+    toast,
+    closeToast,
   }
 }

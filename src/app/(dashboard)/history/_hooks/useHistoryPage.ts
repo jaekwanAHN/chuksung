@@ -8,7 +8,7 @@ import { useCompletedHistory } from '../../_hooks/tasks/useTasks'
 const PAGE_SIZE = 40
 
 export function useHistoryPage() {
-  const { data: tasks = [], isLoading, error } = useCompletedHistory()
+  const { data: tasks = [], isLoading, error, refetch } = useCompletedHistory()
   const [month, setMonth] = useState(() => format(new Date(), 'yyyy-MM'))
   const [category, setCategory] = useState<TaskCategory | 'all'>('all')
   const [visible, setVisible] = useState(PAGE_SIZE)
@@ -44,6 +44,7 @@ export function useHistoryPage() {
     tasks,
     isLoading,
     error,
+    refetch,
     month,
     category,
     filtered,
