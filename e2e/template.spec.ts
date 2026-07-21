@@ -36,10 +36,11 @@ test.describe('템플릿 관리 · 하루 시작 시각', () => {
     await page.keyboard.press('Escape')
 
     // 일간 목록에 시딩된 태스크 확인 (템플릿 변경 → 일간 재조회 → 서버 시딩)
-    // 시딩은 서버에서 프로필 조회 + 템플릿 insert + 목록 select 의 다중 왕복이라
-    // CI(원격 Supabase 지연)에서는 기본 5s 를 넘길 수 있어 넉넉히 대기한다.
+    // 시딩은 단일 RPC(seed_daily_templates, migration 0009)로 처리돼 원격 왕복이
+    // 1회로 축소됐다. 이전엔 다중 왕복 지연으로 20s 도 간헐 초과(flake)했으나,
+    // 이제 CI 여유를 두고도 10s 로 충분하다. (원인 제거 근거는 e2e/PERF-seeding.md 참조)
     const seeded = page.locator('li').filter({ hasText: title })
-    await expect(seeded).toBeVisible({ timeout: 20000 })
+    await expect(seeded).toBeVisible({ timeout: 10000 })
 
     // 정리 1: 시딩된 태스크 삭제 (confirm 수락)
     page.on('dialog', (dialog) => dialog.accept())

@@ -237,6 +237,36 @@ CREATE POLICY tta_insert ON public.task_template_applications
 CREATE POLICY tta_delete ON public.task_template_applications
   FOR DELETE USING (auth.uid() = user_id);
 
+-- 12-1. 일간 템플릿 시딩 RPC (migration 0009 반영)
+-- 활성 템플릿을 targetDate 일간 태스크로 시딩한다. 선점(ON CONFLICT)과 insert 를
+-- 한 CTE 문에 묶어 단일 왕복·단일 트랜잭션으로 처리한다. (템플릿, 날짜)당 1회 멱등.
+-- SECURITY INVOKER 로 호출자 RLS 를 그대로 적용한다.
+CREATE OR REPLACE FUNCTION public.seed_daily_templates(p_target_date date)
+RETURNS void
+LANGUAGE sql
+SECURITY INVOKER
+AS $$
+  WITH claimed AS (
+    INSERT INTO public.task_template_applications (user_id, template_id, applied_date)
+    SELECT t.user_id, t.id, p_target_date
+    FROM public.task_templates t
+    WHERE t.user_id = auth.uid()
+      AND t.is_active
+    ON CONFLICT (template_id, applied_date) DO NOTHING
+    RETURNING template_id
+  )
+  INSERT INTO public.tasks
+    (user_id, title, description, scope, target_date, is_completed, category, priority)
+  SELECT t.user_id, t.title, t.description, 'daily', p_target_date, false,
+         t.category, t.priority
+  FROM public.task_templates t
+  JOIN claimed c ON c.template_id = t.id;
+$$;
+
+REVOKE ALL ON FUNCTION public.seed_daily_templates(date) FROM public;
+REVOKE ALL ON FUNCTION public.seed_daily_templates(date) FROM anon;
+GRANT EXECUTE ON FUNCTION public.seed_daily_templates(date) TO authenticated;
+
 -- 13. CS 퀴즈 (migrations 0001·0003 반영. 문항 시드는 0002_quiz_seed.sql 참조)
 CREATE TYPE quiz_difficulty AS ENUM ('beginner', 'intermediate', 'advanced');
 
