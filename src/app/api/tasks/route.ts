@@ -38,7 +38,7 @@ export const GET = withAuth(async (request, { supabase, user }) => {
         targetDate >= effectiveToday &&
         clientNow >= `${targetDate}T${startTime}`
       ) {
-        await applyDailyTemplates(supabase, user.id, targetDate)
+        await applyDailyTemplates(supabase, targetDate)
       }
     }
   }
