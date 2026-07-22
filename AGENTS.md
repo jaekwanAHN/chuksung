@@ -15,6 +15,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 패키지 매니저: **pnpm** (npm 사용 금지)
 - 검증: `pnpm lint && pnpm build`
 - E2E 테스트: `pnpm test:e2e` (UI 모드: `pnpm test:e2e:ui`)
+- 성능 측정: `pnpm perf` (전체) / `pnpm perf --page /daily` (특정 페이지) — Lighthouse 5회 median, 결과·델타는 `docs/perf/`에 기록. 상세는 `docs/perf/README.md`
 - DB 스키마 변경: `supabase/schema.sql` 수정 + `pnpm db:new <이름>` → `pnpm db:push`
 
 ## 하드 룰
