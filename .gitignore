@@ -50,3 +50,4 @@ next-env.d.ts
 .claude/agent-memory/
 /reviews/
 .claude/settings.local.json
+.claude/worktrees/

@@ -9,6 +9,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 새 작업 브랜치는 **항상 최신 main에서 시작**: `git checkout main && git pull origin main` 후 `git checkout -b <브랜치명>`
 - 브랜치명: `<type>/<kebab-case-요약>` (예: `feat/e2e-playwright`, `fix/modal-rounded-corners`)
 - main에 직접 커밋 금지. 작업은 브랜치 → PR로 병합
+- 병렬 작업은 worktree로: `pnpm wt <브랜치명>` (생성 + `.env.local` 복사 + 포트 할당 + install). 정리는 `/sync-main`. 상세는 `docs/parallel-worktrees.md`
 
 ## 명령어
 
@@ -17,6 +18,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - E2E 테스트: `pnpm test:e2e` (UI 모드: `pnpm test:e2e:ui`)
 - 성능 측정: `pnpm perf` (전체) / `pnpm perf --page /daily` (특정 페이지) — Lighthouse 5회 median, 결과·델타는 `docs/perf/`에 기록. 상세는 `docs/perf/README.md`
 - DB 스키마 변경: `supabase/schema.sql` 수정 + `pnpm db:new <이름>` → `pnpm db:push`
+- worktree 생성: `pnpm wt <브랜치명> [--base <ref>] [--no-install]`
+- **병렬 작업 시 직렬화 필수**: `pnpm test:e2e` / `pnpm perf` / `pnpm db:push` 는 원격 DB·E2E 테스트 계정·`docs/perf/history.md` 원장을 공유하므로 동시에 실행하지 말 것
 
 ## 하드 룰
 
