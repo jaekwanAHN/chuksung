@@ -4,20 +4,27 @@ import { useMemo } from 'react'
 import {
   endOfMonth,
   endOfWeek,
+  format,
   isWithinInterval,
+  parseISO,
   startOfMonth,
   startOfWeek,
 } from 'date-fns'
 import type { Task } from '@/types'
 
 export function HistoryStats({ tasks }: { tasks: Task[] }) {
-  const now = new Date()
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 })
-  const weekEnd = endOfWeek(now, { weekStartsOn: 1 })
-  const monthStart = startOfMonth(now)
-  const monthEnd = endOfMonth(now)
+  // 날짜 경계는 useMemo 안에서 만든다. Date 객체를 deps 에 넣으면 값이 같아도
+  // 매 렌더 새 참조라 Object.is 비교가 항상 실패해 메모가 무력화된다.
+  // 문자열 키는 값으로 비교되므로 같은 날 안에서는 재계산이 일어나지 않는다.
+  const todayKey = format(new Date(), 'yyyy-MM-dd')
 
   const stats = useMemo(() => {
+    const now = parseISO(todayKey)
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 })
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 })
+    const monthStart = startOfMonth(now)
+    const monthEnd = endOfMonth(now)
+
     const total = tasks.length
     const thisWeek = tasks.filter((t) => {
       if (!t.completed_at) return false
@@ -34,7 +41,7 @@ export function HistoryStats({ tasks }: { tasks: Task[] }) {
       total > 0 ? Math.min(100, Math.round((thisMonth / total) * 100)) : 0
 
     return { total, thisWeek, thisMonth, completionRate }
-  }, [tasks, weekStart, weekEnd, monthStart, monthEnd])
+  }, [tasks, todayKey])
 
   const cards = [
     { label: '총 완료', value: String(stats.total) },
