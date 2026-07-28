@@ -18,6 +18,26 @@ test.describe('템플릿 관리 · 하루 시작 시각', () => {
   )
   test.use({ storageState: STORAGE_STATE })
 
+  // 테스트가 중간에 실패하면 UI 정리 단계에 도달하지 못해 템플릿이 남는다.
+  // 남은 템플릿은 **활성 상태로 매일 시딩**되므로 일간 목록이 계속 커지고,
+  // 일간 GET(시딩 포함)이 느려져 다음 실행이 더 잘 깨지는 자기증폭이 생긴다.
+  // 실제로 고아가 33개까지 쌓여 일간 GET 이 3.6초까지 늘어난 적이 있다.
+  // 그래서 성공·실패와 무관하게 API 로 정리한다.
+  //
+  // 이미 시딩된 태스크는 여기서 지우지 않는다. 실패당 하루 1건이라 누적되지 않고,
+  // 증폭의 원인은 "매일 다시 시딩하는 활성 템플릿" 쪽이다.
+  test.afterEach(async ({ request }) => {
+    const res = await request.get('/api/task-templates')
+    if (!res.ok()) return
+    const templates = await res.json()
+    if (!Array.isArray(templates)) return
+    for (const t of templates) {
+      if (typeof t?.title === 'string' && t.title.startsWith('E2E 템플릿')) {
+        await request.delete(`/api/task-templates/${t.id}`)
+      }
+    }
+  })
+
   test('템플릿을 추가하면 오늘 일간 목록에 시딩되고, 삭제까지 정리된다', async ({
     page,
   }) => {
