@@ -50,7 +50,6 @@ export function DayStartTimeModal({
         open={toast !== null}
         message={toast?.message ?? ''}
         variant={toast?.variant}
-        position="top"
         onClose={() => setToast(null)}
       />
     </>
