@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { formatVolume, volumeDrift } from './volume.mjs'
 
 // 원장에 기록/추적하는 지표 정의. higherBetter=true 는 값이 클수록 개선.
 export const METRICS = [
@@ -89,9 +90,22 @@ export function appendHistory(historyPath, snapshot, prev) {
   const compared = prev
     ? `vs ${stamp(prev.timestamp)}`
     : 'baseline (첫 측정 — 비교 대상 없음)'
+
+  // 측정 조건(데이터 볼륨)을 매 섹션에 남긴다. 지표는 데이터 양에 좌우되므로
+  // 볼륨을 모르면 이 표가 무엇과 비교 가능한지 알 수 없다.
+  const volumeLine = formatVolume(snapshot.volume)
+  const drift = volumeDrift(snapshot.volume, prev?.volume)
+  const driftLine = drift.length
+    ? `> ⚠️ **직전 측정과 데이터 볼륨이 다르다** — ` +
+      drift.map((d) => `${d.key} ${d.from.toLocaleString()} → ${d.to.toLocaleString()}`).join(', ') +
+      `.\n> 아래 델타는 코드 변화가 아니라 데이터 변화의 결과일 수 있다. 코드 회귀로 읽지 말 것.\n\n`
+    : ''
+
   const section =
     `## ${stamp(snapshot.timestamp)} · ${snapshot.runs} runs · ` +
     `${cfg.formFactor}/${cfg.throttling} · ${compared}\n\n` +
+    driftLine +
+    (volumeLine ? `데이터: ${volumeLine}\n\n` : '') +
     [head, sep, ...rows].join('\n') +
     '\n'
 
