@@ -1,0 +1,19 @@
+{
+  "timestamp": "2026-07-28T05:34:42.689Z",
+  "runs": 5,
+  "base": "http://localhost:3111",
+  "config": {
+    "formFactor": "mobile",
+    "throttling": "simulated"
+  },
+  "results": {
+    "/history": {
+      "score": 75,
+      "lcp": 6066.224,
+      "tbt": 190,
+      "cls": 0,
+      "fcp": 805.1120000000001,
+      "si": 1338.2478332053984
+    }
+  }
+}

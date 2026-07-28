@@ -4,6 +4,12 @@
 🟢=이전 대비 개선, 🔴=회귀, (—)=오차 범위. 시간은 낮을수록, Perf 점수는 높을수록 좋음.
 원본 데이터는 `snapshots/` 참조. 지표 의미는 `README.md`.
 
+## 2026-07-28 05:34 · 5 runs · mobile/simulated · vs 2026-07-28 04:19
+
+| Page | Perf | LCP | TBT | CLS | FCP | SI |
+|------|------|------|------|------|------|------|
+| /history | 75 🟢+2 | 6.07s 🟢-0.20s | 190ms (—) | 0.000 🟢-0.094 | 0.81s (—) | 1.34s 🔴+0.20s |
+
 ## 2026-07-28 04:19 · 5 runs · mobile/simulated · vs 2026-07-21 18:51
 
 | Page | Perf | LCP | TBT | CLS | FCP | SI |
