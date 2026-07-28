@@ -13,7 +13,9 @@ export const GET = withAuth(async (request, { supabase, user }) => {
   const targetDate = searchParams.get('target_date')
   const start = searchParams.get('start')
   const end = searchParams.get('end')
-  const completed = searchParams.get('completed')
+  // 완료 기록 조회는 집계 RPC 를 쓰는 `GET /api/tasks/history` 로 분리됐다.
+  // 여기서 전체를 내려보내던 completed=true 모드는 PostgREST max-rows(1000)에
+  // 걸려 조용히 잘렸으므로 제거했다.
   const clientNow = searchParams.get('client_now') // 로컬 현재시각 'yyyy-MM-ddTHH:mm'
 
   // 시간 게이트: scope=daily이고, 조회 날짜가 "유효 오늘"(하루 시작 시각
@@ -45,9 +47,7 @@ export const GET = withAuth(async (request, { supabase, user }) => {
 
   let query = supabase.from('tasks').select('*')
 
-  if (completed === 'true') {
-    query = query.eq('is_completed', true).order('completed_at', { ascending: false })
-  } else if (scope === 'monthly' && start && end) {
+  if (scope === 'monthly' && start && end) {
     query = query
       .eq('scope', scope)
       .gte('target_date', start)
