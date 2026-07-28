@@ -17,7 +17,9 @@
     "db:link": "supabase link --project-ref ywwsdezbttlwhiikasjq",
     "db:new": "supabase migration new",
     "db:push": "supabase db push",
-    "db:diff": "supabase db diff"
+    "db:diff": "supabase db diff",
+    "dev:login": "node scripts/dev-login.mjs",
+    "perf:diagnose": "node scripts/perf/diagnose.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.0",
