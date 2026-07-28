@@ -16,23 +16,29 @@ import { cn } from '@/lib/utils'
 const WEEKS = 12
 
 export function HistoryCalendar({ tasks }: { tasks: Task[] }) {
-  const countByDay = useMemo(() => {
+  const { countByDay, maxCount } = useMemo(() => {
     const map = new Map<string, number>()
     for (const t of tasks) {
       if (!t.completed_at) continue
       const day = format(parseISO(t.completed_at), 'yyyy-MM-dd')
       map.set(day, (map.get(day) ?? 0) + 1)
     }
-    return map
+    // 스프레드 없이 순회해 최대값을 구한다 (기록이 많이 쌓여도 인자 한계에 걸리지 않음).
+    let max = 1
+    for (const n of map.values()) if (n > max) max = n
+    return { countByDay: map, maxCount: max }
   }, [tasks])
 
-  const today = new Date()
-  const gridEnd = endOfWeek(today, { weekStartsOn: 1 })
-  const gridStart = startOfWeek(subWeeks(gridEnd, WEEKS - 1), {
-    weekStartsOn: 1,
-  })
+  // 그리드 기준일은 useMemo 안에서 만든다. Date 객체를 deps 에 넣으면 값이 같아도
+  // 매 렌더 새 참조라 Object.is 비교가 항상 실패해 메모가 무력화된다.
+  // 문자열 키는 값으로 비교되므로 같은 날 안에서는 재계산이 일어나지 않는다.
+  const todayKey = format(new Date(), 'yyyy-MM-dd')
 
   const columns = useMemo(() => {
+    const gridEnd = endOfWeek(parseISO(todayKey), { weekStartsOn: 1 })
+    const gridStart = startOfWeek(subWeeks(gridEnd, WEEKS - 1), {
+      weekStartsOn: 1,
+    })
     return Array.from({ length: WEEKS }, (_, w) => {
       const ws = addWeeks(gridStart, w)
       return eachDayOfInterval({
@@ -40,9 +46,7 @@ export function HistoryCalendar({ tasks }: { tasks: Task[] }) {
         end: endOfWeek(ws, { weekStartsOn: 1 }),
       }).map((d) => format(d, 'yyyy-MM-dd'))
     })
-  }, [gridStart])
-
-  const maxCount = Math.max(1, ...[...countByDay.values()])
+  }, [todayKey])
 
   const level = (n: number) => {
     if (n <= 0) return 'bg-zinc-100'

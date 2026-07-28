@@ -5,6 +5,7 @@ import { HistoryStats } from './_components/HistoryStats'
 import { HistoryCalendar } from './_components/HistoryCalendar'
 import { HistoryFilter } from './_components/HistoryFilter'
 import { HistoryRow } from './_components/HistoryRow'
+import { HistorySkeleton } from './_components/HistorySkeleton'
 import { QueryErrorRetry } from '../_components/QueryErrorRetry'
 
 export default function HistoryPage() {
@@ -28,7 +29,7 @@ export default function HistoryPage() {
       <h1 className="text-xl font-bold text-zinc-900">완료 기록</h1>
 
       {isLoading ? (
-        <p className="text-sm text-zinc-500">불러오는 중…</p>
+        <HistorySkeleton />
       ) : error ? (
         <QueryErrorRetry
           message="기록을 불러오지 못했습니다."
