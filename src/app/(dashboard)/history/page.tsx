@@ -10,14 +10,17 @@ import { QueryErrorRetry } from '../_components/QueryErrorRetry'
 
 export default function HistoryPage() {
   const {
-    tasks,
+    stats,
+    dayCounts,
+    gridDays,
+    rows,
+    filteredCount,
     isLoading,
+    isFetching,
     error,
     refetch,
     month,
     category,
-    filtered,
-    slice,
     hasMore,
     handleMonthChange,
     handleCategoryChange,
@@ -37,8 +40,12 @@ export default function HistoryPage() {
         />
       ) : (
         <>
-          <HistoryStats tasks={tasks} />
-          <HistoryCalendar tasks={tasks} />
+          <HistoryStats
+            total={stats.total}
+            thisWeek={stats.thisWeek}
+            thisMonth={stats.thisMonth}
+          />
+          <HistoryCalendar dayCounts={dayCounts} gridDays={gridDays} />
 
           <HistoryFilter
             month={month}
@@ -49,20 +56,27 @@ export default function HistoryPage() {
 
           <section>
             <h2 className="mb-3 text-sm font-semibold text-zinc-800">
-              완료된 태스크 ({filtered.length}건)
+              완료된 태스크 ({filteredCount}건)
             </h2>
-            <ul className="flex flex-col gap-2">
-              {slice.map((t) => (
-                <HistoryRow key={t.id} task={t} />
-              ))}
-            </ul>
+            {rows.length === 0 ? (
+              <p className="rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-6 text-center text-sm text-zinc-400">
+                이 기간에 완료한 태스크가 없습니다.
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-2">
+                {rows.map((t) => (
+                  <HistoryRow key={t.id} task={t} />
+                ))}
+              </ul>
+            )}
             {hasMore && (
               <button
                 type="button"
-                className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-200 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+                disabled={isFetching}
+                className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-200 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={showMore}
               >
-                더 보기
+                {isFetching ? '불러오는 중…' : '더 보기'}
               </button>
             )}
           </section>

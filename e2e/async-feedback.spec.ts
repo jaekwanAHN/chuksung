@@ -219,9 +219,11 @@ test.describe('비동기 피드백 (P2·P3·P4)', () => {
   })
 
   test('P4 기록 로드 실패 시 재시도 버튼을 노출한다', async ({ page }) => {
-    await page.route('**/api/tasks**', async (route) => {
+    // 완료 기록은 집계 RPC 엔드포인트(/api/tasks/history)로 조회한다.
+    // 예전의 `/api/tasks?completed=true` 는 응답이 1000건에서 잘리는 문제로 대체됐다.
+    await page.route('**/api/tasks/history**', async (route) => {
       const req = route.request()
-      if (req.method() === 'GET' && req.url().includes('completed=true')) {
+      if (req.method() === 'GET') {
         await route.fulfill({
           status: 500,
           contentType: 'application/json',

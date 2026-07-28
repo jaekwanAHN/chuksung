@@ -13,8 +13,34 @@ export const taskKeys = {
   scope: (scope: TaskScope) => ['tasks', scope] as const,
   byScope: (scope: TaskScope, date: string) =>
     ['tasks', scope, date] as const,
+  // history 프리픽스 하나로 아래 둘을 함께 무효화한다 (useDeleteTask 등이 이걸 쓴다)
   history: () => ['tasks', 'history'] as const,
+  historyPage: (params: HistoryQuery) => ['tasks', 'history', 'page', params] as const,
+  historyDays: (start: string, end: string) =>
+    ['tasks', 'history', 'days', start, end] as const,
 }
+
+/** 완료 기록 집계 응답. 집계는 DB가 전체 행에 대해 수행한다. */
+export interface CompletedHistory {
+  total: number
+  this_week: number
+  this_month: number
+  filtered_count: number
+  rows: Task[]
+  day_counts: Record<string, number>
+}
+
+interface HistoryQuery {
+  month: string
+  category: string
+  limit: number
+  gridStart?: string
+  gridEnd?: string
+}
+
+// 서버가 날짜를 자를 기준 타임존. UTC 로 자르면 KST 새벽 완료 건이 전날로 집계된다.
+const timeZone = () =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
 
 export function useTasks(scope: TaskScope, date: Date) {
   const targetDate = getTargetDateForScope(scope, date)
@@ -45,14 +71,57 @@ export function useTasks(scope: TaskScope, date: Date) {
   })
 }
 
-export function useCompletedHistory() {
+/**
+ * 완료 기록 — 집계 + 목록 한 페이지.
+ *
+ * 이전에는 완료 태스크 전체를 받아 브라우저에서 집계했으나, 응답이 1000건에서
+ * 조용히 잘려 총계·완료율·과거 월 필터가 틀린 값을 보여줬다. 이제 서버가 전체
+ * 행을 집계하고 목록만 페이지 단위로 내려준다.
+ */
+export function useCompletedHistory({
+  month,
+  category,
+  limit,
+  gridStart,
+  gridEnd,
+}: HistoryQuery) {
   return useQuery({
-    queryKey: taskKeys.history(),
-    queryFn: async (): Promise<Task[]> => {
-      const { data } = await apiClient.get<Task[]>('/tasks', {
-        params: { completed: 'true' },
+    queryKey: taskKeys.historyPage({ month, category, limit, gridStart, gridEnd }),
+    queryFn: async (): Promise<CompletedHistory> => {
+      const { data } = await apiClient.get<CompletedHistory>('/tasks/history', {
+        params: {
+          tz: timeZone(),
+          month,
+          category,
+          limit,
+          ...(gridStart && gridEnd ? { grid_start: gridStart, grid_end: gridEnd } : {}),
+        },
       })
       return data
+    },
+    // 필터·페이지가 바뀌는 동안 이전 결과를 유지해 목록이 빈 화면으로 깜빡이지 않게 한다.
+    placeholderData: (prev) => prev,
+    ...STABLE_QUERY_OPTIONS,
+  })
+}
+
+/**
+ * 특정 기간의 일별 완료 수만 조회한다 (월간 미니달력).
+ * 같은 RPC 를 limit=0 으로 호출해 목록 없이 집계만 받는다.
+ */
+export function useCompletedDayCounts(gridStart: string, gridEnd: string) {
+  return useQuery({
+    queryKey: taskKeys.historyDays(gridStart, gridEnd),
+    queryFn: async (): Promise<Record<string, number>> => {
+      const { data } = await apiClient.get<CompletedHistory>('/tasks/history', {
+        params: {
+          tz: timeZone(),
+          limit: 0,
+          grid_start: gridStart,
+          grid_end: gridEnd,
+        },
+      })
+      return data.day_counts
     },
     ...STABLE_QUERY_OPTIONS,
   })
