@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "playwright-report/**",
     "test-results/**",
     "playwright/.cache/**",
+    // Claude Code 가 만드는 격리 워크트리 — 리포 전체 사본이라 린트하면
+    // 같은 파일이 두 번 잡히고 node_modules 까지 딸려 들어온다.
+    ".claude/worktrees/**",
   ]),
 ]);
 
