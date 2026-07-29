@@ -23,8 +23,8 @@
 - **템플릿 자동 시딩**: 활성 템플릿을 "하루 시작 시각"이 지나면 그날 일간 목록에 자동 추가 (단일 RPC로 처리)
 - **주간** (`/weekly`): ISO 주 기준 목표, 주간 달성률
 - **월간** (`/monthly`): 월 목표, 일별 완료 건수 미니 캘린더, 월간 달성률
-- **기록** (`/history`): 통계 카드, 최근 12주 GitHub 스타일 히트맵, 기간·카테고리 필터, 완료 목록
-- **취업공고** (`/jobs`): 공고 CRUD, 상태 관리 (저장됨 → 지원 → 면접 → 합격/불합격/오퍼)
+- **기록** (`/history`): 통계 카드, 최근 12주 GitHub 스타일 히트맵, 기간·카테고리 필터, 완료 목록. 통계·히트맵 집계는 **DB에서 전체 행에 대해** 수행하고 목록만 40건씩 받아옵니다 (RPC `completed_history`)
+- **취업공고** (`/jobs`): 공고 CRUD, 상태 관리 (저장됨 → 지원 → 면접 → 합격/불합격/오퍼). 목록은 20건씩 그리고 "더 보기"로 늘립니다
 - **CS 퀴즈** (`/quiz`): 카테고리·난이도별 문제, 즐겨찾기(북마크) 기능
 - **타이머** (`/timer`): 스톱워치 / 카운트다운 타이머, 완료 토스트 알림
 - **D-day 관리**: 사이드바에서 D-day 추가·편집·삭제, D-숫자 실시간 표시
@@ -42,6 +42,7 @@ src/
 │   ├── (dashboard)/            # daily, weekly, monthly, history, jobs, quiz, timer
 │   ├── api/                    # Route Handlers
 │   │   ├── tasks/[id]/
+│   │   ├── tasks/history/      # 완료 기록 집계 (RPC completed_history 호출)
 │   │   ├── ddays/[id]/
 │   │   ├── job-postings/[id]/
 │   │   ├── quiz-histories/     # 퀴즈 즐겨찾기 toggle
@@ -69,6 +70,11 @@ src/
 supabase/
 ├── schema.sql                  # DB 스키마·RLS·트리거·RPC (소스 오브 트루스)
 └── migrations/                 # 순번 마이그레이션 (0000~, `pnpm db:push`로 적용)
+e2e/                            # Playwright 시나리오 + 가이드(README.md)
+scripts/
+├── perf/                       # Lighthouse 측정·진단 (run·diagnose·ledger·volume)
+└── dev-login.mjs               # 테스트 계정 세션을 브라우저에 주입
+docs/perf/                      # 측정 원장(history.md)·스냅샷·지표 해설(README.md)
 ```
 
 > 일간·주간·월간 페이지는 공통 로직을 `usePlannerPage` 훅으로 공유하며, 로드 실패 시 `_components/QueryErrorRetry`로 재시도를, 뮤테이션 실패 시 `useToast`로 에러를 안내합니다.
@@ -102,20 +108,35 @@ pnpm dev
 
 ## 스크립트
 
-| 명령                   | 설명                                    |
-| ---------------------- | --------------------------------------- |
-| `pnpm dev`             | 개발 서버                               |
-| `pnpm build`           | 프로덕션 빌드                           |
-| `pnpm start`           | 프로덕션 서버 (`next start`)            |
-| `pnpm lint`            | ESLint                                  |
-| `pnpm test:e2e`        | Playwright E2E 테스트 (헤드리스)        |
-| `pnpm test:e2e:ui`     | Playwright UI 모드 (디버깅)             |
-| `pnpm test:e2e:report` | 마지막 E2E HTML 리포트 열기             |
+| 명령                   | 설명                                                        |
+| ---------------------- | ----------------------------------------------------------- |
+| `pnpm dev`             | 개발 서버                                                    |
+| `pnpm build`           | 프로덕션 빌드                                                |
+| `pnpm start`           | 프로덕션 서버 (`next start`)                                 |
+| `pnpm lint`            | ESLint                                                       |
+| `pnpm test:e2e`        | Playwright E2E 테스트 (헤드리스)                             |
+| `pnpm test:e2e:ui`     | Playwright UI 모드 (디버깅)                                  |
+| `pnpm test:e2e:report` | 마지막 E2E HTML 리포트 열기                                  |
+| `pnpm perf`            | Lighthouse 측정 → `docs/perf/history.md`에 델타 기록          |
+| `pnpm perf:diagnose`   | 상세 audit 출력 (메인스레드 분해·DOM 크기·번들) — 원인 진단용 |
+| `pnpm dev:login`       | 테스트 계정 세션을 띄운 브라우저에 주입                       |
+| `pnpm db:new <이름>`   | 새 마이그레이션 파일 생성                                    |
+| `pnpm db:push`         | 마이그레이션을 원격 Supabase에 적용                          |
 
 ## 테스트 · CI
 
 - **E2E**: [Playwright](https://playwright.dev) 기반. `pnpm dev` 서버를 자동으로 띄우고 실제 브라우저로 시나리오를 검증합니다. 인증 테스트는 Supabase 테스트 계정으로 세션을 발급해 재사용합니다. 상세는 [`e2e/README.md`](e2e/README.md) 참조.
 - **CI 게이트**: `main`으로의 Pull Request는 GitHub Actions에서 **`lint` · `build` · `e2e`** 를 모두 통과해야 병합할 수 있습니다 (`e2e`는 필수 상태 체크). 설정은 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) 참조.
+
+## 성능 측정
+
+`pnpm perf`가 프로덕션 빌드를 띄우고 페이지마다 5회 측정해 **중앙값**을 `docs/perf/history.md`에 델타로 쌓습니다. 지표 의미와 사용법은 [`docs/perf/README.md`](docs/perf/README.md) 참조.
+
+측정 도구를 쓰면서 정한 규칙이 셋 있습니다.
+
+- **측정값은 데이터 볼륨과 한 쌍입니다.** 측정마다 행 수를 함께 기록하고, 직전 측정과 볼륨이 다르면 원장에 "비교 불가" 경고를 붙입니다. 이게 없으면 데이터가 늘어난 걸 코드 회귀로 오해하게 됩니다 — 실제로 겪었고, 커밋 이분 탐색으로는 찾을 수 없는 원인이었습니다.
+- **원인을 진단하기 전에 최적화하지 않습니다.** `pnpm perf:diagnose <경로>`로 `mainthread-work-breakdown`·`dom-size`를 먼저 봅니다. 지표 조합으로 원인을 추론하면 틀립니다 — 레이아웃 비용도 LCP·CLS를 안 건드리고 TBT만 올립니다.
+- **노이즈 임계값 이하 변화(`(—)`)는 개선으로 보고하지 않습니다.** 한 번 잰 값은 값이 아니라 산포 중 하나입니다.
 
 ## 데이터 모델 (요약)
 
@@ -130,4 +151,5 @@ pnpm dev
 - **`quiz_questions`**: 퀴즈 문제 (`question`, `answer`, `difficulty`, `tags`)
 - **`quiz_histories`**: 퀴즈 히스토리·즐겨찾기 (`is_bookmarked`)
 - **RPC `seed_daily_templates(date)`**: 활성 템플릿을 그날 일간 태스크로 시딩. 선점(`ON CONFLICT DO NOTHING`)과 삽입을 CTE 한 문에 묶어 단일 왕복·멱등·동시성 안전 (migration 0009)
-- **RLS**: 본인 `user_id` 데이터만 조회·수정·삭제 가능
+- **RPC `completed_history(...)`**: 완료 기록의 총계·주간·월간 집계, 일별 카운트, 필터된 목록을 한 번에 반환. 날짜 절단은 클라이언트가 넘긴 IANA 타임존 기준 (migration `20260728090454`)
+- **RLS**: 본인 `user_id` 데이터만 조회·수정·삭제 가능. 두 RPC 모두 `security invoker`라 호출자의 RLS가 그대로 적용됩니다 — `security definer`로 바꾸면 남의 데이터가 집계에 섞입니다
