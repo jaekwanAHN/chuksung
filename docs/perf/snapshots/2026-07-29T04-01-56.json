@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-07-29T04:01:56.280Z",
+  "runs": 5,
+  "base": "http://localhost:3111",
+  "config": {
+    "formFactor": "mobile",
+    "throttling": "simulated"
+  },
+  "volume": {
+    "tasks": 9029,
+    "tasks_completed": 6287,
+    "job_postings": 200,
+    "task_templates": 30,
+    "ddays": 0,
+    "quiz_histories": 29
+  },
+  "results": {
+    "/jobs": {
+      "score": 95,
+      "lcp": 2574.92,
+      "tbt": 171,
+      "cls": 0,
+      "fcp": 837.46,
+      "si": 1329.116179999597
+    }
+  }
+}

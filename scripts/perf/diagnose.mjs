@@ -2,6 +2,7 @@
 // 기존 scripts/perf/ 의 인증·서버 기동 방식을 그대로 재사용한다.
 import fs from 'node:fs'
 import net from 'node:net'
+import os from 'node:os'
 import path from 'node:path'
 import { chromium } from '@playwright/test'
 import lighthouse from 'lighthouse'
@@ -13,7 +14,8 @@ for (const f of ['.env.local', '.env.test']) {
 
 const PAGES = process.argv.slice(2).length ? process.argv.slice(2) : ['/jobs', '/history']
 const PORT = 3111
-const OUT = '/tmp/claude-1000/-home-ggstork-projects-chuksung/6eaaaa8e-5966-4fca-8c15-3cf3afb04dd0/scratchpad'
+// 원본 LHR JSON 을 떨어뜨릴 위치. 세션별 임시 디렉토리를 쓰고 싶으면 환경변수로 넘긴다.
+const OUT = process.env.PERF_DIAGNOSE_OUT || os.tmpdir()
 
 function getFreePort() {
   return new Promise((resolve, reject) => {
@@ -86,6 +88,15 @@ async function main() {
         `  total ${ms(it.total).padStart(8)} | eval ${ms(it.scripting).padStart(8)} | ` +
           `parse ${ms(it.scriptParseCompile).padStart(7)}  ${url}`
       )
+    }
+
+    // 2.5 DOM 규모 — 노드 수가 많으면 Style & Layout 이 그대로 비싸진다
+    const domItems = a['dom-size-insight']?.details?.items ?? a['dom-size']?.details?.items ?? []
+    if (domItems.length) {
+      console.log('\n── dom-size ──')
+      for (const it of domItems) {
+        console.log(`  ${String(it.value?.value ?? it.value).padStart(8)}  ${it.statistic}`)
+      }
     }
 
     // 3. 긴 작업
