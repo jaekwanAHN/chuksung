@@ -1,7 +1,4 @@
-import {
-  GoogleLoginButton,
-  KakaoLoginButton,
-} from './_components/LoginButton'
+import { LoginButtons } from './_components/LoginButton'
 
 export default async function LoginPage({
   searchParams,
@@ -25,10 +22,7 @@ export default async function LoginPage({
             로그인에 실패했습니다. 다시 시도해 주세요.
           </p>
         ) : null}
-        <div className="flex flex-col gap-3">
-          <GoogleLoginButton />
-          <KakaoLoginButton />
-        </div>
+        <LoginButtons />
       </div>
     </div>
   )
