@@ -36,9 +36,9 @@ test.describe('CS 퀴즈 (조회)', () => {
   }) => {
     await page.goto('/quiz')
 
-    // useQuiz 가 문항을 클라이언트에서 셔플해 hydration 시 카드 트리가
-    // 재생성된다(현재 앱의 hydration mismatch). 재생성 중 클릭이 유실되므로,
-    // 문항 넘김이 실제로 동작할 때까지 재시도해 인터랙션 준비를 보장한다.
+    // 셔플은 서버 시드 기반이라 hydration 불일치는 없지만(useQuiz 참조),
+    // Playwright 의 actionability 검사는 hydration 완료를 기다려주지 않는다.
+    // 핸들러가 붙기 전 클릭은 무시되므로 실제로 넘어갈 때까지 재시도한다.
     // "n / N" 카운터는 진행 바와 하단 내비 두 곳에 있다 — 첫 번째로 고정
     const progress = page.getByText(/^\d+ \/ \d+$/).first()
     await expect(async () => {
