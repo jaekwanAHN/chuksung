@@ -34,7 +34,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - 페이지 로직은 페이지 훅으로 분리 (`usePlannerPage` 패턴), 페이지 전용 컴포넌트는 해당 라우트의 `_components/`에 배치
 - `useQuery` 캐시 옵션은 `@/lib/query`의 `STABLE_QUERY_OPTIONS`(편집으로만 바뀌는 데이터) / `DAILY_QUERY_OPTIONS`(일간 태스크) 재사용
-- 공통 타입은 `src/types/`에 정의, 공용 UI는 `src/components/ui/`(Button, Modal, Badge, EmptyState, Toast, `useToast` 훅) 재사용 — 새로 만들기 전에 기존 것 확인. 로드 에러+재시도 UI는 `src/app/(dashboard)/_components/QueryErrorRetry` 재사용
+- 공통 타입은 `src/types/`에 정의, 공용 UI는 `src/components/ui/`(Button, Modal, Badge, EmptyState, Skeleton, Toast, `useToast` 훅) 재사용 — 새로 만들기 전에 기존 것 확인. 로드 에러+재시도 UI는 `src/app/(dashboard)/_components/QueryErrorRetry` 재사용
 - 여러 번의 원격 DB 왕복이 필요한 서버 로직(예: 템플릿 시딩)은 단일 Postgres 함수(RPC)로 묶어 왕복·지연을 줄일 것 (참조: `seed_daily_templates`, `supabase/migrations/0009`)
 - 커밋 메시지: `feat|fix|test|docs|refactor: 한국어 요약`
 - 프로젝트 구조·데이터 모델은 `README.md`, E2E 테스트 가이드는 `e2e/README.md` 참조

@@ -53,12 +53,15 @@ src/
 │   ├── layout.tsx, providers.tsx, page.tsx
 ├── components/
 │   ├── layout/                 # Sidebar, Header, Footer, NavigationProgress
-│   └── ui/                     # Button, Modal, Badge, EmptyState, Toast, useToast
+│   └── ui/                     # Button, Modal, Badge, EmptyState, Skeleton, Toast, useToast
 ├── hooks/
 │   ├── auth/useAuth.ts
 │   └── theme/useTheme.tsx
 ├── lib/
+│   ├── api/                    # route-helpers(withAuth·parseBody·dbError), schemas(zod)
+│   ├── apply-daily-templates.ts # 템플릿 시딩 (RPC seed_daily_templates 호출)
 │   ├── axios.ts                # Axios 인스턴스 (baseURL=/api, Auth 인터셉터)
+│   ├── query.ts                # STABLE_QUERY_OPTIONS / DAILY_QUERY_OPTIONS
 │   ├── supabase/               # client, server, update-session
 │   ├── task-dates.ts
 │   ├── themes.ts               # ThemeId, THEMES, THEME_IDS, DEFAULT_THEME_ID
