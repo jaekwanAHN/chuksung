@@ -58,7 +58,7 @@ src/
 │   ├── auth/useAuth.ts
 │   └── theme/useTheme.tsx
 ├── lib/
-│   ├── api/                    # route-helpers(withAuth·parseBody·dbError), schemas(zod)
+│   ├── api/                    # route-helpers(withAuth·parseBody·dbError), schemas(zod), rate-limit
 │   ├── apply-daily-templates.ts # 템플릿 시딩 (RPC seed_daily_templates 호출)
 │   ├── axios.ts                # Axios 인스턴스 (baseURL=/api, Auth 인터셉터)
 │   ├── query.ts                # STABLE_QUERY_OPTIONS / DAILY_QUERY_OPTIONS
@@ -77,7 +77,9 @@ e2e/                            # Playwright 시나리오 + 가이드(README.md)
 scripts/
 ├── perf/                       # Lighthouse 측정·진단 (run·diagnose·ledger·volume)
 └── dev-login.mjs               # 테스트 계정 세션을 브라우저에 주입
-docs/perf/                      # 측정 원장(history.md)·스냅샷·지표 해설(README.md)
+docs/
+├── perf/                       # 측정 원장(history.md)·스냅샷·지표 해설(README.md)
+└── security/                   # API 남용 방어 목록·근거(README.md)·검증 절차(verification.md)
 ```
 
 > 일간·주간·월간 페이지는 공통 로직을 `usePlannerPage` 훅으로 공유하며, 로드 실패 시 `_components/QueryErrorRetry`로 재시도를, 뮤테이션 실패 시 `useToast`로 에러를 안내합니다.
@@ -130,6 +132,16 @@ pnpm dev
 
 - **E2E**: [Playwright](https://playwright.dev) 기반. `pnpm dev` 서버를 자동으로 띄우고 실제 브라우저로 시나리오를 검증합니다. 인증 테스트는 Supabase 테스트 계정으로 세션을 발급해 재사용합니다. 상세는 [`e2e/README.md`](e2e/README.md) 참조.
 - **CI 게이트**: `main`으로의 Pull Request는 GitHub Actions에서 **`lint` · `build` · `e2e`** 를 모두 통과해야 병합할 수 있습니다 (`e2e`는 필수 상태 체크). 설정은 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) 참조.
+
+## 보안 · 남용 방어
+
+RLS로 남의 데이터를 막고 zod 화이트리스트로 임의 컬럼 주입을 막는 것에 더해, **인증을 통과한 뒤의** 호출량·본문 크기·클라이언트가 보낸 값에도 상한을 둡니다.
+
+- **레이트 리밋**: `withAuth`가 사용자 단위로 60초 윈도를 센다 — 읽기 300 / 쓰기 100, 초과 시 `429` + `Retry-After`. 조회 폭주가 쓰기 예산을 먹지 않도록 버킷을 분리합니다. 카운터가 인스턴스 메모리라 서버리스에서는 인스턴스당 상한입니다
+- **본문 크기**: `parseBody`가 64KB 초과를 `413`으로 끊습니다. `Content-Length` 확인에 더해 스트림 누적 바이트를 세므로 chunked 전송으로 우회할 수 없습니다
+- **클라이언트가 보낸 시각**: 템플릿 시딩 게이트는 `client_now`를 서버 시각과 24시간 이내인지 대조한 뒤에만 신뢰합니다. 이 검증이 없을 때는 조작된 시각으로 임의의 미래 날짜에 시딩을 반복해 행을 무제한으로 늘릴 수 있었습니다
+
+방어 목록 전체와 설계 근거·한계·남은 과제는 [`docs/security/README.md`](docs/security/README.md), 재현 절차는 [`docs/security/verification.md`](docs/security/verification.md) 참조.
 
 ## 성능 측정
 
