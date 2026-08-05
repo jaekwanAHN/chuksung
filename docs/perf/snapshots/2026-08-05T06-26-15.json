@@ -1,0 +1,27 @@
+{
+  "timestamp": "2026-08-05T06:26:15.899Z",
+  "runs": 5,
+  "base": "http://localhost:3111",
+  "config": {
+    "formFactor": "mobile",
+    "throttling": "simulated"
+  },
+  "volume": {
+    "tasks": 9151,
+    "tasks_completed": 6287,
+    "job_postings": 200,
+    "task_templates": 30,
+    "ddays": 0,
+    "quiz_histories": 31
+  },
+  "results": {
+    "/daily": {
+      "score": 95,
+      "lcp": 2389.3450000000003,
+      "tbt": 89,
+      "cls": 0.09356014580801944,
+      "fcp": 805.738,
+      "si": 1523.4869561757005
+    }
+  }
+}
