@@ -79,7 +79,8 @@ scripts/
 └── dev-login.mjs               # 테스트 계정 세션을 브라우저에 주입
 docs/
 ├── perf/                       # 측정 원장(history.md)·스냅샷·지표 해설(README.md)
-└── security/                   # API 남용 방어 목록·근거(README.md)·검증 절차(verification.md)
+├── security/                   # API 남용 방어 목록·근거(README.md)·검증 절차(verification.md)
+└── hydration.md                # SSR 하이드레이션 불일치 사례·해결 패턴·회귀 감시
 ```
 
 > 일간·주간·월간 페이지는 공통 로직을 `usePlannerPage` 훅으로 공유하며, 로드 실패 시 `_components/QueryErrorRetry`로 재시도를, 뮤테이션 실패 시 `useToast`로 에러를 안내합니다.
@@ -152,6 +153,8 @@ RLS로 남의 데이터를 막고 zod 화이트리스트로 임의 컬럼 주입
 - **측정값은 데이터 볼륨과 한 쌍입니다.** 측정마다 행 수를 함께 기록하고, 직전 측정과 볼륨이 다르면 원장에 "비교 불가" 경고를 붙입니다. 이게 없으면 데이터가 늘어난 걸 코드 회귀로 오해하게 됩니다 — 실제로 겪었고, 커밋 이분 탐색으로는 찾을 수 없는 원인이었습니다.
 - **원인을 진단하기 전에 최적화하지 않습니다.** `pnpm perf:diagnose <경로>`로 `mainthread-work-breakdown`·`dom-size`를 먼저 봅니다. 지표 조합으로 원인을 추론하면 틀립니다 — 레이아웃 비용도 LCP·CLS를 안 건드리고 TBT만 올립니다.
 - **노이즈 임계값 이하 변화(`(—)`)는 개선으로 보고하지 않습니다.** 한 번 잰 값은 값이 아니라 산포 중 하나입니다.
+
+하이드레이션 불일치도 성능 문제로 취급합니다 — 불일치가 나면 React 가 서브트리를 통째로 다시 그려 SSR 이득이 사라집니다. 실제로 `/daily` 의 불일치 18건을 없애 LCP 2.69s → 2.39s, TBT 114ms → 89ms 가 됐습니다. 사례와 해결 패턴은 [`docs/hydration.md`](docs/hydration.md) 참조.
 
 ## 데이터 모델 (요약)
 
