@@ -4,12 +4,25 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+## 작업 절차
+
+새 작업은 아래 순서로 진행한다. 각 단계의 상세 규칙은 해당 절 참조.
+
+1. **대상 선정** — `gh issue list` 에서 `priority:` 라벨 기준으로 고른다 (→ 이슈)
+2. **브랜치** — 최신 main에서 새 브랜치 (→ Git 워크플로)
+3. **재현·계측** — 이슈의 관측이 현재도 재현되는지 먼저 확인하고, 성능 작업이면 수정 전 기준선을 측정한다. 원인이 여럿으로 갈리면 분리한다
+4. **계획 보고 → 승인** — 원인 요약·수정 방향(대안이 있으면 권고안 명시)·영향 범위·검증 계획을 보고하고, **승인받은 뒤에만 코드를 수정한다**
+5. **구현** — 하드 룰·컨벤션 준수. 설계 배경·근거·한계는 코드 주석이 아니라 `docs/` 문서로 남기고 코드에는 포인터만 둔다
+6. **검증** — `pnpm lint && pnpm build` + E2E, 성능 작업이면 전후 측정 (→ 명령어)
+7. **커밋 → PR** — 템플릿 3절 + `Fixes #<번호>` (→ Git 워크플로, 이슈)
+8. **머지 후 정리** — main 최신화, 병합된 브랜치 로컬·원격 삭제. **머지된 PR 브랜치에 추가 커밋을 푸시하지 말 것** — 반영되지 않는다. 후속 작업은 새 브랜치로
+
 ## Git 워크플로
 
 - 새 작업 브랜치는 **항상 최신 main에서 시작**: `git checkout main && git pull origin main` 후 `git checkout -b <브랜치명>`
 - 브랜치명: `<type>/<kebab-case-요약>` (예: `feat/e2e-playwright`, `fix/modal-rounded-corners`)
 - main에 직접 커밋 금지. 작업은 브랜치 → PR로 병합
-- PR 본문은 `.github/pull_request_template.md` 의 3절(작업 내용 / 변경사항 / 관련 이슈)을 따를 것
+- PR 본문은 `.github/pull_request_template.md` 의 3절(작업 내용 / 변경사항 / 관련 이슈)을 따를 것. 검증 절차는 PR 본문이 아니라 저장소 문서에 남긴다
 
 ## 이슈
 
