@@ -3,6 +3,9 @@
 `/api/*` 라우트 핸들러가 악의적인 요청과 다량 호출에 대해 어떤 가드를 두는지 정리한다.
 구현은 `src/lib/api/route-helpers.ts`, `src/lib/api/rate-limit.ts` 에 모여 있다.
 
+각 가드가 실제로 동작하는지 확인하는 재현 절차는 [`verification.md`](verification.md) 에 있다.
+방어 코드를 고쳤다면 그쪽을 그대로 다시 돌린다.
+
 ## 이미 있던 방어선
 
 새로 추가한 것과 겹치지 않도록, 기존에 성립하던 전제를 먼저 적는다.
