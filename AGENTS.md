@@ -28,7 +28,8 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 페이지 내비게이션은 `<Link>` 사용. `<button onClick={() => router.push(...)}>` 금지
 - 새 도메인 훅은 query key factory 패턴 유지 (참조: `taskKeys`)
 - 클라이언트에서 API 호출은 `@/lib/axios`의 `apiClient` 사용 (인증 토큰·401 처리 인터셉터 포함). raw `fetch`나 개별 axios 인스턴스 생성 금지
-- 새 Route Handler는 `@/lib/api/route-helpers`의 `withAuth`로 감싸고(미인증 시 401), 요청 본문은 `parseBody` + `@/lib/api/schemas`의 zod 스키마로 검증, DB 에러는 `dbError`로 응답할 것. raw body를 insert/update에 스프레드 금지 (참조: `src/app/api/tasks/route.ts`)
+- 새 Route Handler는 `@/lib/api/route-helpers`의 `withAuth`로 감싸고(미인증 시 401), 요청 본문은 `parseBody` + `@/lib/api/schemas`의 zod 스키마로 검증, DB 에러는 `dbError`로 응답할 것. raw body를 insert/update에 스프레드 금지 (참조: `src/app/api/tasks/route.ts`). `withAuth`가 레이트 리밋(429), `parseBody`가 본문 크기 상한(413)을 함께 처리하므로 우회하지 말 것 — 방어 목록은 `docs/security/README.md`
+- 클라이언트가 보낸 시각·날짜로 서버 분기를 만들지 말 것. 불가피하면 서버 시각과 대조해 허용 오차를 두고 검증할 것 (참조: `isTrustableClientNow`)
 
 ## 컨벤션
 

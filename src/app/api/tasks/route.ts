@@ -7,6 +7,17 @@ import {
   getEffectiveTodayFromClientNow,
 } from '@/lib/task-dates'
 
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const CLIENT_NOW_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
+const MAX_CLIENT_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000
+
+function isTrustableClientNow(clientNow: string): boolean {
+  if (!CLIENT_NOW_PATTERN.test(clientNow)) return false
+  const asUtc = Date.parse(`${clientNow}:00Z`)
+  if (Number.isNaN(asUtc)) return false
+  return Math.abs(asUtc - Date.now()) <= MAX_CLIENT_CLOCK_SKEW_MS
+}
+
 export const GET = withAuth(async (request, { supabase, user }) => {
   const { searchParams } = new URL(request.url)
   const scope = searchParams.get('scope')
@@ -21,7 +32,13 @@ export const GET = withAuth(async (request, { supabase, user }) => {
   // 시간 게이트: scope=daily이고, 조회 날짜가 "유효 오늘"(하루 시작 시각
   // 이전이면 전날) 이후이며, 현재 로컬 시각이 그날의 하루 시작 시각을
   // 지났을 때만 템플릿을 시딩한다.
-  if (scope === 'daily' && targetDate && clientNow) {
+  if (
+    scope === 'daily' &&
+    targetDate &&
+    DATE_PATTERN.test(targetDate) &&
+    clientNow &&
+    isTrustableClientNow(clientNow)
+  ) {
     const calendarToday = clientNow.slice(0, 10)
     const calendarYesterday = format(
       addDays(new Date(`${calendarToday}T00:00:00`), -1),

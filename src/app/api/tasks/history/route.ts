@@ -17,6 +17,15 @@ import { dbError, withAuth } from '@/lib/api/route-helpers'
  *   grid_start 일별 카운트 시작일 (히트맵·미니달력). grid_end 와 함께 있을 때만 계산
  *   grid_end   일별 카운트 종료일
  */
+function isValidTimeZone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en-US', { timeZone: tz })
+    return true
+  } catch {
+    return false
+  }
+}
+
 export const GET = withAuth(async (request, { supabase }) => {
   const { searchParams } = new URL(request.url)
 
@@ -34,8 +43,13 @@ export const GET = withAuth(async (request, { supabase }) => {
     return Response.json({ error: 'month 는 yyyy-MM 형식이어야 합니다.' }, { status: 400 })
   }
 
+  const tz = searchParams.get('tz') || 'UTC'
+  if (!isValidTimeZone(tz)) {
+    return Response.json({ error: 'tz 가 올바른 IANA 타임존이 아닙니다.' }, { status: 400 })
+  }
+
   const { data, error } = await supabase.rpc('completed_history', {
-    p_tz: searchParams.get('tz') || 'UTC',
+    p_tz: tz,
     p_month: month,
     p_category: searchParams.get('category') || 'all',
     p_limit: limit,
