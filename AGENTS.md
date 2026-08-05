@@ -9,6 +9,18 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 새 작업 브랜치는 **항상 최신 main에서 시작**: `git checkout main && git pull origin main` 후 `git checkout -b <브랜치명>`
 - 브랜치명: `<type>/<kebab-case-요약>` (예: `feat/e2e-playwright`, `fix/modal-rounded-corners`)
 - main에 직접 커밋 금지. 작업은 브랜치 → PR로 병합
+- PR 본문은 `.github/pull_request_template.md` 의 3절(작업 내용 / 변경사항 / 관련 이슈)을 따를 것
+
+## 이슈
+
+- **미해결 항목의 단일 소스는 GitHub Issues다.** 작업 시작 전 `gh issue list` 로 확인한다
+- 작업 순서는 **이슈 번호가 아니라 `priority:` 라벨**로 정한다 — 번호는 생성 순서일 뿐이다.
+  `gh issue list --label "priority: high"` 로 다음에 할 것을 고른다
+- 새 이슈는 `.github/ISSUE_TEMPLATE/` 의 양식(결함 / 구조 개선)을 쓴다.
+  파일·줄 번호를 적을 때는 **확인한 커밋을 함께** 남긴다 (착수 시점엔 밀려 있다)
+- PR 로 닫을 때는 본문에 `Fixes #<번호>` 를 적어 이슈↔PR 을 연결한다
+- `reviews/` 는 gitignore 대상이라 **저장소에 없다.** 미이관 메모와 상시 참조 문서(감수 중인
+  부채·지켜야 할 제약·교훈)만 남아 있고, 미해결 목록의 소스가 아니다
 
 ## 명령어
 
