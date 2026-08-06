@@ -6,6 +6,7 @@ import {
   useCreateTask,
   useDeleteTask,
   useToggleTask,
+  useTogglingTaskIds,
   useUpdateTask,
 } from './useTaskMutations'
 import { useToast } from '@/components/ui/useToast'
@@ -26,6 +27,7 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
   const toggleTask = useToggleTask(scope, anchor)
   const deleteTask = useDeleteTask(scope, anchor)
   const updateTask = useUpdateTask(scope, anchor)
+  const togglingIds = useTogglingTaskIds()
 
   const handleToggle = (id: string, done: boolean) => {
     // 낙관적 업데이트가 즉시 화면을 갱신하고 실패 시 onError 가 롤백하므로
@@ -102,6 +104,7 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
     formOpen,
     editing,
     deletingId,
+    togglingIds,
     isMutating: createTask.isPending || updateTask.isPending,
     openForm,
     closeForm,
