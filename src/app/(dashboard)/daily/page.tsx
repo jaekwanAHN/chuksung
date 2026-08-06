@@ -82,6 +82,7 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
     formOpen,
     editing,
     deletingId,
+    togglingIds,
     isMutating,
     openForm,
     closeForm,
@@ -203,6 +204,7 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
             deletingId={deletingId}
+            togglingIds={togglingIds}
           />
           <PlannerProgress tasks={tasks} />
         </>

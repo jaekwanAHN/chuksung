@@ -12,12 +12,15 @@ export function TaskCard({
   onDelete,
   onEdit,
   deleting,
+  toggling,
 }: {
   task: Task
   onToggle: (id: string, done: boolean) => void
   onDelete: (id: string) => void
   onEdit: (task: Task) => void
   deleting?: boolean
+  /** 완료 토글 응답 대기 중 — 편집·삭제를 막는다 (docs/task-race-guards.md) */
+  toggling?: boolean
 }) {
   return (
     <div
@@ -30,7 +33,8 @@ export function TaskCard({
         type="checkbox"
         checked={task.is_completed}
         onChange={(e) => onToggle(task.id, e.target.checked)}
-        className="mt-1 size-4 shrink-0 cursor-pointer rounded border-zinc-300"
+        disabled={deleting}
+        className="mt-1 size-4 shrink-0 cursor-pointer rounded border-zinc-300 disabled:cursor-not-allowed disabled:opacity-50"
         aria-label={task.is_completed ? '완료 취소' : '완료'}
       />
       <div className="min-w-0 flex-1">
@@ -63,7 +67,7 @@ export function TaskCard({
           variant="ghost"
           className="!p-2"
           onClick={() => onEdit(task)}
-          disabled={deleting}
+          disabled={deleting || toggling}
           aria-label="수정"
         >
           <Pencil className="size-4 text-zinc-500" />
@@ -73,7 +77,7 @@ export function TaskCard({
           variant="ghost"
           className="!p-2"
           onClick={() => onDelete(task.id)}
-          disabled={deleting}
+          disabled={deleting || toggling}
           aria-label="삭제"
         >
           {deleting ? (

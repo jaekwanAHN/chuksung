@@ -1,6 +1,6 @@
 'use client'
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useMutationState, useQueryClient } from '@tanstack/react-query'
 import apiClient from '@/lib/axios'
 import type { CreateTaskInput, Task, TaskScope } from '@/types'
 import { taskKeys } from './useTasks'
@@ -29,6 +29,22 @@ export function useCreateTask(scope: TaskScope) {
 }
 
 const TOGGLE_TASK_MUTATION_KEY = ['toggle-task'] as const
+
+/**
+ * 완료 토글이 진행 중인 태스크 id 집합.
+ *
+ * 별도 state 로 추적하지 않고 pending 뮤테이션에서 파생시킨다 — 해제 시점이
+ * 없으므로 버튼이 영구 비활성화될 여지가 없다. 이 값으로 무엇을 막고 무엇을
+ * 일부러 열어두는지는 docs/task-race-guards.md 참조.
+ */
+export function useTogglingTaskIds(): ReadonlySet<string> {
+  const ids = useMutationState({
+    filters: { mutationKey: TOGGLE_TASK_MUTATION_KEY, status: 'pending' },
+    select: (mutation) =>
+      (mutation.state.variables as { id?: string } | undefined)?.id,
+  })
+  return new Set(ids.filter((id): id is string => Boolean(id)))
+}
 
 export function useToggleTask(scope: TaskScope, date: Date) {
   const queryClient = useQueryClient()
@@ -77,6 +93,10 @@ export function useToggleTask(scope: TaskScope, date: Date) {
     onError: (_err, vars, context) => {
       // 더 새로운 토글이 진행 중이면 그쪽의 낙관적 상태가 최신 의도이므로
       // 이 스냅샷으로 되돌리지 않는다 (되돌리면 최신 의도를 덮어쓴다).
+      //
+      // 이 복원은 리스트 전체를 되돌리므로, 토글 대기 중 삭제가 성공했다면
+      // 삭제된 항목까지 되살린다. UI 에서 토글 중 삭제를 막아 그 조합 자체를
+      // 만들지 않는 쪽으로 처리한다 — docs/task-race-guards.md
       if (context?.previous && isLatestToggleFor(vars.id)) {
         queryClient.setQueryData(
           taskKeys.byScope(scope, targetDate),
