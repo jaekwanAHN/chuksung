@@ -48,6 +48,9 @@ argument-hint: "[이슈번호 | 문제 설명 | 생략 시 priority 목록에서
    **원격 브랜치는 지우지 않는다.** 머지 후에 문제를 발견할 수 있어 의도적으로 남긴다
    (저장소도 `delete_branch_on_merge: false` 로 맞춰져 있다).
 
+   **지우지 않은 브랜치는 한 줄로 보고한다.** 조용히 넘어가면 열린 채 잊힌 PR이
+   계속 쌓인다. 예: `남은 브랜치: chore/foo (PR #58 OPEN), bar (PR 없음)`
+
 2. **worktree 정리.** `git worktree list` 에 머지된 브랜치의 worktree가 있으면
    `git worktree remove <경로>` 로 제거한다. 이 저장소는 worktree를 기본으로 쓰지 않는다
    — `.env.local`·`node_modules`·`.claude/settings.local.json` 이 gitignore 대상이라
@@ -169,12 +172,20 @@ git checkout -b fix/header-today-label
 ## 6. 검증
 
 ```bash
-pnpm lint && pnpm build
+npx tsc --noEmit && pnpm lint && pnpm build
 ```
 
-- E2E가 필요하면 `pnpm test:e2e`
+`tsc --noEmit` 을 먼저 돌린다. `pnpm build` 도 타입을 보지만 훨씬 느리고, 타입
+오류를 먼저 걷어내면 build 를 한 번만 돌려도 된다.
+
+- E2E가 필요하면 `pnpm test:e2e <spec>` 으로 좁혀 돌리고, 마지막에 전체를 한 번
 - `performance` 라벨이면 수정 후 측정 + **`docs/perf/` 에 전후 델타 기록**
 - 실패하면 고친다. **고쳐지지 않으면 멈추고 보고한다** — 실패를 안고 CP3로 넘어가지 않는다
+
+**회귀 테스트를 추가했다면 그 테스트가 수정 없이는 실패하는지 확인한다.** 수정을
+잠시 되돌려 새 테스트가 빨간불인 것을 보고 복구한다. 이 확인을 건너뛰면 아무것도
+잡지 못하는 테스트가 통과하는 것만 보고 넘어가게 된다 — 회귀 방지라는 목적 자체가
+사라진다. 확인했으면 CP3의 검증 결과에 그 사실을 적는다.
 
 로컬 검증을 건너뛰지 말 것. main의 required check가 `lint-and-build` 와 `e2e` 두 개라
 어차피 CI에서 걸리고, 그때는 왕복이 훨씬 비싸다.
@@ -192,7 +203,7 @@ pnpm lint && pnpm build
 - `git diff main...HEAD --stat` 과 변경의 요지
 - **PR 본문 초안 전문** — `.github/pull_request_template.md` 의 3절
   (작업 내용 / 변경사항 / 관련 이슈)을 그대로 채우고, 관련 이슈에 `Fixes #<번호>`
-- 검증 결과 (lint/build/E2E/perf 델타)
+- 검증 결과 (tsc/lint/build/E2E/perf 델타, 회귀 테스트 유효성 확인 여부)
 
 검증 절차 자체는 PR 본문이 아니라 저장소 문서에 남긴다.
 
