@@ -1,12 +1,14 @@
 import { LoginButtons } from './_components/LoginButton'
+import { hasSessionInvalidMarker } from '@/lib/auth-redirect'
 
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>
+  searchParams: Promise<{ error?: string; session?: string }>
 }) {
   const sp = await searchParams
   const authError = sp.error === 'auth_failed'
+  const sessionInvalid = hasSessionInvalidMarker(sp.session)
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-100 px-4 py-12">
@@ -20,6 +22,11 @@ export default async function LoginPage({
         {authError ? (
           <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-center text-sm text-red-700">
             로그인에 실패했습니다. 다시 시도해 주세요.
+          </p>
+        ) : null}
+        {sessionInvalid ? (
+          <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-center text-sm text-amber-800">
+            세션이 유효하지 않습니다. 다시 로그인해 주세요.
           </p>
         ) : null}
         <LoginButtons />
