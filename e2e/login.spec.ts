@@ -73,29 +73,31 @@ test.describe('인증된 사용자', () => {
     await expect(page).toHaveURL(/\/daily$/)
   })
 
-  test('API 가 401 을 반환하면 /login 으로 이동한다', async ({ page }) => {
-    // 첫 응답만 401 로 채운다. 계속 채우면 인증 쿠키가 아직 유효한 탓에
-    // 미들웨어가 /login 을 다시 /daily 로 되돌려 무한 왕복이 된다.
-    let injected = false
-    await page.route('**/api/tasks**', async (route) => {
-      if (injected) return route.continue()
-      injected = true
-      await route.fulfill({
+  test('API 가 401 을 계속 반환해도 왕복하지 않고 /login 에서 멈춘다', async ({
+    page,
+  }) => {
+    // 인증 쿠키는 유효한 채로 API 만 401 이 되는 상황 (docs/auth-redirects.md)
+    await page.route('**/api/tasks**', (route) =>
+      route.fulfill({
         status: 401,
         contentType: 'application/json',
         body: JSON.stringify({ error: 'Unauthorized' }),
       })
-    })
-
-    const loginNavigation = page.waitForRequest(
-      (req) => req.isNavigationRequest() && req.url().includes('/login')
     )
 
-    await page.goto('/daily').catch(() => {})
+    const navigations: string[] = []
+    page.on('request', (req) => {
+      if (req.isNavigationRequest()) navigations.push(req.url())
+    })
 
-    // 최종 URL 이 아니라 이동 시도를 본다 — 위 이유로 미들웨어가 되돌린다.
-    const req = await loginNavigation
-    expect(req.url()).toContain('/login')
+    await page.goto('/daily').catch(() => {})
+    await expect(page).toHaveURL(/\/login\?session=invalid$/)
+    await expect(page.getByText('세션이 유효하지 않습니다')).toBeVisible()
+
+    // 되돌림이 살아있으면 이 사이 여러 번 왕복한다
+    await page.waitForTimeout(3000)
+    await expect(page).toHaveURL(/\/login\?session=invalid$/)
+    expect(navigations.filter((url) => url.includes('/daily'))).toHaveLength(1)
   })
 
   test('대시보드(/daily)가 정상 렌더링된다', async ({ page }) => {
