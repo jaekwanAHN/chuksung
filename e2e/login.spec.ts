@@ -100,6 +100,30 @@ test.describe('인증된 사용자', () => {
     expect(navigations.filter((url) => url.includes('/daily'))).toHaveLength(1)
   })
 
+  test("'/' 로 진입해도 401 왕복 없이 /login 에서 멈춘다", async ({ page }) => {
+    // '/' 는 보호 경로가 아니라 프록시를 통과하므로, 왕복 차단이 /daily 진입과
+    // 같은 방식으로 동작하는지 별도로 확인한다.
+    await page.route('**/api/**', (route) =>
+      route.fulfill({
+        status: 401,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Unauthorized' }),
+      })
+    )
+
+    const navigations: string[] = []
+    page.on('request', (req) => {
+      if (req.isNavigationRequest()) navigations.push(req.url())
+    })
+
+    await page.goto('/').catch(() => {})
+    await expect(page).toHaveURL(/\/login\?session=invalid$/)
+
+    await page.waitForTimeout(3000)
+    await expect(page).toHaveURL(/\/login\?session=invalid$/)
+    expect(navigations.filter((url) => url.includes('/daily'))).toHaveLength(1)
+  })
+
   test('대시보드(/daily)가 정상 렌더링된다', async ({ page }) => {
     await page.goto('/daily')
     await expect(page).toHaveURL(/\/daily$/)
@@ -107,5 +131,89 @@ test.describe('인증된 사용자', () => {
     await expect(
       page.getByRole('button', { name: '새 태스크' })
     ).toBeVisible()
+  })
+})
+
+/** `@supabase/ssr` 의 `base64-<base64 JSON>` 세션 쿠키를 열고 닫는다 */
+function readSessionCookie(value: string) {
+  return JSON.parse(
+    Buffer.from(value.replace(/^base64-/, ''), 'base64').toString()
+  )
+}
+function writeSessionCookie(session: unknown) {
+  return 'base64-' + Buffer.from(JSON.stringify(session)).toString('base64')
+}
+
+function authCookieFromStorageState() {
+  const state = JSON.parse(fs.readFileSync(STORAGE_STATE, 'utf-8'))
+  const cookie = state.cookies.find((c: { name: string }) =>
+    c.name.endsWith('-auth-token')
+  )
+  if (!cookie) throw new Error('storageState 에 세션 쿠키가 없습니다.')
+  return cookie
+}
+
+/**
+ * 프록시는 Auth 서버에 묻지 않고 JWT 서명을 로컬 검증한다
+ * (`src/lib/supabase/update-session.ts`). 위조 토큰이 통과하면 보호 경로가
+ * 열리고, 갱신이 빠지면 토큰 수명마다 전원이 로그아웃된다 — 둘 다 여기서 막는다.
+ */
+test.describe('프록시의 낙관적 세션 검증', () => {
+  test.skip(
+    () => !hasAuthState(),
+    'E2E_TEST_USER_EMAIL/PASSWORD 미설정 — 인증 테스트 건너뜀'
+  )
+
+  test('서명이 위조된 토큰은 보호 경로에서 차단된다', async ({ browser }) => {
+    const cookie = authCookieFromStorageState()
+    const session = readSessionCookie(cookie.value)
+
+    const [header, payload, signature] = session.access_token.split('.')
+    const forged = Buffer.from(signature, 'base64url')
+    forged[0] ^= 0xff
+    session.access_token = `${header}.${payload}.${forged.toString('base64url')}`
+    // 갱신으로 우회해 통과하는 일이 없도록 refresh 경로도 막는다 —
+    // 이 테스트가 검증하는 것은 오직 서명 검증이다.
+    session.refresh_token = 'invalid-refresh-token'
+
+    const context = await browser.newContext()
+    await context.addCookies([
+      { ...cookie, value: writeSessionCookie(session) },
+    ])
+    const page = await context.newPage()
+
+    await page.goto('/daily')
+    await expect(page).toHaveURL(/\/login$/)
+
+    await context.close()
+  })
+
+  test('만료된 세션은 갱신되어 통과하고 새 쿠키가 내려온다', async ({
+    browser,
+  }) => {
+    const cookie = authCookieFromStorageState()
+    const session = readSessionCookie(cookie.value)
+    const before = session.access_token
+
+    // 만료된 것으로 표시하면 getClaims 가 검증 전에 세션을 먼저 갱신한다.
+    session.expires_at = Math.floor(Date.now() / 1000) - 60
+    session.expires_in = 0
+
+    const context = await browser.newContext()
+    await context.addCookies([
+      { ...cookie, value: writeSessionCookie(session) },
+    ])
+    const page = await context.newPage()
+
+    await page.goto('/daily')
+    await expect(page).toHaveURL(/\/daily$/)
+
+    const refreshed = (await context.cookies()).find((c) =>
+      c.name.endsWith('-auth-token')
+    )
+    expect(refreshed).toBeDefined()
+    expect(readSessionCookie(refreshed!.value).access_token).not.toBe(before)
+
+    await context.close()
   })
 })
