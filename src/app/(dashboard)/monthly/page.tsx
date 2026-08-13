@@ -5,13 +5,12 @@ import {
   addMonths,
   endOfMonth,
   format,
-  parseISO,
   startOfMonth,
 } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { usePlannerPage } from '../_hooks/tasks/usePlannerPage'
-import { useCompletedHistory } from '../_hooks/tasks/useTasks'
+import { useCompletedDayCounts } from '../_hooks/tasks/useTasks'
 import { TaskList } from '../_components/tasks/TaskList'
 import { TaskFilters } from '../_components/tasks/TaskFilters'
 import { TaskForm } from '../_components/tasks/TaskForm'
@@ -37,6 +36,7 @@ export default function MonthlyPlannerPage() {
     formOpen,
     editing,
     deletingId,
+    togglingIds,
     isMutating,
     openForm,
     closeForm,
@@ -47,21 +47,17 @@ export default function MonthlyPlannerPage() {
     closeToast,
   } = usePlannerPage('monthly', month)
 
-  const { data: completed = [] } = useCompletedHistory()
-
-  const dayCounts = useMemo(() => {
-    const map = new Map<string, number>()
-    const ms = startOfMonth(month)
-    const me = endOfMonth(month)
-    for (const t of completed) {
-      if (!t.completed_at) continue
-      const d = parseISO(t.completed_at)
-      if (d < ms || d > me) continue
-      const key = format(d, 'yyyy-MM-dd')
-      map.set(key, (map.get(key) ?? 0) + 1)
-    }
-    return map
-  }, [completed, month])
+  // 이전에는 완료 태스크 전체를 받아 여기서 셌는데, 그 응답이 1000건에서 잘려
+  // 오래된 달의 미니달력이 비어 보였다. 이제 해당 월만 서버에서 집계한다.
+  const { monthStart, monthEnd } = useMemo(
+    () => ({
+      monthStart: format(startOfMonth(month), 'yyyy-MM-dd'),
+      monthEnd: format(endOfMonth(month), 'yyyy-MM-dd'),
+    }),
+    [month]
+  )
+  const { data: counts = {} } = useCompletedDayCounts(monthStart, monthEnd)
+  const dayCounts = useMemo(() => new Map(Object.entries(counts)), [counts])
 
   const monthTitle = format(month, 'yyyy년 M월', { locale: ko })
 
@@ -123,6 +119,7 @@ export default function MonthlyPlannerPage() {
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
             deletingId={deletingId}
+            togglingIds={togglingIds}
           />
           <div className="grid gap-4 lg:grid-cols-2">
             <MonthMiniCalendar month={month} counts={dayCounts} />

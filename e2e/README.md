@@ -6,18 +6,18 @@
 
 ```bash
 # 1) 브라우저 바이너리
-npx playwright install chromium
+pnpm exec playwright install chromium
 
 # 2) 브라우저 실행에 필요한 시스템 라이브러리 (Linux/WSL, sudo 필요)
-sudo npx playwright install-deps chromium
+sudo pnpm exec playwright install-deps chromium
 ```
 
 ## 실행
 
 ```bash
-npm run test:e2e          # 헤드리스 실행
-npm run test:e2e:ui       # Playwright UI 모드 (디버깅)
-npm run test:e2e:report   # 마지막 HTML 리포트 열기
+pnpm test:e2e          # 헤드리스 실행
+pnpm test:e2e:ui       # Playwright UI 모드 (디버깅)
+pnpm test:e2e:report   # 마지막 HTML 리포트 열기
 ```
 
 기본적으로 `.env.local`(없으면 `.env.test`)의 환경 변수를 불러옵니다.

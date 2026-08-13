@@ -3,6 +3,9 @@ import type { SupabaseClient, User } from '@supabase/supabase-js'
 import type { PostgrestError } from '@supabase/supabase-js'
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { checkRateLimit } from '@/lib/api/rate-limit'
+
+const MAX_BODY_BYTES = 64 * 1024
 
 interface AuthContext {
   supabase: SupabaseClient
@@ -10,8 +13,8 @@ interface AuthContext {
 }
 
 /**
- * Route Handler 인증 가드. 미인증 요청은 401로 끊고,
- * 인증된 요청에는 supabase 클라이언트와 user를 넘긴다.
+ * Route Handler 인증 가드. 미인증 요청은 401, 호출량 초과는 429로 끊고,
+ * 통과한 요청에는 supabase 클라이언트와 user를 넘긴다.
  *
  * 사용 예:
  *   export const POST = withAuth(async (request, { supabase, user }) => { ... })
@@ -30,6 +33,15 @@ export function withAuth<Ctx = unknown>(
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 })
+
+    const rate = checkRateLimit(user.id, request.method)
+    if (!rate.ok) {
+      return Response.json(
+        { error: '요청이 너무 잦습니다. 잠시 후 다시 시도해 주세요.' },
+        { status: 429, headers: { 'Retry-After': String(rate.retryAfter) } }
+      )
+    }
+
     return handler(request, { supabase, user }, ctx)
   }
 }
@@ -37,6 +49,32 @@ export function withAuth<Ctx = unknown>(
 type ParsedBody<T> =
   | { ok: true; data: T }
   | { ok: false; response: Response }
+
+async function readBodyWithLimit(request: NextRequest): Promise<string | null> {
+  const declared = Number(request.headers.get('content-length'))
+  if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) return null
+
+  const body = request.body
+  if (!body) return ''
+
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let text = ''
+  let total = 0
+
+  while (true) {
+    const { done, value } = await reader.read()
+    if (done) break
+    total += value.byteLength
+    if (total > MAX_BODY_BYTES) {
+      await reader.cancel()
+      return null
+    }
+    text += decoder.decode(value, { stream: true })
+  }
+
+  return text + decoder.decode()
+}
 
 /**
  * 요청 본문을 zod 스키마로 검증한다. 스키마에 없는 키는 제거되므로
@@ -46,9 +84,20 @@ export async function parseBody<T>(
   request: NextRequest,
   schema: z.ZodType<T>
 ): Promise<ParsedBody<T>> {
+  const raw = await readBodyWithLimit(request)
+  if (raw === null) {
+    return {
+      ok: false,
+      response: Response.json(
+        { error: '본문이 너무 큽니다.' },
+        { status: 413 }
+      ),
+    }
+  }
+
   let json: unknown
   try {
-    json = await request.json()
+    json = JSON.parse(raw)
   } catch {
     return {
       ok: false,

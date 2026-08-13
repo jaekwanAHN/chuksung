@@ -7,19 +7,38 @@ import {
   getEffectiveTodayFromClientNow,
 } from '@/lib/task-dates'
 
+const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
+const CLIENT_NOW_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
+const MAX_CLIENT_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000
+
+function isTrustableClientNow(clientNow: string): boolean {
+  if (!CLIENT_NOW_PATTERN.test(clientNow)) return false
+  const asUtc = Date.parse(`${clientNow}:00Z`)
+  if (Number.isNaN(asUtc)) return false
+  return Math.abs(asUtc - Date.now()) <= MAX_CLIENT_CLOCK_SKEW_MS
+}
+
 export const GET = withAuth(async (request, { supabase, user }) => {
   const { searchParams } = new URL(request.url)
   const scope = searchParams.get('scope')
   const targetDate = searchParams.get('target_date')
   const start = searchParams.get('start')
   const end = searchParams.get('end')
-  const completed = searchParams.get('completed')
+  // 완료 기록 조회는 집계 RPC 를 쓰는 `GET /api/tasks/history` 로 분리됐다.
+  // 여기서 전체를 내려보내던 completed=true 모드는 PostgREST max-rows(1000)에
+  // 걸려 조용히 잘렸으므로 제거했다.
   const clientNow = searchParams.get('client_now') // 로컬 현재시각 'yyyy-MM-ddTHH:mm'
 
   // 시간 게이트: scope=daily이고, 조회 날짜가 "유효 오늘"(하루 시작 시각
   // 이전이면 전날) 이후이며, 현재 로컬 시각이 그날의 하루 시작 시각을
   // 지났을 때만 템플릿을 시딩한다.
-  if (scope === 'daily' && targetDate && clientNow) {
+  if (
+    scope === 'daily' &&
+    targetDate &&
+    DATE_PATTERN.test(targetDate) &&
+    clientNow &&
+    isTrustableClientNow(clientNow)
+  ) {
     const calendarToday = clientNow.slice(0, 10)
     const calendarYesterday = format(
       addDays(new Date(`${calendarToday}T00:00:00`), -1),
@@ -45,9 +64,7 @@ export const GET = withAuth(async (request, { supabase, user }) => {
 
   let query = supabase.from('tasks').select('*')
 
-  if (completed === 'true') {
-    query = query.eq('is_completed', true).order('completed_at', { ascending: false })
-  } else if (scope === 'monthly' && start && end) {
+  if (scope === 'monthly' && start && end) {
     query = query
       .eq('scope', scope)
       .gte('target_date', start)

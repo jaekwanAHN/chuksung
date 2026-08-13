@@ -132,6 +132,46 @@ test.describe('태스크 추가/삭제', () => {
     await expect(updated).not.toBeVisible()
   })
 
+  test('완료 토글 응답을 기다리는 동안 편집·삭제가 잠긴다', async ({ page }) => {
+    const title = `E2E 토글 경합 ${Date.now()}`
+
+    await page.goto('/daily')
+
+    await page.getByRole('button', { name: '새 태스크' }).click()
+    await page.getByLabel('제목').fill(title)
+    await page.getByRole('button', { name: '저장' }).click()
+
+    const card = page.locator('li').filter({ hasText: title })
+    await expect(card).toBeVisible()
+
+    // 토글 PATCH 를 붙잡아 "응답 대기 중" 상태를 만든다. 생성 POST 는
+    // /api/tasks 라 이 글롭에 걸리지 않고, DELETE 는 아래에서 통과시킨다.
+    let release: () => void = () => {}
+    const held = new Promise<void>((resolve) => {
+      release = resolve
+    })
+    await page.route('**/api/tasks/*', async (route) => {
+      if (route.request().method() !== 'PATCH') return route.continue()
+      await held
+      await route.continue()
+    })
+
+    await card.getByRole('checkbox').click()
+
+    await expect(card.getByRole('button', { name: '수정' })).toBeDisabled()
+    await expect(card.getByRole('button', { name: '삭제' })).toBeDisabled()
+
+    // 응답이 도착하면 다시 열린다 (해제 누락으로 영구 잠기지 않는지)
+    release()
+    await expect(card.getByRole('button', { name: '수정' })).toBeEnabled()
+    await expect(card.getByRole('button', { name: '삭제' })).toBeEnabled()
+
+    // 정리
+    page.on('dialog', (dialog) => dialog.accept())
+    await card.getByRole('button', { name: '삭제' }).click()
+    await expect(card).not.toBeVisible()
+  })
+
   test('완료 토글 후 취소하면 미완료 상태로 돌아온다', async ({ page }) => {
     const title = `E2E 토글 테스트 ${Date.now()}`
 

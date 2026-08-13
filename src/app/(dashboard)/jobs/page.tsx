@@ -11,6 +11,9 @@ import { useJobsPage } from './_hooks/useJobsPage'
 export default function JobsPage() {
   const {
     postings,
+    totalCount,
+    hasMore,
+    showMore,
     loading,
     error,
     refetch,
@@ -34,7 +37,12 @@ export default function JobsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-zinc-900">취업공고</h1>
+        <h1 className="text-xl font-bold text-zinc-900">
+          취업공고
+          {totalCount > 0 && (
+            <span className="ml-2 text-sm font-medium text-zinc-400">{totalCount}건</span>
+          )}
+        </h1>
         <Button onClick={openAdd}>
           <Plus className="size-4" />
           공고 추가
@@ -60,16 +68,27 @@ export default function JobsPage() {
           저장된 공고가 없습니다. 공고를 추가해 보세요.
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
-          {postings.map((p) => (
-            <PostingCard
-              key={p.id}
-              posting={p}
-              onEdit={() => openEdit(p)}
-              onDelete={() => setDeleteTarget(p)}
-            />
-          ))}
-        </ul>
+        <div>
+          <ul className="flex flex-col gap-3">
+            {postings.map((p) => (
+              <PostingCard
+                key={p.id}
+                posting={p}
+                onEdit={() => openEdit(p)}
+                onDelete={() => setDeleteTarget(p)}
+              />
+            ))}
+          </ul>
+          {hasMore && (
+            <button
+              type="button"
+              className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-200 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              onClick={showMore}
+            >
+              더 보기 ({totalCount - postings.length}건 남음)
+            </button>
+          )}
+        </div>
       )}
 
       <JobPostingModal

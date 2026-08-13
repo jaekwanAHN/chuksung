@@ -35,6 +35,7 @@ export default function WeeklyPlannerPage() {
     formOpen,
     editing,
     deletingId,
+    togglingIds,
     isMutating,
     openForm,
     closeForm,
@@ -115,6 +116,7 @@ export default function WeeklyPlannerPage() {
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
             deletingId={deletingId}
+            togglingIds={togglingIds}
           />
           <PlannerProgress tasks={tasks} label="주간 달성률" />
         </>

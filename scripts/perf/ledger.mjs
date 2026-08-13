@@ -1,9 +1,12 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import { formatVolume, volumeDrift } from './volume.mjs'
 
 // 원장에 기록/추적하는 지표 정의. higherBetter=true 는 값이 클수록 개선.
 export const METRICS = [
   { key: 'score', label: 'Perf', higherBetter: true },
+  { key: 'a11y', label: 'A11y', higherBetter: true },
+  { key: 'seo', label: 'SEO', higherBetter: true },
   { key: 'lcp', label: 'LCP', higherBetter: false },
   { key: 'tbt', label: 'TBT', higherBetter: false },
   { key: 'cls', label: 'CLS', higherBetter: false },
@@ -12,11 +15,14 @@ export const METRICS = [
 ]
 
 // 노이즈(측정 오차)로 볼 임계값 — 이 이하 변화는 개선/회귀로 표시하지 않는다.
-const NOISE = { score: 0.5, lcp: 20, tbt: 5, cls: 0.005, fcp: 20, si: 20 }
+const NOISE = { score: 0.5, a11y: 0.5, seo: 0.5, lcp: 20, tbt: 5, cls: 0.005, fcp: 20, si: 20 }
+
+// 0~100 점수 계열 (나머지는 시간/비율 지표).
+const SCORE_KEYS = new Set(['score', 'a11y', 'seo'])
 
 function fmt(key, v) {
   if (v == null) return '—'
-  if (key === 'score') return String(Math.round(v))
+  if (SCORE_KEYS.has(key)) return String(Math.round(v))
   if (key === 'tbt') return `${Math.round(v)}ms`
   if (key === 'cls') return v.toFixed(3)
   return `${(v / 1000).toFixed(2)}s` // lcp/fcp/si
@@ -24,7 +30,7 @@ function fmt(key, v) {
 
 function fmtDelta(key, diff) {
   const sign = diff > 0 ? '+' : ''
-  if (key === 'score') return `${sign}${Math.round(diff)}`
+  if (SCORE_KEYS.has(key)) return `${sign}${Math.round(diff)}`
   if (key === 'tbt') return `${sign}${Math.round(diff)}ms`
   if (key === 'cls') return `${sign}${diff.toFixed(3)}`
   return `${sign}${(diff / 1000).toFixed(2)}s`
@@ -89,16 +95,30 @@ export function appendHistory(historyPath, snapshot, prev) {
   const compared = prev
     ? `vs ${stamp(prev.timestamp)}`
     : 'baseline (첫 측정 — 비교 대상 없음)'
+
+  // 측정 조건(데이터 볼륨)을 매 섹션에 남긴다. 지표는 데이터 양에 좌우되므로
+  // 볼륨을 모르면 이 표가 무엇과 비교 가능한지 알 수 없다.
+  const volumeLine = formatVolume(snapshot.volume)
+  const drift = volumeDrift(snapshot.volume, prev?.volume)
+  const driftLine = drift.length
+    ? `> ⚠️ **직전 측정과 데이터 볼륨이 다르다** — ` +
+      drift.map((d) => `${d.key} ${d.from.toLocaleString()} → ${d.to.toLocaleString()}`).join(', ') +
+      `.\n> 아래 델타는 코드 변화가 아니라 데이터 변화의 결과일 수 있다. 코드 회귀로 읽지 말 것.\n\n`
+    : ''
+
   const section =
     `## ${stamp(snapshot.timestamp)} · ${snapshot.runs} runs · ` +
     `${cfg.formFactor}/${cfg.throttling} · ${compared}\n\n` +
+    driftLine +
+    (volumeLine ? `데이터: ${volumeLine}\n\n` : '') +
     [head, sep, ...rows].join('\n') +
     '\n'
 
   const header =
     '# 성능 지표 원장 (Lighthouse)\n\n' +
     '`pnpm perf` 로 자동 기록됨. 최신 측정이 맨 위. 셀 형식: `현재값 🟢/🔴델타`.\n' +
-    '🟢=이전 대비 개선, 🔴=회귀, (—)=오차 범위. 시간은 낮을수록, Perf 점수는 높을수록 좋음.\n' +
+    '🟢=이전 대비 개선, 🔴=회귀, (—)=오차 범위. 시간은 낮을수록, 점수(Perf/A11y/SEO)는 높을수록 좋음.\n' +
+    'A11y/SEO 는 Perf 점수의 median run 에서 함께 읽은 값이다 (`README.md` 참조).\n' +
     '원본 데이터는 `snapshots/` 참조. 지표 의미는 `README.md`.\n\n'
 
   let body = ''

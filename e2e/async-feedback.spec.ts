@@ -7,8 +7,8 @@ import { STORAGE_STATE } from './constants'
  *
  * 감사(audit)에서 발견한 P1 결함 — 요청 실패 시 "진행/실패/재시도"를
  * 사용자가 알 수 없는 지점 — 을 **네트워크 실패 주입**으로 재현한다.
- * 각 테스트는 "수정 후 기대 동작"을 기술하므로, 현재(버그) 코드에서는
- * 실패(red)하고 해당 P1 수정이 들어가면 통과(green)한다.
+ * 결함은 모두 수정됐고(10f8be1, 8982cc5), 이 파일은 재발 방지용 회귀
+ * 테스트로 남는다.
  *
  *  P1-1 D-day 추가 실패 → 버튼 영구 비활성화 금지 + 에러 안내
  *  P1-2 D-day 삭제 실패 → fire-and-forget 금지(데이터 유지 + 에러 안내)
@@ -71,7 +71,7 @@ test.describe('비동기 피드백 (P1)', () => {
     const addButton = modal.getByRole('button', { name: '추가' })
     await addButton.click()
 
-    // 버그: try/finally 부재로 saving=true 가 풀리지 않아 버튼이 영구 비활성화됨.
+    // 회귀 대상: try/finally 부재로 saving=true 가 풀리지 않아 버튼이 영구 비활성화됐다.
     // 기대: 실패 후 버튼이 다시 활성화되어 재시도할 수 있어야 한다.
     await expect(addButton).toBeEnabled({ timeout: 10_000 })
 
@@ -130,7 +130,7 @@ test.describe('비동기 피드백 (P1)', () => {
     await failMethod(page, '**/api/job-postings', 'GET')
     await page.goto('/jobs')
 
-    // 버그: error 를 무시해 "저장된 공고가 없습니다" 빈 상태로 오표시됨.
+    // 회귀 대상: error 를 무시해 "저장된 공고가 없습니다" 빈 상태로 오표시됐다.
     // 기대: 빈 상태 문구가 아니라 에러 상태가 보여야 한다.
     await expect(
       page.getByText('저장된 공고가 없습니다', { exact: false })
@@ -159,7 +159,7 @@ test.describe('비동기 피드백 (P1)', () => {
     const aside = page.locator('aside')
     await expect(aside).toBeVisible()
 
-    // 버그: error 를 버려 조용히 "+ D-day 추가" 빈 상태를 보여줌.
+    // 회귀 대상: error 를 버려 조용히 "+ D-day 추가" 빈 상태를 보여줬다.
     // 기대: 에러 표시 + 재시도 수단이 사이드바에 있어야 한다.
     const retry = aside.getByRole('button', { name: /다시 시도/ })
     await expect(retry).toBeVisible({ timeout: 10_000 })
@@ -219,9 +219,11 @@ test.describe('비동기 피드백 (P2·P3·P4)', () => {
   })
 
   test('P4 기록 로드 실패 시 재시도 버튼을 노출한다', async ({ page }) => {
-    await page.route('**/api/tasks**', async (route) => {
+    // 완료 기록은 집계 RPC 엔드포인트(/api/tasks/history)로 조회한다.
+    // 예전의 `/api/tasks?completed=true` 는 응답이 1000건에서 잘리는 문제로 대체됐다.
+    await page.route('**/api/tasks/history**', async (route) => {
       const req = route.request()
-      if (req.method() === 'GET' && req.url().includes('completed=true')) {
+      if (req.method() === 'GET') {
         await route.fulfill({
           status: 500,
           contentType: 'application/json',

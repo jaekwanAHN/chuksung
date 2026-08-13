@@ -48,6 +48,7 @@ next-env.d.ts
 
 # claude code (auto-generated agent memory, review outputs & personal local settings)
 .claude/agent-memory/
+.claude/worktrees/
 /reviews/
 .claude/settings.local.json
 .claude/worktrees/

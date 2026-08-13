@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
 import { PlannerProgress } from '../_components/tasks/PlannerProgress'
 import { QueryErrorRetry } from '../_components/QueryErrorRetry'
+import { useHydrated } from '@/hooks/useHydrated'
 import { TemplateManager } from '../_components/templates/TemplateManager'
 import { DayStartTimeModal } from '../_components/settings/DayStartTimeModal'
 
@@ -26,8 +27,10 @@ export default function DailyPlannerPage() {
   // 앵커의 초기값이 "유효 오늘"(하루 시작 시각 반영)이어야 하므로
   // 프로필 로드를 기다린 뒤 초기 날짜를 주입한다.
   // (layout의 서버 프리페치로 프로필이 캐시에 미리 실려 이 게이트는 사실상 즉시 통과)
+  // hydrated 를 함께 보는 이유는 docs/hydration.md 참조
+  const hydrated = useHydrated()
   const { ready, failed, retryProfile, effectiveToday } = useEffectiveToday()
-  if (!ready) {
+  if (!hydrated || !ready) {
     return (
       <div className="mx-auto max-w-3xl">
         <p className="text-sm text-zinc-500">불러오는 중…</p>
@@ -79,6 +82,7 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
     formOpen,
     editing,
     deletingId,
+    togglingIds,
     isMutating,
     openForm,
     closeForm,
@@ -200,6 +204,7 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
             deletingId={deletingId}
+            togglingIds={togglingIds}
           />
           <PlannerProgress tasks={tasks} />
         </>

@@ -8,6 +8,7 @@ import lighthouse from 'lighthouse'
 import { getAuthCookieHeader } from './auth.mjs'
 import { PAGES } from './pages.mjs'
 import { saveSnapshot, findPreviousSnapshot, appendHistory } from './ledger.mjs'
+import { measureDataVolume, formatVolume } from './volume.mjs'
 
 // .env.local 을 직접 로드 (Node 는 자동 로드하지 않음).
 for (const f of ['.env.local', '.env.test']) {
@@ -115,10 +116,19 @@ function stopServer(server) {
 }
 
 // ── Lighthouse 측정 ─────────────────────────────────────────
+// 카테고리 점수(0~1)를 0~100 으로. 카테고리가 없으면 null — 0 으로 기록하면
+// 원장에 근거 없는 회귀(🔴)가 찍힌다.
+function categoryScore(lhr, name) {
+  const s = lhr.categories[name]?.score
+  return s == null ? null : s * 100
+}
+
 function extract(lhr) {
   const a = lhr.audits
   return {
     score: (lhr.categories.performance.score ?? 0) * 100,
+    a11y: categoryScore(lhr, 'accessibility'),
+    seo: categoryScore(lhr, 'seo'),
     lcp: a['largest-contentful-paint'].numericValue,
     tbt: a['total-blocking-time'].numericValue,
     cls: a['cumulative-layout-shift'].numericValue,
@@ -183,11 +193,18 @@ async function main() {
       console.log(`  → Perf ${Math.round(results[page].score)}                `)
     }
 
+    // 데이터 볼륨을 함께 남긴다. 이게 없으면 볼륨이 다른 두 측정에 델타가 찍혀
+    // 코드 회귀로 오해된다 (2026-07-27 시딩 사건).
+    const volume = await measureDataVolume()
+    if (volume) console.log(`▸ 데이터 볼륨: ${formatVolume(volume)}`)
+    else console.log('▸ 데이터 볼륨을 세지 못했습니다 — 비교 조건 경고가 생략됩니다')
+
     const snapshot = {
       timestamp: new Date().toISOString(),
       runs: opts.runs,
       base,
       config: { formFactor: 'mobile', throttling: 'simulated' },
+      volume,
       results,
     }
 
