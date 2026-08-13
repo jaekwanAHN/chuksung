@@ -87,12 +87,12 @@ docs/
 ├── security/                   # API 남용 방어 목록·근거(README.md)·검증 절차(verification.md)
 ├── auth-redirects.md           # 리다이렉트 상호작용·프록시의 낙관적 세션 검증
 ├── hydration.md                # SSR 하이드레이션 불일치 사례·해결 패턴·회귀 감시
-└── task-race-guards.md         # 태스크 토글·삭제·편집의 경합 가드
+└── task-race-guards.md         # 경합 가드 — 태스크 토글·삭제·편집, 템플릿 변경
 ```
 
 > 일간·주간·월간 페이지는 공통 로직을 `usePlannerPage` 훅으로 공유하며, 로드 실패 시 `_components/QueryErrorRetry`로 재시도를, 뮤테이션 실패 시 `useToast`로 에러를 안내합니다.
 
-같은 대상을 건드리는 경로가 겹칠 때의 규칙은 문서로 남겨 두었습니다 — 태스크 토글·삭제·편집이 서로를 잠그는 기준은 [`docs/task-race-guards.md`](docs/task-race-guards.md), 로그인 상태에 따라 경로를 옮기는 세 지점이 서로를 먹지 않게 하는 방법은 [`docs/auth-redirects.md`](docs/auth-redirects.md) 참조.
+같은 대상을 건드리는 경로가 겹칠 때의 규칙은 문서로 남겨 두었습니다 — 태스크 토글·삭제·편집이 서로를 잠그는 기준과 템플릿 변경 시의 캐시 경합은 [`docs/task-race-guards.md`](docs/task-race-guards.md), 로그인 상태에 따라 경로를 옮기는 세 지점이 서로를 먹지 않게 하는 방법은 [`docs/auth-redirects.md`](docs/auth-redirects.md) 참조.
 
 ## 설치 및 실행
 

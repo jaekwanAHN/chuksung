@@ -77,6 +77,65 @@ test.describe('템플릿 관리 · 하루 시작 시각', () => {
     await page.keyboard.press('Escape')
   })
 
+  /**
+   * `useTaskTemplates` 의 `invalidateToday` 가 `invalidateQueries` 앞에 두는
+   * `cancelQueries` 를 고정한다. 그 한 줄을 지우면 이 테스트만 실패한다 —
+   * 위의 "템플릿을 추가하면…" 은 통과하므로 이 스펙 없이는 무방비다.
+   *
+   * 경합은 순서를 강제해야만 성립한다. 서버가 목록을 계산하는 시점이 템플릿 생성
+   * 이후로 밀리면 서버가 새 템플릿을 보게 되어 아무 일도 일어나지 않는다.
+   * 그래서 지연을 요청 전송이 아니라 **응답 전달**에만 건다.
+   */
+  test('진행 중인 일간 조회가 있어도 방금 추가한 템플릿이 즉시 반영된다', async ({
+    page,
+  }) => {
+    const title = `E2E 템플릿 ${Date.now()}`
+
+    let signalComputed!: () => void
+    const serverComputed = new Promise<void>((r) => (signalComputed = r))
+    let signalRelease!: () => void
+    const staleReleased = new Promise<void>((r) => (signalRelease = r))
+
+    // 첫 일간 조회만 가로챈다. 서버로는 즉시 보내 "템플릿이 없는 목록"을 계산하게
+    // 하고, 그 응답은 테스트가 풀어줄 때까지 붙잡아 둔다.
+    let intercepted = false
+    await page.route('**/api/tasks?**', async (route) => {
+      if (intercepted || !route.request().url().includes('scope=daily')) {
+        await route.continue()
+        return
+      }
+      intercepted = true
+      const response = await route.fetch()
+      signalComputed()
+      await staleReleased
+      await route.fulfill({ response })
+    })
+
+    await page.goto('/daily', { waitUntil: 'commit' })
+    await serverComputed
+
+    // 낡은 응답이 아직 도착하지 않은(= 조회가 진행 중인) 상태에서 템플릿을 추가한다
+    await page.getByRole('button', { name: '템플릿 관리' }).click()
+    const manager = page.getByRole('dialog')
+    await expect(manager).toBeVisible()
+    await manager.getByPlaceholder(/제목/).fill(title)
+    await manager.getByRole('button', { name: '템플릿 추가' }).click()
+    await expect(manager.getByText(title)).toBeVisible()
+    await page.keyboard.press('Escape')
+
+    // 템플릿이 생긴 뒤에 낡은 응답을 흘려보낸다. 취소되지 않았다면 이 응답이
+    // 신선한 데이터로 캐시에 안착해 새 태스크를 가린다.
+    signalRelease()
+
+    const seeded = page.locator('li').filter({ hasText: title })
+    await expect(seeded).toBeVisible({ timeout: 15000 })
+
+    // 정리 — 시딩된 태스크는 afterEach 가 지우지 않는다 (템플릿만 정리한다)
+    page.on('dialog', (dialog) => dialog.accept())
+    await seeded.getByRole('button', { name: '삭제' }).click()
+    await expect(seeded).not.toBeVisible()
+  })
+
   test('하루 시작 시각을 변경하면 버튼 라벨에 반영되고 원복된다', async ({
     page,
     request,
