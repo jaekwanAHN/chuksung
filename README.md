@@ -30,7 +30,7 @@
 - **D-day 관리**: 사이드바에서 D-day 추가·편집·삭제, D-숫자 실시간 표시
 - **테마**: 헤더 드롭다운으로 기본 / 에메랄드 / 인디고 / 레드 테마 전환 (localStorage 유지)
 - **페이지 전환 로딩**: 라우트 이동 시 상단 프로그레스 바 표시
-- **라우트 보호**: 미인증 시 대시보드 접근 시 `/login`으로 리다이렉트 ([`src/proxy.ts`](src/proxy.ts))
+- **라우트 보호**: 프록시가 세션을 보고 경로를 정합니다 — 미인증의 대시보드 접근은 `/login`으로, 루트 `/`는 인증 여부에 따라 `/daily` 또는 `/login`으로 ([`src/proxy.ts`](src/proxy.ts))
 - **푸터**: GitHub 링크·이메일 클릭 복사
 
 ## 디렉터리 구조 (요약)
@@ -50,7 +50,8 @@ src/
 │   │   ├── goal/               # 최종목표
 │   │   └── profile/            # 하루 시작 시각 등 프로필
 │   ├── auth/callback/          # OAuth 코드 교환
-│   ├── layout.tsx, providers.tsx, page.tsx
+│   ├── layout.tsx, providers.tsx
+│   └── page.tsx                # 루트 분기의 폴백 (평소엔 프록시가 먼저 처리)
 ├── components/
 │   ├── layout/                 # Sidebar, Header, Footer, NavigationProgress
 │   └── ui/                     # Button, Modal, Badge, EmptyState, Skeleton, Toast, useToast
@@ -75,15 +76,23 @@ supabase/
 └── migrations/                 # 순번 마이그레이션 (0000~, `pnpm db:push`로 적용)
 e2e/                            # Playwright 시나리오 + 가이드(README.md)
 scripts/
-├── perf/                       # Lighthouse 측정·진단 (run·diagnose·ledger·volume)
+├── perf/                       # Lighthouse 측정·진단 (run·diagnose·ledger·volume·auth·pages)
 └── dev-login.mjs               # 테스트 계정 세션을 브라우저에 주입
 docs/
-├── perf/                       # 측정 원장(history.md)·스냅샷·지표 해설(README.md)
+├── perf/
+│   ├── README.md               # 지표 해설·측정 방법
+│   ├── history.md              # 로컬 측정 원장 (pnpm perf 가 자동 기록)
+│   ├── deploy-latency.md       # 배포 URL 지연 측정 원장 (수동)
+│   └── function-region.md      # Vercel 함수 리전 결정과 프록시 배치의 사각지대
 ├── security/                   # API 남용 방어 목록·근거(README.md)·검증 절차(verification.md)
-└── hydration.md                # SSR 하이드레이션 불일치 사례·해결 패턴·회귀 감시
+├── auth-redirects.md           # 리다이렉트 상호작용·프록시의 낙관적 세션 검증
+├── hydration.md                # SSR 하이드레이션 불일치 사례·해결 패턴·회귀 감시
+└── task-race-guards.md         # 태스크 토글·삭제·편집의 경합 가드
 ```
 
 > 일간·주간·월간 페이지는 공통 로직을 `usePlannerPage` 훅으로 공유하며, 로드 실패 시 `_components/QueryErrorRetry`로 재시도를, 뮤테이션 실패 시 `useToast`로 에러를 안내합니다.
+
+같은 대상을 건드리는 경로가 겹칠 때의 규칙은 문서로 남겨 두었습니다 — 태스크 토글·삭제·편집이 서로를 잠그는 기준은 [`docs/task-race-guards.md`](docs/task-race-guards.md), 로그인 상태에 따라 경로를 옮기는 세 지점이 서로를 먹지 않게 하는 방법은 [`docs/auth-redirects.md`](docs/auth-redirects.md) 참조.
 
 ## 설치 및 실행
 
@@ -98,8 +107,11 @@ pnpm install
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase_anon_key>
-SUPABASE_SERVICE_ROLE_KEY=<supabase_service_role_key>
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
+
+# E2E·성능 측정용 테스트 계정 (없으면 인증 E2E 는 skip 되고 `pnpm perf` 는 실패합니다)
+E2E_TEST_USER_EMAIL=<test_user_email>
+E2E_TEST_USER_PASSWORD=<test_user_password>
 ```
 
 배포 시 `NEXT_PUBLIC_SITE_URL`은 실제 도메인으로 바꿉니다.
@@ -122,17 +134,22 @@ pnpm dev
 | `pnpm lint`            | ESLint                                                       |
 | `pnpm test:e2e`        | Playwright E2E 테스트 (헤드리스)                             |
 | `pnpm test:e2e:ui`     | Playwright UI 모드 (디버깅)                                  |
+| `pnpm test:e2e:trace`  | 트레이스를 항상 남기며 실행 (실패 원인 추적)                  |
 | `pnpm test:e2e:report` | 마지막 E2E HTML 리포트 열기                                  |
+| `pnpm test:e2e:view`   | 리포트를 외부 접속 가능한 호스트/포트로 열기                  |
 | `pnpm perf`            | Lighthouse 측정 → `docs/perf/history.md`에 델타 기록          |
 | `pnpm perf:diagnose`   | 상세 audit 출력 (메인스레드 분해·DOM 크기·번들) — 원인 진단용 |
 | `pnpm dev:login`       | 테스트 계정 세션을 띄운 브라우저에 주입                       |
 | `pnpm db:new <이름>`   | 새 마이그레이션 파일 생성                                    |
 | `pnpm db:push`         | 마이그레이션을 원격 Supabase에 적용                          |
+| `pnpm db:link`         | 로컬 저장소를 Supabase 프로젝트에 연결 (최초 1회)             |
+| `pnpm db:diff`         | 원격 스키마와 마이그레이션의 차이 확인                        |
 
 ## 테스트 · CI
 
 - **E2E**: [Playwright](https://playwright.dev) 기반. `pnpm dev` 서버를 자동으로 띄우고 실제 브라우저로 시나리오를 검증합니다. 인증 테스트는 Supabase 테스트 계정으로 세션을 발급해 재사용합니다. 상세는 [`e2e/README.md`](e2e/README.md) 참조.
-- **CI 게이트**: `main`으로의 Pull Request는 GitHub Actions에서 **`lint` · `build` · `e2e`** 를 모두 통과해야 병합할 수 있습니다 (`e2e`는 필수 상태 체크). 설정은 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) 참조.
+- **CI 게이트**: `main`으로의 Pull Request는 GitHub Actions의 **`lint-and-build`** 와 **`e2e`** 를 통과해야 병합할 수 있습니다 (둘 다 필수 상태 체크). 설정은 [`.github/workflows/ci.yml`](.github/workflows/ci.yml) 참조.
+- **배포 헬스 체크**: 별도 워크플로 **`health-check`** 가 배포된 사이트의 `/`·`/login`이 200을 내는지 확인합니다. 필수 체크는 아니며 **PR의 변경분이 아니라 이미 배포된 프로덕션을 봅니다** — 실패하면 배포 상태를 의심할 신호입니다. 설정은 [`.github/workflows/health-check.yml`](.github/workflows/health-check.yml) 참조.
 
 ## 보안 · 남용 방어
 
@@ -147,6 +164,8 @@ RLS로 남의 데이터를 막고 zod 화이트리스트로 임의 컬럼 주입
 ## 성능 측정
 
 `pnpm perf`가 프로덕션 빌드를 띄우고 페이지마다 5회 측정해 **중앙값**을 `docs/perf/history.md`에 델타로 쌓습니다. 지표 의미와 사용법은 [`docs/perf/README.md`](docs/perf/README.md) 참조.
+
+**측정 원장이 둘이고 서로 다른 것을 잽니다.** `history.md`는 **로컬** 프로덕션 빌드의 렌더링 지표(Perf·LCP·TBT…)를, [`docs/perf/deploy-latency.md`](docs/perf/deploy-latency.md)는 **배포된 URL**의 서버 응답 지연(TTFB)을 기록합니다. 로컬 측정은 사용자↔함수 거리와 콜드스타트가 없어 배포 환경의 지연을 구조적으로 보지 못합니다 — 실제로 로컬 원장이 양호한 동안 배포에서는 인증 API 하나가 1초를 썼습니다. 함수 리전 결정과 프록시 배치의 사각지대는 [`docs/perf/function-region.md`](docs/perf/function-region.md) 참조.
 
 측정 도구를 쓰면서 정한 규칙이 셋 있습니다.
 
@@ -167,6 +186,7 @@ RLS로 남의 데이터를 막고 zod 화이트리스트로 임의 컬럼 주입
 - **`job_postings`**: 취업공고 (`title`, `company`, `url`, `status`, `deadline`, `notes`)
 - **`quiz_categories`**: 퀴즈 카테고리 (`frontend`, `network`, `os` 등)
 - **`quiz_questions`**: 퀴즈 문제 (`question`, `answer`, `difficulty`, `tags`)
+- **`quiz_follow_ups`**: 문제별 꼬리 질문 (`question_id` 참조)
 - **`quiz_histories`**: 퀴즈 히스토리·즐겨찾기 (`is_bookmarked`)
 - **RPC `seed_daily_templates(date)`**: 활성 템플릿을 그날 일간 태스크로 시딩. 선점(`ON CONFLICT DO NOTHING`)과 삽입을 CTE 한 문에 묶어 단일 왕복·멱등·동시성 안전 (migration 0009)
 - **RPC `completed_history(...)`**: 완료 기록의 총계·주간·월간 집계, 일별 카운트, 필터된 목록을 한 번에 반환. 날짜 절단은 클라이언트가 넘긴 IANA 타임존 기준 (migration `20260728090454`)
