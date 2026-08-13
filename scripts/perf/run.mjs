@@ -116,10 +116,19 @@ function stopServer(server) {
 }
 
 // ── Lighthouse 측정 ─────────────────────────────────────────
+// 카테고리 점수(0~1)를 0~100 으로. 카테고리가 없으면 null — 0 으로 기록하면
+// 원장에 근거 없는 회귀(🔴)가 찍힌다.
+function categoryScore(lhr, name) {
+  const s = lhr.categories[name]?.score
+  return s == null ? null : s * 100
+}
+
 function extract(lhr) {
   const a = lhr.audits
   return {
     score: (lhr.categories.performance.score ?? 0) * 100,
+    a11y: categoryScore(lhr, 'accessibility'),
+    seo: categoryScore(lhr, 'seo'),
     lcp: a['largest-contentful-paint'].numericValue,
     tbt: a['total-blocking-time'].numericValue,
     cls: a['cumulative-layout-shift'].numericValue,
