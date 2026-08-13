@@ -176,6 +176,10 @@ for (const p of ['/api/tasks','/api/tasks/history','/daily','/login','/auth/call
 프록시가 보호하던 페이지 리다이렉트는 E2E 의 `login.spec.ts` · `navigation.spec.ts` 가
 덮으므로 별도 확인하지 않는다.
 
+프록시의 **낙관적 세션 검증**(README 5번)도 수동 절차 없이 E2E 가 덮는다 —
+`login.spec.ts` 의 "프록시의 낙관적 세션 검증" 그룹이 위조 서명 차단·만료 세션 갱신·
+리다이렉트의 쿠키 이관을 확인한다. 근거는 `docs/auth-redirects.md`.
+
 ## 6. `tz` 검증
 
 ```bash
@@ -208,7 +212,7 @@ curl -s -H "Cookie: $C" "$B/api/tasks?scope=daily&target_date=2030-01-01"
 ## 함께 도는 것
 
 - `pnpm lint && pnpm build`
-- `pnpm test:e2e` — 48개 전부 통과해야 한다. 스위트 전체가 레이트 리밋 상한 아래로
+- `pnpm test:e2e` — 전부 통과해야 한다 (2026-08-13 기준 56개). 스위트 전체가 레이트 리밋 상한 아래로
   들어오는지에 대한 확인을 겸한다. 여기서 `429` 가 나오면 상한이 정상 사용량보다
   낮게 잡힌 것이므로 `src/lib/api/rate-limit.ts` 의 상수를 재검토할 것
 
