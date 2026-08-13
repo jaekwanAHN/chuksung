@@ -16,8 +16,25 @@ function withRegion(response: NextResponse) {
   return response
 }
 
+/**
+ * 리다이렉트는 `updateSession` 이 만든 응답과 별개의 객체라, 갱신된 세션 쿠키를
+ * 옮겨 싣지 않으면 서버만 토큰을 바꾸고 브라우저는 옛 쿠키를 유지한다.
+ * 근거는 docs/auth-redirects.md 의 "리다이렉트도 쿠키를 싣는다"
+ */
+function redirectTo(path: string, request: NextRequest, from: NextResponse) {
+  const redirect = NextResponse.redirect(new URL(path, request.url))
+  from.cookies.getAll().forEach((cookie) => redirect.cookies.set(cookie))
+  return withRegion(redirect)
+}
+
 export async function proxy(request: NextRequest) {
   const { response, claims } = await updateSession(request)
+
+  // 루트 분기를 프록시가 맡는다. `app/page.tsx` 와 기준도 결과도 같지만, 여기서
+  // 끝내면 페이지 함수가 뜨지 않고 `getUser()` 왕복도 사라진다.
+  if (request.nextUrl.pathname === '/') {
+    return redirectTo(claims ? '/daily' : '/login', request, response)
+  }
 
   const protectedPaths = [
     '/daily',
@@ -34,7 +51,7 @@ export async function proxy(request: NextRequest) {
   )
 
   if (!claims && isProtected) {
-    return withRegion(NextResponse.redirect(new URL('/login', request.url)))
+    return redirectTo('/login', request, response)
   }
 
   // 프록시는 통과시켰는데 API 는 401 을 내는 상황에서는 되돌리지 않는다 — 되돌리면
@@ -44,7 +61,7 @@ export async function proxy(request: NextRequest) {
     request.nextUrl.searchParams.get(SESSION_INVALID_PARAM)
   )
   if (claims && request.nextUrl.pathname === '/login' && !sessionInvalid) {
-    return withRegion(NextResponse.redirect(new URL('/daily', request.url)))
+    return redirectTo('/daily', request, response)
   }
 
   return withRegion(response)
