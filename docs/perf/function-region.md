@@ -38,6 +38,9 @@ Vercel 신규 프로젝트의 기본 함수 리전은 **`iad1`(워싱턴 D.C.)**
 | 대시보드 레이아웃 프리페치 | `src/app/(dashboard)/layout.tsx` |
 | 각 Route Handler | `src/lib/api/route-helpers.ts` (`withAuth`) |
 
+이 표는 `#88` 착수 시점의 모습이다. 이후 프록시의 왕복은 로컬 JWT 검증으로(#90),
+루트 분기의 왕복은 분기를 프록시로 올려(#91) 없앴다.
+
 ## 측정
 
 `docs/perf/deploy-latency.md` 참조. 요약하면 인증 API 응답이 1초 안팎에서
