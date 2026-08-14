@@ -27,8 +27,14 @@ pnpm perf --help                  # 옵션 전체
   테스트 계정으로 로그인해 발급한 쿠키를 Lighthouse `Cookie` 헤더로 주입한다
   (`scripts/perf/auth.mjs`). 필요한 환경변수는 `.env.local` 의
   `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, `E2E_TEST_USER_EMAIL/PASSWORD`.
-- **비용 0 / 로컬 전용**: Lighthouse·chrome-launcher 모두 무료 OSS. 외부 전송
-  없이 로컬 서버를 로컬 Chrome(Playwright chromium)으로 측정한다.
+- **비용 0**: Lighthouse·chrome-launcher 모두 무료 OSS. 측정 결과를 외부로
+  보내지 않고, 로컬 서버를 로컬 Chrome(Playwright chromium)으로 측정한다.
+- **로컬인 것은 앱까지다 — DB 는 원격이다**: `.env.local` 의
+  `NEXT_PUBLIC_SUPABASE_URL` 이 가리키는 **호스팅된 Supabase(서울)** 에 그대로
+  붙는다. 그래서 로컬에서 0 이 되는 구간은 앱↔DB 가 아니라 브라우저↔앱이고,
+  아래 「측정 조건: 데이터 볼륨」이 필요한 이유이기도 하다 — 측정이 보는 데이터는
+  E2E·다른 세션과 **공유되는 원격 계정의 실제 행**이다. 배포 환경과의 나머지 차이는
+  `deploy-latency.md` 의 구간 표를 볼 것.
 
 ## 측정 지표
 
