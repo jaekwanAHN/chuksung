@@ -52,7 +52,8 @@ test.describe('취업공고 CRUD', () => {
     await expect(modal).toBeVisible()
     await modal.getByPlaceholder('공고 제목').fill(title)
     await modal.getByPlaceholder('회사명').fill('E2E 주식회사')
-    await modal.locator('input[type="date"]').fill(deadline)
+    // 라벨로 잡는다 — Field 래퍼의 연결이 끊기면 접근 이름이 없어 실패한다 (#103)
+    await modal.getByLabel('마감일').fill(deadline)
     await modal.getByRole('button', { name: '저장' }).click()
 
     const card = page.locator('li').filter({ hasText: title })
@@ -88,7 +89,7 @@ test.describe('취업공고 CRUD', () => {
     await expect(modal).toBeVisible()
     await modal.getByPlaceholder('공고 제목').fill(title)
     await modal.getByPlaceholder('회사명').fill('E2E 주식회사')
-    await modal.locator('select').selectOption('interviewing')
+    await modal.getByLabel('상태').selectOption('interviewing')
     await modal.getByRole('button', { name: '저장' }).click()
 
     const card = page.locator('li').filter({ hasText: title })

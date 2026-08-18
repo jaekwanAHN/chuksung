@@ -19,8 +19,14 @@ export function HistoryFilter({
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end">
       <div>
-        <label className="mb-1 block text-xs font-medium text-zinc-500">기간 (월)</label>
+        <label
+          htmlFor="history-month"
+          className="mb-1 block text-xs font-medium text-zinc-500"
+        >
+          기간 (월)
+        </label>
         <input
+          id="history-month"
           type="month"
           value={month}
           onChange={(e) => onMonthChange(e.target.value)}
@@ -28,8 +34,14 @@ export function HistoryFilter({
         />
       </div>
       <div className="flex-1">
-        <label className="mb-1 block text-xs font-medium text-zinc-500">카테고리</label>
+        <label
+          htmlFor="history-category"
+          className="mb-1 block text-xs font-medium text-zinc-500"
+        >
+          카테고리
+        </label>
         <select
+          id="history-category"
           value={category}
           onChange={(e) => onCategoryChange(e.target.value as TaskCategory | 'all')}
           className={`${inputClass} w-full sm:max-w-xs`}
