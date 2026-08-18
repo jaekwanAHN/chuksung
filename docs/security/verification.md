@@ -212,7 +212,7 @@ curl -s -H "Cookie: $C" "$B/api/tasks?scope=daily&target_date=2030-01-01"
 ## 함께 도는 것
 
 - `pnpm lint && pnpm build`
-- `pnpm test:e2e` — 전부 통과해야 한다 (2026-08-13 기준 56개). 스위트 전체가 레이트 리밋 상한 아래로
+- `pnpm test:e2e` — 전부 통과해야 한다 (2026-08-18 기준 58개). 스위트 전체가 레이트 리밋 상한 아래로
   들어오는지에 대한 확인을 겸한다. 여기서 `429` 가 나오면 상한이 정상 사용량보다
   낮게 잡힌 것이므로 `src/lib/api/rate-limit.ts` 의 상수를 재검토할 것
 
