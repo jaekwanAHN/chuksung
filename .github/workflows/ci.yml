@@ -49,6 +49,9 @@ jobs:
     concurrency:
       group: e2e-shared-account
       cancel-in-progress: false
+      # 기본값(single)은 pending 을 1개만 두고 나머지를 취소한다 — 게이트가
+      # 실행도 못 해 보고 죽는다. max 로 FIFO 대기시킨다.
+      queue: max
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}

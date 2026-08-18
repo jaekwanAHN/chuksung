@@ -77,16 +77,22 @@ pnpm test:e2e:report   # 마지막 HTML 리포트 열기
   - 프로세스 안: `workers: 1` 고정. 병렬 워커가 같은 계정의 시딩·설정·목록을
     동시에 건드리면 간섭으로 오탐이 발생합니다.
   - 프로세스 밖(CI): `.github/workflows/ci.yml` 의 `e2e` job 에
-    `concurrency: { group: e2e-shared-account, cancel-in-progress: false }`.
+    `concurrency: { group: e2e-shared-account, cancel-in-progress: false, queue: max }`.
     `workers: 1` 은 **한 러너 안에서만** 유효합니다 — PR 이 둘이면 러너가 둘이고
-    서로를 모릅니다. 그룹 이름은 PR·브랜치와 무관하게 **고정**이어야 합니다.
-    `github.ref` 를 섞으면 PR 마다 그룹이 갈려 아무것도 막지 못합니다.
+    서로를 모릅니다.
 
-  > **한계**: 그룹당 대기(pending)는 1개만 유지됩니다. PR 이 3개 이상 몰리면
-  > 가장 오래 기다리던 pending 이 취소되고, `e2e` 는 required check 라 그 PR 은
-  > 재실행 전까지 머지가 막힙니다. `cancel-in-progress: false` 는 **실행 중인**
-  > job 만 지켜 줍니다 — 중간에 죽으면 계정 데이터가 어중간한 상태로 남기 때문입니다.
-  > 계정을 여러 개로 나눠 처리량을 되찾는 방안은 #113(계정 프로비저닝) 이후 과제입니다.
+  세 값이 각각 하나씩 막습니다.
+
+  | 키 | 없으면 |
+  |---|---|
+  | `group` **고정 이름** | `github.ref` 를 섞으면 PR 마다 그룹이 갈려 아무것도 막지 못합니다 |
+  | `cancel-in-progress: false` | 실행 중인 e2e 가 중간에 죽어 계정 데이터가 어중간한 상태로 남습니다 |
+  | `queue: max` | 기본값 `single` 은 pending 을 **1개만** 두고 나머지를 취소합니다. PR 3개가 몰리면 가운데 것이 **실행도 못 해 보고** cancelled 로 끝나고, `e2e` 는 required check 라 재실행 전까지 머지가 막힙니다 |
+
+  > **남은 한계**: `queue: max` 로도 동시성이 늘지는 않습니다 — 취소 대신 FIFO 로
+  > 줄을 설 뿐이라 PR 이 몰리면 대기가 길어집니다(e2e 1회 ≈ 4분). 대기열 상한은
+  > 100개이고 그걸 넘으면 그때는 취소됩니다. 계정을 여러 개로 나눠 처리량 자체를
+  > 되찾는 방안은 #113(계정 프로비저닝) 이후 과제입니다.
 - **마커 + 자체 정리**: 생성 데이터는 `E2E <기능> ${Date.now()}` 제목을 쓰고
   테스트가 스스로 삭제합니다. 실패로 잔여물이 남아도 마커로 식별 가능합니다.
 - **덮어쓰기 값 복원은 API 로**: goal(PUT 전체 덮어쓰기)·하루 시작 시각처럼
