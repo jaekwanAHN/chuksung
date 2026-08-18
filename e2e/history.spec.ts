@@ -95,8 +95,8 @@ test.describe('완료 기록', () => {
     await page.goto('/history')
     await expect(page.getByText(title)).toBeVisible()
 
-    // 카테고리 필터 — 페이지의 select 는 카테고리 필터 하나뿐
-    const categorySelect = page.locator('select')
+    // 라벨로 잡는다 — 연결이 끊기면(#103) 접근 이름이 없어 이 셀렉터가 실패한다
+    const categorySelect = page.getByLabel('카테고리')
     await categorySelect.selectOption('interview')
     await expect(page.getByText(title)).not.toBeVisible()
     await categorySelect.selectOption('general')
@@ -110,7 +110,7 @@ test.describe('완료 기록', () => {
     const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1)
     const prevMonth = `${prev.getFullYear()}-${pad(prev.getMonth() + 1)}`
 
-    const monthInput = page.locator('input[type="month"]')
+    const monthInput = page.getByLabel('기간 (월)')
     await monthInput.fill(prevMonth)
     await expect(page.getByText(title)).not.toBeVisible()
     await monthInput.fill(currentMonth)
