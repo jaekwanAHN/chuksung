@@ -124,3 +124,13 @@ export const THEMES: Record<ThemeId, Theme> = {
 
 export const THEME_IDS = Object.keys(THEMES) as ThemeId[];
 export const DEFAULT_THEME_ID: ThemeId = "base";
+
+/**
+ * 테마 저장 위치. localStorage 가 아니라 쿠키인 이유는 `docs/hydration.md` 참조.
+ */
+export const THEME_COOKIE = "theme";
+
+/** 신뢰할 수 없는 입력(쿠키·localStorage)을 ThemeId 로 좁힌다. */
+export function toThemeId(value: string | null | undefined): ThemeId {
+  return value && value in THEMES ? (value as ThemeId) : DEFAULT_THEME_ID;
+}
