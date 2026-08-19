@@ -107,14 +107,11 @@ pnpm install
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase_anon_key>
-NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
 # E2E·성능 측정용 테스트 계정 (없으면 인증 E2E 는 skip 되고 `pnpm perf` 는 실패합니다)
 E2E_TEST_USER_EMAIL=<test_user_email>
 E2E_TEST_USER_PASSWORD=<test_user_password>
 ```
-
-배포 시 `NEXT_PUBLIC_SITE_URL`은 실제 도메인으로 바꿉니다.
 
 ### 개발 서버
 
