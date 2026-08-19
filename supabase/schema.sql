@@ -267,6 +267,122 @@ REVOKE ALL ON FUNCTION public.seed_daily_templates(date) FROM public;
 REVOKE ALL ON FUNCTION public.seed_daily_templates(date) FROM anon;
 GRANT EXECUTE ON FUNCTION public.seed_daily_templates(date) TO authenticated;
 
+-- 12-2. 완료 기록 집계 RPC (migration 20260728090454 반영)
+-- 집계(총계/주·월 완료/일별 카운트)를 DB가 전체 행에 대해 수행하고 목록은 한 페이지만
+-- 반환한다. 클라이언트 집계는 PostgREST max-rows(1000)에 걸려 조용히 잘렸다.
+-- SECURITY INVOKER 로 호출자 RLS 를 그대로 적용한다 — DEFINER 로 바꾸면 타인 기록이
+-- 집계에 섞인다. 날짜 절단을 전부 `at time zone p_tz` 로 맞추는 이유는 마이그레이션 주석 참조.
+CREATE OR REPLACE FUNCTION public.completed_history(
+  p_tz text DEFAULT 'UTC',
+  p_month text DEFAULT NULL,          -- 'yyyy-MM' 목록 필터. NULL 이면 전체 기간
+  p_category text DEFAULT 'all',      -- 'all' 이면 전 카테고리
+  p_limit int DEFAULT 40,             -- 0 이면 목록 없이 집계만 (월간 미니달력용)
+  p_offset int DEFAULT 0,
+  p_grid_start date DEFAULT NULL,     -- 일별 카운트 범위(히트맵/미니달력). NULL 이면 생략
+  p_grid_end date DEFAULT NULL
+)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY INVOKER
+STABLE
+AS $$
+DECLARE
+  v_today date;
+  v_week_start date;
+  v_month_start date;
+  v_range_start date;
+  v_range_end date;
+  v_total bigint;
+  v_this_week bigint;
+  v_this_month bigint;
+  v_filtered bigint;
+  v_rows jsonb;
+  v_day_counts jsonb;
+BEGIN
+  -- 사용자 타임존 기준 '오늘'과 주/월 경계. 주 시작은 월요일(클라이언트 weekStartsOn:1 과 일치).
+  v_today := (now() AT TIME ZONE p_tz)::date;
+  v_week_start := date_trunc('week', v_today::timestamp)::date;
+  v_month_start := date_trunc('month', v_today::timestamp)::date;
+
+  -- 목록 필터 범위
+  IF p_month IS NOT NULL THEN
+    v_range_start := to_date(p_month || '-01', 'YYYY-MM-DD');
+    v_range_end := (v_range_start + interval '1 month' - interval '1 day')::date;
+  END IF;
+
+  -- 집계는 전체 행에 대해 DB가 수행한다 (1000건 절단 없음).
+  SELECT
+    count(*),
+    count(*) FILTER (WHERE (completed_at AT TIME ZONE p_tz)::date >= v_week_start),
+    count(*) FILTER (WHERE (completed_at AT TIME ZONE p_tz)::date >= v_month_start)
+  INTO v_total, v_this_week, v_this_month
+  FROM public.tasks
+  WHERE is_completed AND completed_at IS NOT NULL;
+
+  -- 필터를 적용한 총 건수 ("완료된 태스크 (N건)" 표시용 — 페이지 크기와 무관해야 한다)
+  SELECT count(*)
+  INTO v_filtered
+  FROM public.tasks
+  WHERE is_completed
+    AND completed_at IS NOT NULL
+    AND (p_category = 'all' OR category = p_category)
+    AND (
+      v_range_start IS NULL
+      OR (completed_at AT TIME ZONE p_tz)::date BETWEEN v_range_start AND v_range_end
+    );
+
+  -- 목록 한 페이지
+  IF p_limit > 0 THEN
+    SELECT coalesce(jsonb_agg(to_jsonb(t) ORDER BY t.completed_at DESC), '[]'::jsonb)
+    INTO v_rows
+    FROM (
+      SELECT *
+      FROM public.tasks
+      WHERE is_completed
+        AND completed_at IS NOT NULL
+        AND (p_category = 'all' OR category = p_category)
+        AND (
+          v_range_start IS NULL
+          OR (completed_at AT TIME ZONE p_tz)::date BETWEEN v_range_start AND v_range_end
+        )
+      ORDER BY completed_at DESC
+      LIMIT p_limit OFFSET p_offset
+    ) t;
+  ELSE
+    v_rows := '[]'::jsonb;
+  END IF;
+
+  -- 일별 완료 수 (히트맵 12주 / 월간 미니달력). 범위를 호출자가 정해 한 함수로 둘 다 쓴다.
+  IF p_grid_start IS NOT NULL AND p_grid_end IS NOT NULL THEN
+    SELECT coalesce(jsonb_object_agg(d.day::text, d.cnt), '{}'::jsonb)
+    INTO v_day_counts
+    FROM (
+      SELECT (completed_at AT TIME ZONE p_tz)::date AS day, count(*) AS cnt
+      FROM public.tasks
+      WHERE is_completed
+        AND completed_at IS NOT NULL
+        AND (completed_at AT TIME ZONE p_tz)::date BETWEEN p_grid_start AND p_grid_end
+      GROUP BY 1
+    ) d;
+  ELSE
+    v_day_counts := '{}'::jsonb;
+  END IF;
+
+  RETURN jsonb_build_object(
+    'total', v_total,
+    'this_week', v_this_week,
+    'this_month', v_this_month,
+    'filtered_count', v_filtered,
+    'rows', coalesce(v_rows, '[]'::jsonb),
+    'day_counts', v_day_counts
+  );
+END;
+$$;
+
+REVOKE ALL ON FUNCTION public.completed_history(text, text, text, int, int, date, date) FROM public;
+REVOKE ALL ON FUNCTION public.completed_history(text, text, text, int, int, date, date) FROM anon;
+GRANT EXECUTE ON FUNCTION public.completed_history(text, text, text, int, int, date, date) TO authenticated;
+
 -- 13. CS 퀴즈 (migrations 0001·0003 반영. 문항 시드는 0002_quiz_seed.sql 참조)
 CREATE TYPE quiz_difficulty AS ENUM ('beginner', 'intermediate', 'advanced');
 

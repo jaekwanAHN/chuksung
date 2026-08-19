@@ -41,7 +41,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 검증: `pnpm lint && pnpm build`
 - E2E 테스트: `pnpm test:e2e` (UI 모드: `pnpm test:e2e:ui`)
 - 성능 측정: `pnpm perf` (전체) / `pnpm perf --page /daily` (특정 페이지) — Lighthouse 5회 median, 결과·델타는 `docs/perf/`에 기록. 상세는 `docs/perf/README.md`
-- DB 스키마 변경: `supabase/schema.sql` 수정 + `pnpm db:new <이름>` → `pnpm db:push`
+- DB 스키마 변경: `supabase/schema.sql` 수정 + `pnpm db:new <이름>` → `pnpm db:push`.
+  `schema.sql` 이 소스 오브 트루스이고 마이그레이션은 거기 도달하는 경로다 — 반영 누락은
+  **`pnpm db:check` 가 집행한다**(CI 의 `lint-and-build` 에서도 실행). 배경은
+  `docs/schema-source-of-truth.md`
 
 ## 하드 룰
 
