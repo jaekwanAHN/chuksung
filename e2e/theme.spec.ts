@@ -91,3 +91,49 @@ test.describe('테마 전환', () => {
     expect(errors.filter((m) => m.includes('Hydration failed'))).toEqual([])
   })
 })
+
+/**
+ * 라이트 전용 선언은 `globals.css` 의 `:root { color-scheme: light }` 한 줄이
+ * 담당한다. `color-scheme` 이 상속 속성이라는 데 기대는 구조라, 그 한 줄이
+ * 사라지면 폼 컨트롤이 조용히 다크로 반전된다 — 배경은 docs/color-scheme.md
+ *
+ * 라이트 모드로 개발하면 드러나지 않으므로 다크를 강제해 확인한다.
+ */
+test.describe('라이트 전용 선언 (다크 모드 강제)', () => {
+  test.skip(
+    () => !hasAuthState(),
+    'E2E_TEST_USER_EMAIL/PASSWORD 미설정 — 인증 테스트 건너뜀'
+  )
+  test.use({ storageState: STORAGE_STATE, colorScheme: 'dark' })
+
+  test('문서와 모든 폼 컨트롤이 라이트로 고정된다', async ({ page }) => {
+    await page.goto('/daily')
+
+    // 문서 수준 선언 — 개별 요소들이 이걸 상속한다
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () => getComputedStyle(document.documentElement).colorScheme
+        )
+      )
+      .toBe('light')
+
+    // 죽은 `prefers-color-scheme: dark` 블록이 되살아나면 body 가 밝은 배경에
+    // 밝은 글자(#ededed)를 받는다
+    expect(
+      await page.evaluate(() => getComputedStyle(document.body).color)
+    ).toBe('rgb(23, 23, 23)')
+
+    // 상속이 실제로 닿는지 — 목록의 완료 체크박스까지 포함해 전수 확인
+    const notLight = await page.evaluate(() =>
+      [...document.querySelectorAll('input, select, textarea')]
+        .filter((el) => {
+          const r = el.getBoundingClientRect()
+          return r.width > 0 && r.height > 0
+        })
+        .filter((el) => getComputedStyle(el).colorScheme !== 'light')
+        .map((el) => `${el.tagName.toLowerCase()}[type=${el.getAttribute('type') ?? ''}]`)
+    )
+    expect(notLight).toEqual([])
+  })
+})
