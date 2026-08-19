@@ -37,6 +37,10 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # schema.sql 반영 누락은 tsc·lint·build 가 보지 못한다 (SQL 파일이라서).
+      - name: Check schema.sql reflects migrations
+        run: pnpm db:check
+
       - name: Build
         run: pnpm build
 

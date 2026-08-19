@@ -18,6 +18,7 @@
     "db:new": "supabase migration new",
     "db:push": "supabase db push",
     "db:diff": "supabase db diff",
+    "db:check": "node scripts/db/check-schema-reflected.mjs",
     "dev:login": "node scripts/dev-login.mjs",
     "perf:diagnose": "node scripts/perf/diagnose.mjs"
   },
