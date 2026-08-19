@@ -45,16 +45,28 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 ## 하드 룰
 
+**구현 전에 이 절을 다시 읽는다.** 아래 대부분은 `tsc`·lint·build 가 잡지 못해
+코드 리뷰까지 가서야 드러난다. 맨 아래 두 항목만 `pnpm lint` 가 집행한다.
+
+**이 목록을 다른 파일로 복사하지 말 것.** 사본은 원본이 바뀔 때 조용히 어긋난다.
+`/work` 같은 커맨드에서는 이 절을 참조만 한다.
+
 - 데이터 변경(추가/수정/삭제)은 반드시 `useMutation` 사용. plain async `useCallback` 금지 (모범: `src/app/(dashboard)/_hooks/tasks/useTaskMutations.ts`)
 - 로딩/저장 상태는 `try/finally`로 반드시 해제할 것 (에러 시 버튼이 영구 비활성화되는 버그 방지)
 - 뮤테이션 실패는 반드시 사용자에게 알릴 것 — `@/components/ui/useToast` + `Toast`로 에러 토스트. 조용한 실패(무음) 금지 (참조: `usePlannerPage`, `useDdayManager`)
 - 쿼리 로드 실패에는 재시도 수단을 제공할 것 — 정적 에러 문구만 두지 말고 `_components/QueryErrorRetry`(훅의 `refetch` 연결)로 "다시 시도" 노출. 로드 에러를 무시해 빈 상태로 오표시하지 말 것
-- 훅 파일에는 `'use client'` 명시
-- 페이지 내비게이션은 `<Link>` 사용. `<button onClick={() => router.push(...)}>` 금지
+- **라우트 이동**은 `<Link>` 사용. `<button onClick={() => router.push(...)}>` 금지 — 우클릭 새 탭·hover URL 미리보기·시맨틱 내비를 잃는다
+  - **예외: 같은 라우트 안의 URL 상태 전환.** 필터·탭처럼 경로는 그대로고 쿼리스트링만 바뀌는 전환은 `router.push` 를 쓴다. 단 `useTransition` 으로 감싸 `isPending` 동안 컨트롤을 `disabled` 처리할 것 (참조: `quiz/_components/QuizContent.tsx` + `CategoryFilter.tsx`). 서버 컴포넌트가 `searchParams` 로 데이터를 다시 조회하는 구조라 전환에 지연이 있는데, `<Link>` 로는 그 지연을 표현할 수단이 없다
+  - 경로가 바뀌는 이동은 이 예외에 해당하지 않는다. 쿼리스트링만 바뀌더라도 전환이 즉시라면 `<Link>` 를 쓴다
 - 새 도메인 훅은 query key factory 패턴 유지 (참조: `taskKeys`)
-- 클라이언트에서 API 호출은 `@/lib/axios`의 `apiClient` 사용 (baseURL·401 → `/login` 리다이렉트 일원화). raw `fetch`나 개별 axios 인스턴스 생성 금지. 인증은 쿠키 세션이라 요청에 토큰을 붙이지 않는다 (참조: `withAuth`)
 - 새 Route Handler는 `@/lib/api/route-helpers`의 `withAuth`로 감싸고(미인증 시 401), 요청 본문은 `parseBody` + `@/lib/api/schemas`의 zod 스키마로 검증, DB 에러는 `dbError`로 응답할 것. raw body를 insert/update에 스프레드 금지 (참조: `src/app/api/tasks/route.ts`). `withAuth`가 레이트 리밋(429), `parseBody`가 본문 크기 상한(413)을 함께 처리하므로 우회하지 말 것 — 방어 목록은 `docs/security/README.md`
 - 클라이언트가 보낸 시각·날짜로 서버 분기를 만들지 말 것. 불가피하면 서버 시각과 대조해 허용 오차를 두고 검증할 것 (참조: `isTrustableClientNow`)
+
+아래 둘은 **`pnpm lint` 가 집행하므로 구현 중 따로 신경 쓰지 않아도 된다.** 규칙 자체는
+lint 가 담지 못하는 이유·범위까지 포함하므로 여기에 남긴다 (lint 는 그 부분집합을 잡는다).
+
+- 훅 파일에는 `'use client'` 명시 — `chuksung/require-use-client` 가 `use*.ts(x)` 를 검사한다. 훅이 아닌 파일이 클라이언트 훅을 쓰는 경우는 lint 대상이 아니다
+- 클라이언트에서 API 호출은 `@/lib/axios`의 `apiClient` 사용 (baseURL·401 → `/login` 리다이렉트 일원화). raw `fetch`나 개별 axios 인스턴스 생성 금지 — `no-restricted-imports`/`no-restricted-globals` 가 집행한다(route handler 는 서버 코드라 `fetch` 대상 제외). 인증은 쿠키 세션이라 요청에 토큰을 붙이지 않는다 (참조: `withAuth`)
 
 ## 컨벤션
 
