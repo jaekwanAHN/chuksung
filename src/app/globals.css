@@ -1,6 +1,10 @@
 @import "tailwindcss";
 
 :root {
+  /* 라이트 전용 앱임을 문서 수준에 한 번만 선언한다. color-scheme 은 상속되므로
+     폼 컨트롤마다 [color-scheme:light] 를 붙일 필요가 없다 — docs/color-scheme.md */
+  color-scheme: light;
+
   --background: #fafafa;
   --foreground: #171717;
   /* 테마 시스템이 --color-primary-* 를 주입하면 emerald 유틸리티에 반영됨 */
@@ -20,13 +24,6 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {

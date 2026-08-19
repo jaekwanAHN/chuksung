@@ -94,7 +94,7 @@ function DayStartTimeForm({
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onClick={openPicker}
-          className="w-full cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400 [color-scheme:light]"
+          className="w-full cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
         />
         <p className="text-xs text-zinc-500">
           이 시각부터 하루가 시작됩니다. 템플릿 자동 추가와 새 태스크의 기준

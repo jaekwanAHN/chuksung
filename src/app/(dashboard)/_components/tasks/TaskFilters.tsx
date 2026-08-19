@@ -50,7 +50,7 @@ export function TaskFilters({
         <div className="flex min-h-10 w-full items-center">
           {mode === 'category' ? (
             <select
-              className="h-10 w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
+              className="h-10 w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner"
               value={category}
               onChange={(e) =>
                 onCategoryChange(e.target.value as TaskCategory | 'all')
@@ -65,7 +65,7 @@ export function TaskFilters({
             </select>
           ) : mode === 'priority' ? (
             <select
-              className="h-10 w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner [color-scheme:light]"
+              className="h-10 w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner"
               value={priority === 'all' ? 'all' : String(priority)}
               onChange={(e) => {
                 const v = e.target.value

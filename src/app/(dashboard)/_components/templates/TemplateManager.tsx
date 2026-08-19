@@ -84,7 +84,7 @@ export function TemplateManager({
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value as TaskCategory)}
-              className={cn(inputClass, 'cursor-pointer [color-scheme:light]')}
+              className={cn(inputClass, 'cursor-pointer')}
             >
               {TASK_CATEGORY_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>
@@ -95,7 +95,7 @@ export function TemplateManager({
             <select
               value={priority}
               onChange={(e) => setPriority(Number(e.target.value) as TaskPriority)}
-              className={cn(inputClass, 'cursor-pointer [color-scheme:light]')}
+              className={cn(inputClass, 'cursor-pointer')}
             >
               {TASK_PRIORITY_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
@@ -146,7 +146,7 @@ export function TemplateManager({
                       <select
                         value={editCategory}
                         onChange={(e) => setEditCategory(e.target.value as TaskCategory)}
-                        className="w-full cursor-pointer rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400 [color-scheme:light]"
+                        className="w-full cursor-pointer rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
                       >
                         {TASK_CATEGORY_OPTIONS.map((c) => (
                           <option key={c.value} value={c.value}>
@@ -159,7 +159,7 @@ export function TemplateManager({
                         onChange={(e) =>
                           setEditPriority(Number(e.target.value) as TaskPriority)
                         }
-                        className="w-full cursor-pointer rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400 [color-scheme:light]"
+                        className="w-full cursor-pointer rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
                       >
                         {TASK_PRIORITY_OPTIONS.map((p) => (
                           <option key={p.value} value={p.value}>
@@ -217,7 +217,7 @@ export function TemplateManager({
                         checked={t.is_active}
                         onChange={(e) => toggleActive(t.id, e.target.checked)}
                         disabled={isDeleting}
-                        className="size-3.5 accent-zinc-800 [color-scheme:light]"
+                        className="size-3.5 accent-zinc-800"
                       />
                       활성
                     </label>
