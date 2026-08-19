@@ -154,15 +154,13 @@ git checkout -b fix/header-today-label
 
 ## 4~5. 구현
 
-`AGENTS.md` 「하드 룰」·「컨벤션」을 지킨다. 특히 자주 걸리는 것:
+**구현을 시작하기 전에 `AGENTS.md` 「하드 룰」 절을 다시 읽는다.** 그 절의 항목 대부분은
+`tsc`·lint·build 가 잡지 못해 코드 리뷰까지 가서야 드러나고, 그때는 6번 검증을 통과한
+뒤라 여기로 되돌아오는 비용이 가장 크다. 「컨벤션」도 함께 지킨다.
 
-- 데이터 변경은 `useMutation` — plain async `useCallback` 금지
-- 로딩/저장 상태는 `try/finally` 로 해제
-- 뮤테이션 실패는 `useToast` + `Toast` 로 알린다. 조용한 실패 금지
-- 쿼리 로드 실패에는 `QueryErrorRetry` 로 재시도 수단을 준다
-- 클라이언트 API 호출은 `@/lib/axios` 의 `apiClient`
-- 새 Route Handler는 `withAuth` + `parseBody` + zod 스키마 + `dbError`
-- 훅 파일에 `'use client'`, 내비게이션은 `<Link>`
+**여기에 룰을 복사해 두지 않는다.** 단일 원본은 `AGENTS.md` 다 — 사본을 두면 원본이
+바뀔 때 한쪽만 고쳐지고, 그 어긋남은 아무 신호 없이 남는다. 실제로 이 자리에 있던
+사본은 10개 중 8개만 담고 있었다.
 
 **설계 배경·근거·한계는 코드 주석이 아니라 `docs/` 문서에 남기고 코드에는 포인터만 둔다.**
 새 문서를 만들었으면 CP3의 변경 목록에 포함한다.

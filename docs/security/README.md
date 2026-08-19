@@ -19,7 +19,7 @@
 | RPC 무단 호출 | `completed_history`·`seed_daily_templates` 는 `security invoker` + `anon` 실행 권한 revoke |
 | 내부 구조 노출 | `dbError` 가 Postgres 메시지를 감추고 코드만 매핑 |
 | Open redirect | `/auth/callback` 이 `next` 를 내부 경로로만 허용 |
-| 위험한 URL 스킴 | `job_postings.url` 은 zod 에서 `https?` 만 허용 |
+| 위험한 URL 스킴 | `job_postings.url` 은 zod 에서 `https?` 만 허용 (쓰기) + 렌더 시점 `httpUrlOrNull` (7번) |
 
 ## 1. 레이트 리밋
 
@@ -129,12 +129,39 @@ GET /api/tasks?scope=daily&target_date=2030-01-01&client_now=2030-01-01T23:59
 `DB_ERROR_MAP` 에 없는 코드라 `500` 으로 나갔다. `Intl.DateTimeFormat` 으로 실재하는
 IANA 존인지 확인해 `400` 으로 돌려준다.
 
+## 7. 위험한 URL 스킴 — 쓰기만 막으면 남는 구멍
+
+`job_postings.url` 은 zod 에서 `https?` 만 허용한다. 그런데 그 검증은 **앞으로 저장될
+값**에만 걸리고, 컬럼에는 CHECK 제약이 없다 (`supabase/schema.sql`). 검증이 들어오기
+전에 저장된 행은 그대로 남아 있고, `PostingCard` 는 그 값을 `href` 에 그대로 넣었다.
+`javascript:` 스킴이면 클릭 시 실행된다.
+
+그래서 렌더 시점에 한 번 더 거른다. `httpUrlOrNull` (`src/lib/safe-url.ts`) 이
+`new URL()` 로 파싱해 `http:`/`https:` 만 통과시키고, 아니면 `null` 을 돌려 링크를
+렌더하지 않는다.
+
+**왜 DB CHECK 제약이 아닌가.** 위반 행이 이미 있으면 마이그레이션이 실패한다. 먼저
+정리해야 하는데, 그 정리는 사용자 데이터를 지우는 일이라 별도 판단이 필요하다.
+렌더 가드는 그 판단과 무관하게 노출을 닫는다.
+
+**한계 — 스킴이 없는 값도 링크가 사라진다.** `example.com` 처럼 스킴 없이 저장된 값은
+`new URL()` 이 던지므로 링크로 렌더되지 않는다. 원래도 상대경로로 잘못 이동하던 값이라
+기능 손실은 아니지만, `https://` 를 붙여 보정하지는 않는다 — 사용자가 의도한 URL 을
+짐작하는 셈이 된다.
+
+**노출 범위는 self-XSS 다.** RLS 로 본인 행만 보이므로 남의 화면에서 실행시킬 수 없다.
+
+검증은 `e2e/jobs.spec.ts` 가 자동으로 한다 — API 를 우회해 `javascript:` 행을 직접
+넣고, `/jobs` 에서 링크가 렌더되지 않는지 확인한 뒤 지운다.
+
 ## 남은 것
 
 - **전역 레이트 리밋**: 위에 적은 대로 현재는 인스턴스당이다. 다중 인스턴스 배포로
   가면 공유 저장소가 필요하다
 - **계정당 총량 쿼터**: 분당 호출은 제한되지만 누적 행 수에는 상한이 없다. 100행/분을
   계속 유지하면 결국 늘어난다. 테이블별 상한이 필요하면 DB 제약으로 거는 편이 낫다
+- **`job_postings.url` 의 기존 행 정리**: 7번의 렌더 가드는 노출을 닫을 뿐 데이터를
+  고치지 않는다. http(s) 아닌 값이 실제로 남아 있는지 조회하고 정리할지는 별도 판단이다
 - **CSRF**: 상태 변경이 쿠키 인증에 의존한다. Supabase 세션 쿠키가 `SameSite=Lax` 라
   크로스사이트 POST 에 쿠키가 실리지 않고, `application/json` 본문은 프리플라이트를
   요구하므로 현재는 열려 있지 않다. 쿠키 옵션이나 CORS 설정을 바꾸면 재검토할 것

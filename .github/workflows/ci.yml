@@ -37,6 +37,10 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # schema.sql 반영 누락은 tsc·lint·build 가 보지 못한다 (SQL 파일이라서).
+      - name: Check schema.sql reflects migrations
+        run: pnpm db:check
+
       - name: Build
         run: pnpm build
 
@@ -44,6 +48,14 @@ jobs:
     name: e2e
     # main 병합 전 게이트 — PR 이벤트에서만 실행(병합 후 push 재실행 불필요).
     if: github.event_name == 'pull_request'
+    # 전 PR 이 테스트 계정 하나를 공유하므로 러너를 가로질러 직렬화한다.
+    # 그룹 이름은 PR·브랜치와 무관하게 고정 (근거·한계: e2e/README.md).
+    concurrency:
+      group: e2e-shared-account
+      cancel-in-progress: false
+      # 기본값(single)은 pending 을 1개만 두고 나머지를 취소한다 — 게이트가
+      # 실행도 못 해 보고 죽는다. max 로 FIFO 대기시킨다.
+      queue: max
     runs-on: ubuntu-latest
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}

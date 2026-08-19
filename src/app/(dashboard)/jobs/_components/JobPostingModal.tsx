@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/Button'
 import type { CreateJobPostingInput, JobPosting, JobPostingStatus } from '@/types'
 import { STATUS_LABEL } from './constants'
 
+// <label> 이 컨트롤을 감싸 암시적으로 연결한다 (래퍼 한 곳으로 모든 필드에 적용).
 function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div>
-      <label className="mb-1 block text-xs font-medium text-zinc-500">{label}</label>
+    <label className="block">
+      <span className="mb-1 block text-xs font-medium text-zinc-500">{label}</span>
       {children}
-    </div>
+    </label>
   )
 }
 

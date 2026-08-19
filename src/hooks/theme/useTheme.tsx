@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
-import { DEFAULT_THEME_ID, THEMES, type ThemeId } from '@/lib/themes'
+import { THEME_COOKIE, THEMES, type ThemeId } from '@/lib/themes'
 
 interface ThemeContextValue {
   themeId: ThemeId
@@ -10,22 +10,32 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | null>(null)
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeId, setThemeId] = useState<ThemeId>(() => {
-    if (typeof window === 'undefined') return DEFAULT_THEME_ID
-    const stored = localStorage.getItem('theme') as ThemeId
-    return stored && stored in THEMES ? stored : DEFAULT_THEME_ID
-  })
+const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365
+
+function writeThemeCookie(id: ThemeId) {
+  const secure = location.protocol === 'https:' ? '; secure' : ''
+  document.cookie = `${THEME_COOKIE}=${id}; path=/; max-age=${ONE_YEAR_SECONDS}; samesite=lax${secure}`
+}
+
+/**
+ * 초기값은 서버가 쿠키에서 읽어 내려준다. 클라이언트가 저장소를 직접 읽어 첫 렌더를
+ * 정하면 서버와 어긋난다 — 배경은 `docs/hydration.md`.
+ */
+export function ThemeProvider({
+  initialThemeId,
+  children,
+}: {
+  initialThemeId: ThemeId
+  children: React.ReactNode
+}) {
+  const [themeId, setThemeId] = useState<ThemeId>(initialThemeId)
 
   useEffect(() => {
-    const theme = THEMES[themeId]
     const root = document.documentElement
-
-    for (const [key, value] of Object.entries(theme.cssVars)) {
+    for (const [key, value] of Object.entries(THEMES[themeId].cssVars)) {
       root.style.setProperty(key, value)
     }
-
-    localStorage.setItem('theme', themeId)
+    writeThemeCookie(themeId)
   }, [themeId])
 
   const setTheme = (id: ThemeId) => setThemeId(id)
