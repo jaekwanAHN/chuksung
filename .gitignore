@@ -51,4 +51,3 @@ next-env.d.ts
 .claude/worktrees/
 /reviews/
 .claude/settings.local.json
-.claude/worktrees/
