@@ -22,6 +22,9 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 새 작업 브랜치는 **항상 최신 main에서 시작**: `git checkout main && git pull origin main` 후 `git checkout -b <브랜치명>`
 - 브랜치명: `<type>/<kebab-case-요약>` (예: `feat/e2e-playwright`, `fix/modal-rounded-corners`)
 - main에 직접 커밋 금지. 작업은 브랜치 → PR로 병합
+- 여러 갈래를 **동시에** 진행할 때는 브랜치 대신 worktree로 시작한다: `pnpm wt:new <브랜치명>`,
+  끝나면 `pnpm wt:rm <브랜치명>`. 손으로 `git worktree add` 하지 말 것 — 부트스트랩이 빠져
+  빌드·E2E가 실패하거나, 포트·E2E 계정을 공유해 **조용한 오탐**이 난다 (→ 명령어)
 - PR 본문은 `.github/pull_request_template.md` 의 3절(작업 내용 / 변경사항 / 관련 이슈)을 따를 것. 검증 절차는 PR 본문이 아니라 저장소 문서에 남긴다
 
 ## 이슈
@@ -41,6 +44,10 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 검증: `pnpm lint && pnpm build`
 - E2E 테스트: `pnpm test:e2e` (UI 모드: `pnpm test:e2e:ui`)
 - 성능 측정: `pnpm perf` (전체) / `pnpm perf --page /daily` (특정 페이지) — Lighthouse 5회 median, 결과·델타는 `docs/perf/`에 기록. 상세는 `docs/perf/README.md`
+- 병렬 작업: `pnpm wt:new <브랜치>` (생성·부트스트랩) / `pnpm wt:rm <브랜치>` (삭제) /
+  `pnpm wt:ls` (슬롯 현황). 워크트리마다 포트와 E2E 계정이 갈린다. **`pnpm perf` 와
+  `pnpm db:push` 는 기본 체크아웃에서만** — 둘 다 공유 자원이 하나뿐이라 직렬이다.
+  슬롯 모델·계정 풀 만들기·한계는 `docs/parallel-work.md`
 - DB 스키마 변경: `supabase/schema.sql` 수정 + `pnpm db:new <이름>` → `pnpm db:push`.
   `schema.sql` 이 소스 오브 트루스이고 마이그레이션은 거기 도달하는 경로다 — 반영 누락은
   **`pnpm db:check` 가 집행한다**(CI 의 `lint-and-build` 에서도 실행). 배경은
