@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import { perfCredentials } from './account.mjs'
 
 /**
  * 측정 시점의 데이터 볼륨(행 수)을 센다.
@@ -9,15 +10,17 @@ import { createClient } from '@supabase/supabase-js'
  * 커밋 이분 탐색으로는 절대 찾을 수 없는 원인이었다.
  *
  * 그래서 측정마다 볼륨을 스냅샷에 남기고, 직전 측정과 다르면 원장에 경고를 붙인다.
+ * 계정은 getAuthCookieHeader 와 같은 것을 써야 한다 — 다른 계정을 세면 스냅샷의
+ * 볼륨이 측정 대상과 어긋난다 (`account.mjs`).
  *
  * 실패해도 측정을 막지 않는다 (best-effort). 볼륨을 못 세면 경고만 생략된다.
  */
 export async function measureDataVolume() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const email = process.env.E2E_TEST_USER_EMAIL
-  const password = process.env.E2E_TEST_USER_PASSWORD
-  if (!url || !anonKey || !email || !password) return null
+  const creds = perfCredentials()
+  if (!url || !anonKey || !creds) return null
+  const { email, password } = creds
 
   try {
     const supabase = createClient(url, anonKey)

@@ -99,7 +99,21 @@ export function appendHistory(historyPath, snapshot, prev) {
   // 측정 조건(데이터 볼륨)을 매 섹션에 남긴다. 지표는 데이터 양에 좌우되므로
   // 볼륨을 모르면 이 표가 무엇과 비교 가능한지 알 수 없다.
   const volumeLine = formatVolume(snapshot.volume)
-  const drift = volumeDrift(snapshot.volume, prev?.volume)
+
+  // 계정이 다르면 볼륨 차이는 드리프트가 아니라 "다른 데이터셋"이다. 델타를
+  // 코드 변화로 읽으면 안 되므로 드리프트 경고보다 먼저 알린다.
+  // 계정을 기록하기 전(2026-08-20 이전) 스냅샷은 account 가 없다. 그것도 "다르다"로
+  // 본다 — 같다고 볼 근거가 없는데 같다고 치면 경고가 조용히 사라진다.
+  const crossAccount = Boolean(snapshot.account) && Boolean(prev) && prev.account !== snapshot.account
+  const accountLine = crossAccount
+    ? `> ⚠️ **직전 측정과 계정이 다르다** (${prev.account ?? '미기록'} → ${snapshot.account}).\n` +
+      `> 아래 델타는 코드 비교가 아니다. 이 측정을 새 기준선으로 삼을 것.\n\n`
+    : snapshot.account === 'e2e'
+      ? `> ⚠️ **E2E 공유 계정으로 측정했다** — \`PERF_TEST_USER_*\` 미설정.\n` +
+        `> E2E 가 이 계정의 데이터를 바꾸므로 볼륨이 고정되지 않는다 (\`accounts.md\`).\n\n`
+      : ''
+
+  const drift = crossAccount ? [] : volumeDrift(snapshot.volume, prev?.volume)
   const driftLine = drift.length
     ? `> ⚠️ **직전 측정과 데이터 볼륨이 다르다** — ` +
       drift.map((d) => `${d.key} ${d.from.toLocaleString()} → ${d.to.toLocaleString()}`).join(', ') +
@@ -109,6 +123,7 @@ export function appendHistory(historyPath, snapshot, prev) {
   const section =
     `## ${stamp(snapshot.timestamp)} · ${snapshot.runs} runs · ` +
     `${cfg.formFactor}/${cfg.throttling} · ${compared}\n\n` +
+    accountLine +
     driftLine +
     (volumeLine ? `데이터: ${volumeLine}\n\n` : '') +
     [head, sep, ...rows].join('\n') +

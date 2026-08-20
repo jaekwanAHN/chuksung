@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { perfCredentials } from './account.mjs'
 
 /**
  * e2e/auth.setup.ts 와 동일한 방식으로 Supabase 테스트 사용자로 로그인해
@@ -7,23 +8,25 @@ import { createServerClient } from '@supabase/ssr'
  * 앱 로그인은 Google/Kakao OAuth 전용이므로 UI 자동화 대신
  * signInWithPassword 로 쿠키를 직접 발급한다.
  *
+ * 계정은 PERF_TEST_USER_* → E2E_TEST_USER_* 순으로 고른다 (`account.mjs`).
  * 필요한 환경변수 (.env.local): NEXT_PUBLIC_SUPABASE_URL,
- * NEXT_PUBLIC_SUPABASE_ANON_KEY, E2E_TEST_USER_EMAIL, E2E_TEST_USER_PASSWORD
+ * NEXT_PUBLIC_SUPABASE_ANON_KEY, PERF_TEST_USER_EMAIL, PERF_TEST_USER_PASSWORD
  *
  * @returns {Promise<string>} "name1=value1; name2=value2" 형태의 Cookie 헤더 값
  */
 export async function getAuthCookieHeader() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const email = process.env.E2E_TEST_USER_EMAIL
-  const password = process.env.E2E_TEST_USER_PASSWORD
+  const creds = perfCredentials()
 
-  if (!url || !anonKey || !email || !password) {
+  if (!url || !anonKey || !creds) {
     throw new Error(
       '인증 환경변수 누락: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY / ' +
-        'E2E_TEST_USER_EMAIL / E2E_TEST_USER_PASSWORD 를 .env.local 에 설정하세요.'
+        'PERF_TEST_USER_EMAIL / PERF_TEST_USER_PASSWORD (또는 E2E_TEST_USER_*) 를 ' +
+        '.env.local 에 설정하세요.'
     )
   }
+  const { email, password } = creds
 
   // 라이브러리 자신의 인코딩/청킹 로직으로 쿠키를 생성하기 위해
   // server client 에 커스텀 쿠키 스토어를 연결한다 (auth.setup.ts 와 동일).

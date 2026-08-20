@@ -20,6 +20,7 @@
     "db:diff": "supabase db diff",
     "db:check": "node scripts/db/check-schema-reflected.mjs",
     "dev:login": "node scripts/dev-login.mjs",
+    "e2e:provision": "node scripts/e2e/provision-account.mjs",
     "perf:diagnose": "node scripts/perf/diagnose.mjs"
   },
   "dependencies": {
