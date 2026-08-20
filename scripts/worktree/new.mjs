@@ -69,21 +69,31 @@ function run(cmd, args, cwd) {
  * 기본 체크아웃과 나란히 놓고 읽을 수 있다.
  */
 function renderEnv(baseText, { slot, account }) {
+  const isDropped = (line) => {
+    const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=/.exec(line)
+    if (!m) return false
+    const key = m[1]
+    if (STRIPPED_PREFIXES.some((p) => key.startsWith(p))) return true
+    if (OVERWRITTEN_KEYS.includes(key)) return true
+    // 계정 풀(_1, _2, …)은 기본 체크아웃만 들고 있는다. 워크트리에서
+    // wt:new 를 또 부르는 것을 막는 효과도 있다.
+    return /^E2E_TEST_USER_(EMAIL|PASSWORD)_\d+$/.test(key)
+  }
+
+  // 빈 줄로 나뉜 덩어리 단위로 본다. 덩어리의 키가 **전부** 빠지면 그 위의
+  // 주석도 함께 버린다 — 키 단위로만 지우면 "계정 풀" 같은 제목만 남아
+  // 아무것도 없는 절이 생긴다.
   const kept = baseText
-    .split('\n')
-    .filter((line) => {
-      const m = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=/.exec(line)
-      if (!m) return true
-      const key = m[1]
-      if (STRIPPED_PREFIXES.some((p) => key.startsWith(p))) return false
-      if (OVERWRITTEN_KEYS.includes(key)) return false
-      // 계정 풀(_1, _2, …)은 기본 체크아웃만 들고 있는다. 워크트리에서
-      // wt:new 를 또 부르는 것을 막는 효과도 있다.
-      if (/^E2E_TEST_USER_(EMAIL|PASSWORD)_\d+$/.test(key)) return false
-      return true
+    .split(/\n\s*\n/)
+    .map((block) => {
+      const lines = block.split('\n')
+      const keys = lines.filter((l) => /^\s*[A-Za-z_][A-Za-z0-9_]*\s*=/.test(l))
+      if (keys.length > 0 && keys.every(isDropped)) return null
+      const surviving = lines.filter((l) => !isDropped(l))
+      return surviving.some((l) => l.trim()) ? surviving.join('\n').trimEnd() : null
     })
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
+    .filter(Boolean)
+    .join('\n\n')
     .trimEnd()
 
   return `${kept}
