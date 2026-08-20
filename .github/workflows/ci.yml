@@ -13,6 +13,8 @@ jobs:
   lint-and-build:
     name: lint-and-build
     runs-on: ubuntu-latest
+    # 상한이 없으면 GitHub 기본값 6시간이 걸린다 (근거: e2e/README.md 「CI 시간 상한」).
+    timeout-minutes: 10
     env:
       NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
       NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder-anon-key
@@ -55,6 +57,9 @@ jobs:
       # 실행도 못 해 보고 죽는다. max 로 FIFO 대기시킨다.
       queue: max
     runs-on: ubuntu-latest
+    # 직렬화는 "실행 중인 job 은 언젠가 끝난다"를 전제한다 — 상한이 그 전제를
+    # 지킨다. 값의 근거와 조이는 조건: e2e/README.md 「CI 시간 상한」.
+    timeout-minutes: 30
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
       NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -76,7 +81,30 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # apt 는 끊긴 커넥션이 아니라 멈춘 커넥션에는 기본 타임아웃이 없다.
+      # --with-deps 가 부르는 apt-get update 가 그 경로를 탄다.
+      - name: apt 네트워크 상한 설정
+        run: |
+          sudo tee /etc/apt/apt.conf.d/99timeout >/dev/null <<'EOF'
+          Acquire::http::Timeout "30";
+          Acquire::https::Timeout "30";
+          Acquire::Retries "3";
+          EOF
+
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
+      # 브라우저 바이너리 다운로드 분산을 없앤다. 캐시가 적중해도 --with-deps 의
+      # apt 경로는 남으므로 위 상한이 함께 필요하다.
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright browsers
+        timeout-minutes: 20
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run E2E tests
