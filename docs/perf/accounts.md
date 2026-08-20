@@ -31,16 +31,20 @@ job_postings +4, quiz_histories +8 — 아무도 성능 작업을 하지 않은 
 ## 계정 만들기
 
 ```bash
-pnpm e2e:provision --email perf@<도메인>
-pnpm e2e:provision --email perf@<도메인> --dry-run   # 복제 대상 행 수만 센다
+pnpm e2e:provision --use perf --email perf@<도메인>
+pnpm e2e:provision --use perf --email perf@<도메인> --dry-run   # 복제 대상 행 수만 센다
 ```
 
 `SUPABASE_SERVICE_ROLE_KEY` 가 필요하다 (Supabase 대시보드 → Project Settings → API).
 스크립트는 계정을 만들고 **원본 계정(기본값 `E2E_TEST_USER_EMAIL`)의 데이터를 복제한다.**
 끝나면 `.env.local` 에 붙여넣을 `PERF_TEST_USER_*` 두 줄을 출력한다.
 
-`--email` 은 여러 번 줄 수 있다. 계정을 N개로 늘리는 후속 작업(병렬 E2E 등)은 원본을
-한 번만 읽고 그만큼 반복한다.
+**`--use perf` 를 빠뜨리면 실행되지 않는다.** 같은 스크립트가 병렬 작업용 E2E 계정
+풀(`--use slot`)도 만들기 때문이다 — 용도에 따라 출력하는 환경변수 이름이 갈린다.
+잘못 고르면 perf 가 E2E 계정을 가리키게 되고, 이 문서가 지키려는 볼륨 고정이 깨진다.
+
+`--email` 은 여러 번 줄 수 있다. 원본은 한 번만 읽고 그만큼 반복한다 — E2E 계정 풀을
+만드는 쪽이 이 경로를 쓴다 (`docs/parallel-work.md`).
 
 ### 복제 대상
 

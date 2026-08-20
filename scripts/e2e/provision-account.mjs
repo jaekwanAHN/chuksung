@@ -2,13 +2,15 @@
 /**
  * 테스트 계정을 하나(또는 여럿) 새로 만들고, 기준 계정의 데이터를 그대로 복제한다.
  *
- * 쓰임새: perf 측정 전용 계정을 E2E 계정에서 떼어내기 위한 일회성 프로비저닝.
- * 배경·제약·복제 대상 선정 근거는 docs/perf/accounts.md 를 볼 것.
+ * 쓰임새 두 가지. `--use` 로 고르며, 출력하는 환경변수 이름이 달라진다.
+ *   perf  perf 측정 전용 계정을 E2E 계정에서 떼어낸다  → docs/perf/accounts.md
+ *   slot  병렬 작업용 E2E 계정 풀을 만든다             → docs/parallel-work.md
+ * 배경·제약·복제 대상 선정 근거는 위 문서를 볼 것.
  *
  * 사용법:
- *   node scripts/e2e/provision-account.mjs --email perf@example.com
- *   node scripts/e2e/provision-account.mjs --email a@x.com --email b@x.com   # N개
- *   node scripts/e2e/provision-account.mjs --email perf@example.com --dry-run
+ *   node scripts/e2e/provision-account.mjs --use perf --email perf@example.com
+ *   node scripts/e2e/provision-account.mjs --use slot --email a@x.com --email b@x.com
+ *   node scripts/e2e/provision-account.mjs --use slot --email a@x.com --dry-run
  *
  * 필요한 환경변수 (.env.local):
  *   NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
@@ -40,16 +42,41 @@ const DROPPED_COLUMNS = new Set(['id', 'user_id'])
 const INSERT_BATCH = 500
 const SELECT_PAGE = 1000
 
+/**
+ * 만든 계정을 `.env.local` 에 어떤 이름으로 넣을지.
+ *
+ * 이 스크립트는 perf 계정을 떼어내려고 생겼지만(#113) 지금은 병렬 작업용 E2E
+ * 계정 풀도 만든다(#135). 용도를 묻지 않고 `PERF_TEST_USER_*` 를 출력하면,
+ * 그 안내를 따랐을 때 **perf 가 E2E 계정을 가리키게 된다** — `docs/perf/accounts.md`
+ * 가 경고하는 바로 그 사고다. 그래서 용도를 인자로 받는다.
+ */
+const USES = {
+  perf: () => ['PERF_TEST_USER_EMAIL', 'PERF_TEST_USER_PASSWORD'],
+  // 슬롯 번호가 붙는다. 풀 크기는 _1 부터 끊길 때까지 세어 정한다
+  // (scripts/worktree/slots.mjs, docs/parallel-work.md).
+  slot: (i) => [`E2E_TEST_USER_EMAIL_${i}`, `E2E_TEST_USER_PASSWORD_${i}`],
+}
+
 function parseArgs(argv) {
-  const opts = { emails: [], from: process.env.E2E_TEST_USER_EMAIL, password: null, dryRun: false }
+  const opts = {
+    emails: [],
+    from: process.env.E2E_TEST_USER_EMAIL,
+    password: null,
+    dryRun: false,
+    use: null,
+  }
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--email') opts.emails.push(argv[++i])
     else if (a === '--from') opts.from = argv[++i]
     else if (a === '--password') opts.password = argv[++i]
+    else if (a === '--use') opts.use = argv[++i]
     else if (a === '--dry-run') opts.dryRun = true
     else if (a === '--help' || a === '-h') opts.help = true
     else throw new Error(`알 수 없는 인자: ${a}`)
+  }
+  if (opts.use && !(opts.use in USES)) {
+    throw new Error(`--use 는 ${Object.keys(USES).join(' | ')} 중 하나입니다: ${opts.use}`)
   }
   return opts
 }
@@ -59,6 +86,9 @@ const HELP = `테스트 계정 프로비저닝 (기준 계정 데이터 복제)
   --email <addr>    만들 계정. 여러 번 지정하면 그만큼 만든다 (필수)
   --from <addr>     복제 원본 계정 (기본: E2E_TEST_USER_EMAIL)
   --password <pw>   비밀번호 (기본: 계정마다 랜덤 생성 후 출력)
+  --use <용도>      만든 계정을 .env.local 에 넣을 이름 (필수)
+                      perf  → PERF_TEST_USER_*        (docs/perf/accounts.md)
+                      slot  → E2E_TEST_USER_*_<번호>  (docs/parallel-work.md)
   --dry-run         복제 대상 행 수만 세고 아무것도 쓰지 않는다
 `
 
@@ -235,6 +265,9 @@ async function main() {
   if (opts.help) return console.log(HELP)
   if (opts.emails.length === 0) throw new Error(`--email 이 필요합니다.\n\n${HELP}`)
   if (!opts.from) throw new Error('--from 또는 E2E_TEST_USER_EMAIL 이 필요합니다.')
+  // 기본값을 두지 않는다. 용도를 잘못 고르면 perf 가 E2E 계정을 가리키게 되고,
+  // 그 사고는 몇 주 뒤에야 드러난다 (docs/perf/accounts.md).
+  if (!opts.use) throw new Error(`--use 가 필요합니다 (perf | slot).\n\n${HELP}`)
 
   const admin = serviceClient()
   console.log(`원본 계정: ${opts.from}`)
@@ -247,7 +280,7 @@ async function main() {
 
   if (opts.dryRun) return console.log('\n--dry-run — 아무것도 쓰지 않았습니다.')
 
-  for (const email of opts.emails) {
+  for (const [i, email] of opts.emails.entries()) {
     console.log(`\n${email} 프로비저닝…`)
     const result = await provisionAccount(admin, { email, password: opts.password, source })
     for (const t of CLONED_TABLES) {
@@ -255,10 +288,12 @@ async function main() {
       const ok = actual === result.counts[t]
       console.log(`  ${t.padEnd(28)} ${actual}${ok ? '' : ` ⚠️ 기대 ${result.counts[t]}`}`)
     }
+    // slot 은 1번부터 센다 — 슬롯 0 은 기본 체크아웃의 기존 계정이다.
+    const [emailKey, passwordKey] = USES[opts.use](i + 1)
     console.log(`\n  user_id: ${result.userId}`)
-    console.log('  .env.local 에 추가하세요:')
-    console.log(`    PERF_TEST_USER_EMAIL=${result.email}`)
-    console.log(`    PERF_TEST_USER_PASSWORD=${result.password}`)
+    console.log('  기본 체크아웃의 .env.local 에 추가하세요:')
+    console.log(`    ${emailKey}=${result.email}`)
+    console.log(`    ${passwordKey}=${result.password}`)
   }
 }
 

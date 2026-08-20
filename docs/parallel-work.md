@@ -125,12 +125,16 @@ perf 를 돌려도 그 계정에 닿지 못한다.
 기본 체크아웃 `.env.local` 에 슬롯 수만큼 계정을 둔다.
 
 ```bash
-pnpm e2e:provision --email <슬롯1 주소> --email <슬롯2 주소>
+pnpm e2e:provision --use slot --email <슬롯1 주소> --email <슬롯2 주소>
 ```
 
 `scripts/e2e/provision-account.mjs` 가 기준 계정(`E2E_TEST_USER_EMAIL`)의 데이터를
-복제해 계정을 만들고, 붙여넣을 두 줄을 출력한다. 출력의 `PERF_TEST_USER_*` 를
-**슬롯 번호를 붙인 이름으로 바꿔** 넣는다.
+복제해 계정을 만들고, 그대로 붙여넣을 두 줄을 출력한다.
+
+**`--use slot` 을 빠뜨리면 실행되지 않는다.** 같은 스크립트가 perf 계정도 만들기
+때문이다 — 용도를 묻지 않고 `PERF_TEST_USER_*` 를 출력하던 시절의 안내를 그대로
+따르면 perf 가 E2E 계정을 가리키게 되고, 그 사고는 몇 주 뒤에야 드러난다
+(`docs/perf/accounts.md`). `--use perf` 는 perf 계정용이다.
 
 ```bash
 # 기본 체크아웃 .env.local
