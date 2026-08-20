@@ -1,0 +1,152 @@
+{
+  "timestamp": "2026-08-20T09:19:46.675Z",
+  "runs": 7,
+  "base": "https://chuksung.vercel.app",
+  "account": "e2e",
+  "proxyRegion": "sin1",
+  "deploySha": null,
+  "expectedFunctionRegion": "icn1",
+  "controlPath": "/_next/static/chunks/0x7-o-3fxm6uk.css",
+  "results": {
+    "정적 파일 (대조군)": {
+      "cold": 16.924800000000005,
+      "warm": 13.43380000000002,
+      "status": 200,
+      "segments": 1,
+      "edge": "icn1",
+      "functionRegion": null,
+      "proxyRegion": null,
+      "deploySha": null,
+      "note": "CDN 엣지 — 회선 상태 판정용",
+      "samples": [
+        17,
+        15,
+        12,
+        11,
+        17,
+        14,
+        13
+      ]
+    },
+    "/login (비인증)": {
+      "cold": 132.694701,
+      "warm": 126.74360100000013,
+      "status": 200,
+      "segments": 2,
+      "edge": "icn1",
+      "functionRegion": "icn1",
+      "proxyRegion": "sin1",
+      "deploySha": null,
+      "note": "200, 페이지 함수 기동",
+      "samples": [
+        133,
+        125,
+        128,
+        123,
+        133,
+        144,
+        127
+      ]
+    },
+    "/login (인증)": {
+      "cold": 103.03649999999993,
+      "warm": 116.18020100000012,
+      "status": 307,
+      "segments": 1,
+      "edge": "icn1",
+      "functionRegion": null,
+      "proxyRegion": "sin1",
+      "deploySha": null,
+      "note": "307, 순수 프록시 비용",
+      "samples": [
+        103,
+        298,
+        100,
+        149,
+        116,
+        135,
+        99
+      ]
+    },
+    "/ (인증)": {
+      "cold": 133.13049999999976,
+      "warm": 129.90870099999984,
+      "status": 307,
+      "segments": 1,
+      "edge": "kix1",
+      "functionRegion": null,
+      "proxyRegion": "sin1",
+      "deploySha": null,
+      "note": "307 → /daily",
+      "samples": [
+        133,
+        103,
+        130,
+        332,
+        207,
+        109,
+        155
+      ]
+    },
+    "/daily (인증)": {
+      "cold": 146.96669999999995,
+      "warm": 130.94810099999995,
+      "status": 200,
+      "segments": 2,
+      "edge": "icn1",
+      "functionRegion": "icn1",
+      "proxyRegion": "sin1",
+      "deploySha": null,
+      "note": "SSR 셸",
+      "samples": [
+        147,
+        195,
+        130,
+        128,
+        131,
+        211,
+        208
+      ]
+    },
+    "/api/profile (인증)": {
+      "cold": 180.3111000000008,
+      "warm": 116.66550000000007,
+      "status": 200,
+      "segments": 2,
+      "edge": "icn1",
+      "functionRegion": "icn1",
+      "proxyRegion": null,
+      "deploySha": null,
+      "note": "getUser + 1행 조회",
+      "samples": [
+        180,
+        416,
+        152,
+        148,
+        110,
+        117,
+        100
+      ]
+    },
+    "/api/tasks?scope=weekly (인증)": {
+      "cold": 179.3206,
+      "warm": 156.61629999999968,
+      "status": 200,
+      "segments": 2,
+      "edge": "icn1",
+      "functionRegion": "icn1",
+      "proxyRegion": null,
+      "deploySha": null,
+      "note": "프록시 밖(matcher 제외)",
+      "samples": [
+        179,
+        148,
+        133,
+        157,
+        162,
+        183,
+        175
+      ]
+    }
+  }
+}
