@@ -22,7 +22,7 @@ import {
   portForSlot,
   readEnvFile,
   slugify,
-  withSlotLock,
+  withRepoLock,
 } from './slots.mjs'
 
 const HELP = `병렬 작업용 워크트리 생성 (포트·E2E 계정 슬롯 자동 배정)
@@ -138,7 +138,7 @@ function main() {
   // 있으면 두 프로세스가 같은 번호를 집는다 — 그래서 통째로 잠근다 (#140).
   // fetch 도 안에 둔다: 동시 fetch 는 refs/remotes/origin/main 잠금 충돌을 낸다.
   // `pnpm install` 은 밖이다 — 그때는 이미 `.env.local` 이 있어 역산에 잡힌다.
-  const { slot, account, dir } = withSlotLock(base, () => {
+  const { slot, account, dir } = withRepoLock(base, () => {
     const slot = leaseSlot(baseEnv, cwd)
     const account = accountForSlot(baseEnv, slot)
     if (!account) throw new Error(`슬롯 ${slot} 의 계정이 없습니다 (E2E_TEST_USER_EMAIL_${slot}).`)

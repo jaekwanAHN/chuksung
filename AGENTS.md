@@ -15,13 +15,17 @@ This version has breaking changes — APIs, conventions, and file structure may 
 5. **구현** — 하드 룰·컨벤션 준수. 설계 배경·근거·한계는 코드 주석이 아니라 `docs/` 문서로 남기고 코드에는 포인터만 둔다
 6. **검증** — `pnpm lint && pnpm build` + E2E, 성능 작업이면 전후 측정 (→ 명령어)
 7. **커밋 → PR** — 템플릿 3절 + `Fixes #<번호>` (→ Git 워크플로, 이슈)
-8. **머지 후 정리** — 기본 체크아웃에서 main 최신화 + `pnpm wt:rm <브랜치> --delete-branch`. **머지된 PR 브랜치에 추가 커밋을 푸시하지 말 것** — 반영되지 않는다. 후속 작업은 새 워크트리로
+8. **머지 후 정리** — **작업한 세션이 자기 워크트리를 치운다.** 기본 체크아웃으로 나가 `pnpm wt:rm <브랜치> --delete-branch` (→ Git 워크플로). **머지된 PR 브랜치에 추가 커밋을 푸시하지 말 것** — 반영되지 않는다. 후속 작업은 새 워크트리로
 
 ## Git 워크플로
 
 - **작업은 항상 워크트리에서 한다.** 기본 체크아웃에서 `pnpm wt:new <브랜치명>` 으로
-  시작하고, 끝나면 `pnpm wt:rm <브랜치명> --delete-branch`.
+  시작하고, 끝나면 **그 작업을 한 세션이** 기본 체크아웃으로 나가
+  `pnpm wt:rm <브랜치명> --delete-branch` 로 치운다.
   `wt:new` 가 `origin/main` 최신에서 분기하므로 따로 `git pull` 하지 않아도 된다
+- **남의 워크트리를 지우지 않는다.** 머지됐고 트리가 깨끗해도 그 세션은 아직 살아
+  있을 수 있다 — 머지 여부로는 판별되지 않는다. 남은 워크트리는 `pnpm wt:preflight`
+  가 보고하고, **지울지는 사람이 정한다** (`docs/parallel-work.md` 「정리의 주인」)
 - 브랜치명: `<type>/<kebab-case-요약>` (예: `feat/e2e-playwright`, `fix/modal-rounded-corners`)
 - main에 직접 커밋 금지. 작업은 브랜치 → PR로 병합
 - **기본 체크아웃에서 `git checkout -b` 로 브랜치를 따지 않는다.** `git checkout` 은
@@ -47,10 +51,12 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 - 패키지 매니저: **pnpm** (npm 사용 금지)
 - 검증: `pnpm lint && pnpm build`
+- 워크트리 스크립트 단위 테스트: `pnpm test:unit` (`scripts/**/*.test.mjs`). 워크트리 도구를 고쳤을 때만 필요하다 — 잠금의 실패는 조용해서 lint·build 가 보지 못한다 (`docs/parallel-work.md`)
 - E2E 테스트: `pnpm test:e2e` (UI 모드: `pnpm test:e2e:ui`)
 - 성능 측정: `pnpm perf` (전체) / `pnpm perf --page /daily` (특정 페이지) — Lighthouse 5회 median, 결과·델타는 `docs/perf/`에 기록. 상세는 `docs/perf/README.md`
-- 병렬 작업: `pnpm wt:new <브랜치>` (생성·부트스트랩) / `pnpm wt:rm <브랜치>` (삭제) /
-  `pnpm wt:ls` (슬롯 현황). 워크트리마다 포트와 E2E 계정이 갈린다. **`pnpm perf` 와
+- 병렬 작업: `pnpm wt:preflight` (main 최신화·잔재 보고) / `pnpm wt:new <브랜치>`
+  (생성·부트스트랩) / `pnpm wt:rm <브랜치>` (삭제) / `pnpm wt:ls` (슬롯 현황).
+  워크트리마다 포트와 E2E 계정이 갈린다. **`pnpm perf` 와
   `pnpm db:push` 는 기본 체크아웃에서만** — 둘 다 공유 자원이 하나뿐이라 직렬이다.
   슬롯 모델·계정 풀 만들기·한계는 `docs/parallel-work.md`
 - DB 스키마 변경: `supabase/schema.sql` 수정 + `pnpm db:new <이름>` → `pnpm db:push`.

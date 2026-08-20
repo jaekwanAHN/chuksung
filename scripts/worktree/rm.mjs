@@ -12,7 +12,7 @@
  */
 import { execFileSync } from 'node:child_process'
 import path from 'node:path'
-import { baseRepoPath, listWorktrees, readEnvFile, slugify } from './slots.mjs'
+import { baseRepoPath, listWorktrees, readEnvFile, slugify, withRepoLock } from './slots.mjs'
 
 const HELP = `워크트리 삭제 (슬롯은 자동 반납)
 
@@ -103,17 +103,22 @@ function main() {
   }
 
   const slot = readEnvFile(path.join(wt.path, '.env.local')).WT_SLOT
-  execFileSync('git', ['worktree', 'remove', ...(opts.force ? ['--force'] : []), wt.path], {
-    cwd: base,
-    stdio: 'inherit',
-  })
-  console.log(`삭제: ${wt.path}${slot ? ` (슬롯 ${slot} 반납)` : ''}`)
 
-  if (opts.deleteBranch && wt.branch) {
-    // 원격 브랜치는 남긴다 — 머지 후에 문제를 발견할 수 있다 (AGENTS.md).
-    execFileSync('git', ['branch', '-D', wt.branch], { cwd: base, stdio: 'inherit' })
-    console.log(`로컬 브랜치 삭제: ${wt.branch} (원격은 유지)`)
-  }
+  // 삭제도 기본 체크아웃의 워크트리 목록과 로컬 ref 를 바꾼다. 다른 세션의
+  // wt:new / wt:preflight 와 같은 잠금으로 직렬화한다 (docs/parallel-work.md).
+  withRepoLock(base, () => {
+    execFileSync('git', ['worktree', 'remove', ...(opts.force ? ['--force'] : []), wt.path], {
+      cwd: base,
+      stdio: 'inherit',
+    })
+    console.log(`삭제: ${wt.path}${slot ? ` (슬롯 ${slot} 반납)` : ''}`)
+
+    if (opts.deleteBranch && wt.branch) {
+      // 원격 브랜치는 남긴다 — 머지 후에 문제를 발견할 수 있다 (AGENTS.md).
+      execFileSync('git', ['branch', '-D', wt.branch], { cwd: base, stdio: 'inherit' })
+      console.log(`로컬 브랜치 삭제: ${wt.branch} (원격은 유지)`)
+    }
+  })
 }
 
 try {

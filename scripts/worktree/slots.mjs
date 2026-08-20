@@ -133,28 +133,44 @@ export function slugify(branch) {
 }
 
 /**
- * 슬롯 임차 잠금.
+ * 저장소 잠금 — 기본 체크아웃의 git 상태를 바꾸는 짧은 구간을 직렬화한다.
  *
- * 임차는 살아 있는 워크트리에서 역산하는데(`occupiedSlots`), 새 워크트리의
- * `WT_SLOT` 은 `.env.local` 을 쓴 뒤에야 남들에게 보인다. 그 사이 `git fetch` 와
- * `git worktree add` 가 있어 수 초가 비고, 두 프로세스가 그 창에서 만나면 같은
- * 번호를 집는다 (#140). 그 구간만 배타적으로 감싼다.
+ * 잠금은 **하나뿐이다.** `wt:new` 의 슬롯 임차, `wt:rm` 의 삭제, `wt:preflight` 의
+ * main 최신화가 모두 같은 `refs/remotes/origin/main`·인덱스·워크트리 목록을
+ * 건드리므로, 잠금을 용도별로 나누면 서로를 보지 못해 다시 겹친다
+ * (docs/parallel-work.md 「정리의 주인」).
  *
- * 잠금은 `pnpm install` 까지 끌고 가지 않는다 — 그 시점엔 이미 `.env.local` 이
- * 있어 역산에 잡히고, 수십 초를 잠가둘 이유가 없다.
+ * **긴 작업은 넣지 않는다.** `pnpm install`·`gh` 호출처럼 수십 초 걸리는 것은
+ * 밖에 둔다 — 두 번째 세션이 오래 막히면 병렬화의 의미가 없어진다.
  */
 const LOCK_TIMEOUT_MS = 30_000
 const LOCK_RETRY_MS = 200
 
 function lockPath(base) {
-  return path.join(base, '.claude', 'worktrees', '.slot-lease.lock')
+  return path.join(base, '.claude', 'worktrees', '.repo.lock')
 }
 
-/** 잠금 주인이 아직 살아 있나. 죽었으면 남은 잠금은 무시해도 된다. */
-function holderAlive(file) {
+/** 잠금 파일이 적고 있는 PID. 읽거나 파싱하지 못하면 null. */
+function readPid(file) {
   try {
     const pid = Number(JSON.parse(fs.readFileSync(file, 'utf8')).pid)
-    if (!Number.isInteger(pid)) return false
+    return Number.isInteger(pid) ? pid : null
+  } catch {
+    return null
+  }
+}
+
+/**
+ * 잠금 주인이 아직 살아 있나. 죽었으면 남은 잠금은 걷어내도 된다.
+ *
+ * **읽지 못한 잠금은 살아 있는 것으로 본다.** 아래 `tryAcquire` 가 내용을 다 채운
+ * 파일을 거므로 정상 경로에서는 빈 잠금이 존재하지 않는다 — 못 읽었다면 예외 상황이고,
+ * 그때 걷어내면 둘이 동시에 들어간다. 시간 초과로 보내 사람이 보게 하는 편이 낫다.
+ */
+function holderAlive(file) {
+  const pid = readPid(file)
+  if (pid === null) return true
+  try {
     // 시그널 0 은 아무것도 보내지 않고 존재 여부만 확인한다.
     process.kill(pid, 0)
     return true
@@ -165,54 +181,85 @@ function holderAlive(file) {
 }
 
 /**
- * 슬롯 임차 구간을 배타적으로 실행한다.
+ * 잠금을 건다. 걸었으면 true, 이미 남이 들고 있으면 false.
+ *
+ * `open(…, 'wx')` 로 만들고 PID 를 나중에 쓰면 **파일이 비어 있는 순간**이 생긴다.
+ * 그 창에서 남이 들여다보면 파싱에 실패해 「주인이 죽었다」로 오판하고, 잠금을
+ * 걷어낸 뒤 자기 것을 건다 — **둘 다 들어간다.** 경합이 있을 때마다 재현됐다.
+ *
+ * 그래서 **내용을 다 쓴 임시 파일을 `link()` 로 건다.** `link` 는 원자적이고 대상이
+ * 이미 있으면 `EEXIST` 로 실패하므로, 남에게 보이는 순간 파일에는 이미 PID 가 있다.
+ */
+function tryAcquire(file) {
+  const tmp = `${file}.${process.pid}.tmp`
+  fs.writeFileSync(tmp, JSON.stringify({ pid: process.pid, at: new Date().toISOString() }))
+  try {
+    fs.linkSync(tmp, file)
+    return true
+  } catch (e) {
+    if (e.code !== 'EEXIST') throw e
+    return false
+  } finally {
+    try {
+      fs.unlinkSync(tmp)
+    } catch {
+      // 이미 없으면 그만이다.
+    }
+  }
+}
+
+function timeoutError(file, timeoutMs) {
+  return new Error(
+    `저장소 잠금을 얻지 못했습니다 (${timeoutMs / 1000}초 대기).\n` +
+      `  ${file}\n\n` +
+      '다른 pnpm wt:new / wt:rm / wt:preflight 가 아직 돌고 있습니다. 끝난 뒤 다시 시도하세요.\n' +
+      '아무것도 돌지 않는데 이 메시지가 나오면 위 파일을 지우면 됩니다.'
+  )
+}
+
+/**
+ * 저장소를 바꾸는 구간을 배타적으로 실행한다.
  * @param {string} base 기본 체크아웃 경로
- * @param {() => T} fn 잠금 안에서 돌 일 (임차 → .env.local 기록)
+ * @param {() => T} fn 잠금 안에서 돌 일
+ * @param {{ timeoutMs?: number }} [opts] 대기 상한. 테스트가 짧게 줄여 쓴다
  * @returns {T}
  */
-export function withSlotLock(base, fn) {
+export function withRepoLock(base, fn, opts = {}) {
+  const timeoutMs = opts.timeoutMs ?? LOCK_TIMEOUT_MS
   const file = lockPath(base)
   fs.mkdirSync(path.dirname(file), { recursive: true })
 
-  const deadline = Date.now() + LOCK_TIMEOUT_MS
-  let fd = null
+  const deadline = Date.now() + timeoutMs
   for (;;) {
-    try {
-      // 'wx' = 이미 있으면 실패. 성공하는 프로세스가 하나뿐인 것이 핵심이다.
-      fd = fs.openSync(file, 'wx')
-      break
-    } catch (e) {
-      if (e.code !== 'EEXIST') throw e
-      if (!holderAlive(file)) {
-        // 주인이 죽었다. 남은 잠금을 걷어내고 다시 시도한다.
-        try {
-          fs.unlinkSync(file)
-        } catch {
-          // 다른 프로세스가 먼저 걷어냈다 — 그대로 재시도하면 된다.
-        }
-        continue
+    if (tryAcquire(file)) {
+      // 걸었다고 끝이 아니다 — 낡은 잠금을 걷어내던 남이 그 사이 우리 것까지
+      // 지우고 자기 것을 걸었을 수 있다. 파일에 우리 PID 가 남아 있어야 주인이다.
+      if (readPid(file) === process.pid) break
+    } else if (!holderAlive(file)) {
+      // 주인이 죽었다. 남은 잠금을 걷어내고 다시 시도한다.
+      try {
+        fs.unlinkSync(file)
+      } catch {
+        // 다른 프로세스가 먼저 걷어냈다 — 그대로 재시도하면 된다.
       }
-      if (Date.now() >= deadline) {
-        throw new Error(
-          `슬롯 임차 잠금을 얻지 못했습니다 (${LOCK_TIMEOUT_MS / 1000}초 대기).\n` +
-            `  ${file}\n\n` +
-            '다른 pnpm wt:new 가 아직 돌고 있습니다. 끝난 뒤 다시 시도하세요.\n' +
-            '아무것도 돌지 않는데 이 메시지가 나오면 위 파일을 지우면 됩니다.'
-        )
-      }
-      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, LOCK_RETRY_MS)
+      if (Date.now() >= deadline) throw timeoutError(file, timeoutMs)
+      continue
     }
+
+    if (Date.now() >= deadline) throw timeoutError(file, timeoutMs)
+    Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, LOCK_RETRY_MS)
   }
 
   try {
-    fs.writeFileSync(fd, JSON.stringify({ pid: process.pid, at: new Date().toISOString() }))
     return fn()
   } finally {
-    fs.closeSync(fd)
-    try {
-      fs.unlinkSync(file)
-    } catch {
-      // 이미 없으면 그만이다.
+    // 우리 것일 때만 지운다. 남의 잠금을 열어주면 그 구간이 통째로 무방비가 된다.
+    if (readPid(file) === process.pid) {
+      try {
+        fs.unlinkSync(file)
+      } catch {
+        // 이미 없으면 그만이다.
+      }
     }
   }
 }
