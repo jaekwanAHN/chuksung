@@ -6,13 +6,21 @@ import {
 } from '@/lib/auth-redirect'
 
 /**
- * 프록시가 실제로 실행된 리전을 응답에 남긴다. `vercel.json` 의 `regions` 는
- * 페이지·API 함수에만 적용되고 프록시에는 적용되지 않아, 둘이 어긋나도 빌드나
- * 테스트로는 드러나지 않는다. 배경은 docs/perf/function-region.md
+ * 배포 환경에서만 관측 가능한 조건을 응답 헤더로 남긴다.
+ *
+ * - `x-proxy-region` — 프록시가 실제로 실행된 리전. `vercel.json` 의 `regions` 는
+ *   페이지·API 함수에만 적용되고 프록시에는 적용되지 않아, 둘이 어긋나도 빌드나
+ *   테스트로는 드러나지 않는다.
+ * - `x-deploy-sha` — 지금 응답하는 배포의 커밋. 어느 코드에서 잰 값인지 모르면
+ *   `pnpm perf:deploy` 의 회차 간 델타가 무엇의 결과인지 알 수 없다.
+ *
+ * 배경은 docs/perf/function-region.md, docs/perf/deploy-latency.md 「방법」
  */
 function withRegion(response: NextResponse) {
   const region = process.env.VERCEL_REGION
   if (region) response.headers.set('x-proxy-region', region)
+  const sha = process.env.VERCEL_GIT_COMMIT_SHA
+  if (sha) response.headers.set('x-deploy-sha', sha.slice(0, 7))
   return response
 }
 
