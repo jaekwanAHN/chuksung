@@ -23,6 +23,8 @@
     "wt:new": "node scripts/worktree/new.mjs",
     "wt:rm": "node scripts/worktree/rm.mjs",
     "wt:ls": "node scripts/worktree/ls.mjs",
+    "wt:preflight": "node scripts/worktree/preflight.mjs",
+    "test:unit": "node --test \"scripts/**/*.test.mjs\"",
     "e2e:provision": "node scripts/e2e/provision-account.mjs",
     "perf:diagnose": "node scripts/perf/diagnose.mjs"
   },

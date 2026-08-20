@@ -37,6 +37,11 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      # 워크트리 잠금의 실패는 조용하다 — 둘이 함께 들어가도 에러가 나지 않는다.
+      # lint·build 가 볼 수 없어 따로 돌린다 (scripts/worktree/slots.test.mjs).
+      - name: Worktree script tests
+        run: pnpm test:unit
+
       # schema.sql 반영 누락은 tsc·lint·build 가 보지 못한다 (SQL 파일이라서).
       - name: Check schema.sql reflects migrations
         run: pnpm db:check
