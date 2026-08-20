@@ -26,7 +26,8 @@ pnpm perf --help                  # 옵션 전체
 - **인증**: 대시보드 페이지는 세션이 필요하다. `e2e/auth.setup.ts` 와 동일하게
   테스트 계정으로 로그인해 발급한 쿠키를 Lighthouse `Cookie` 헤더로 주입한다
   (`scripts/perf/auth.mjs`). 필요한 환경변수는 `.env.local` 의
-  `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, `E2E_TEST_USER_EMAIL/PASSWORD`.
+  `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, `PERF_TEST_USER_EMAIL/PASSWORD`
+  (없으면 `E2E_TEST_USER_*` 로 폴백 — 「측정 조건: 계정」 참조).
 - **비용 0**: Lighthouse·chrome-launcher 모두 무료 OSS. 측정 결과를 외부로
   보내지 않고, 로컬 서버를 로컬 Chrome(Playwright chromium)으로 측정한다.
 - **로컬인 것은 앱까지다 — DB 는 원격이다**: `.env.local` 의
@@ -102,3 +103,13 @@ pnpm perf --help                  # 옵션 전체
 볼륨을 세지 못해도(환경변수 누락 등) 측정은 그대로 진행되고 경고만 생략된다.
 옛 스냅샷처럼 볼륨 정보가 없는 쪽과 비교할 때도 경고하지 않는다 — 근거 없는 경고를
 띄우지 않기 위해서다.
+
+## 측정 조건: 계정
+
+**perf 는 전용 계정(`PERF_TEST_USER_*`)으로 측정한다. E2E 는 이 계정에 절대
+로그인하지 않는다.** 계정을 공유하면 E2E 가 만든 행이 계속 쌓여 위의 볼륨 경고가
+상시 점등되고, 그러면 경고는 곧 무시된다. 계정 분리는 그 조건 자체를 없앤다.
+
+계정 생성·복제 방법과 제약은 `accounts.md`. 스냅샷에는 어느 계정에서 잰 값인지
+(`account`) 함께 남고, 직전 측정과 계정이 다르면 원장에 경고가 붙는다 — 그런 섹션의
+델타는 코드 비교가 아니라 **새 기준선**이다.

@@ -9,6 +9,7 @@ import { getAuthCookieHeader } from './auth.mjs'
 import { PAGES } from './pages.mjs'
 import { saveSnapshot, findPreviousSnapshot, appendHistory } from './ledger.mjs'
 import { measureDataVolume, formatVolume } from './volume.mjs'
+import { perfCredentials } from './account.mjs'
 
 // .env.local 을 직접 로드 (Node 는 자동 로드하지 않음).
 for (const f of ['.env.local', '.env.test']) {
@@ -164,8 +165,15 @@ async function main() {
   }
 
   const base = `http://localhost:${opts.port}`
+  const creds = perfCredentials()
   console.log(`▸ 인증 세션 발급…`)
   const cookie = await getAuthCookieHeader()
+  if (creds?.source === 'e2e') {
+    console.log(
+      '  ⚠️ PERF_TEST_USER_* 미설정 — E2E 공유 계정으로 측정합니다. ' +
+        'E2E 가 데이터를 바꾸므로 볼륨이 고정되지 않습니다 (docs/perf/accounts.md).'
+    )
+  }
 
   let server = null
   let browser = null
@@ -204,6 +212,8 @@ async function main() {
       runs: opts.runs,
       base,
       config: { formFactor: 'mobile', throttling: 'simulated' },
+      // 어느 계정에서 잰 값인지 남긴다. 계정이 다르면 볼륨 비교가 성립하지 않는다.
+      account: creds?.source ?? null,
       volume,
       results,
     }

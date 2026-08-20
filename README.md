@@ -108,9 +108,18 @@ pnpm install
 NEXT_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase_anon_key>
 
-# E2E·성능 측정용 테스트 계정 (없으면 인증 E2E 는 skip 되고 `pnpm perf` 는 실패합니다)
+# E2E 용 테스트 계정 (없으면 인증 E2E 는 skip 됩니다)
 E2E_TEST_USER_EMAIL=<test_user_email>
 E2E_TEST_USER_PASSWORD=<test_user_password>
+
+# 성능 측정 전용 계정. E2E 가 건드리지 않아 데이터 볼륨이 고정됩니다.
+# 없으면 E2E_TEST_USER_* 로 폴백하지만 원장의 세로 비교가 성립하지 않습니다
+# (docs/perf/accounts.md). 계정 생성: node scripts/e2e/provision-account.mjs
+PERF_TEST_USER_EMAIL=<perf_user_email>
+PERF_TEST_USER_PASSWORD=<perf_user_password>
+
+# 계정 프로비저닝에만 쓰는 서비스 롤 키. 커밋·CI 반입 금지, .env.local 에만 둡니다.
+SUPABASE_SERVICE_ROLE_KEY=<supabase_service_role_key>
 ```
 
 ### 개발 서버
@@ -137,6 +146,7 @@ pnpm dev
 | `pnpm perf`            | Lighthouse 측정 → `docs/perf/history.md`에 델타 기록          |
 | `pnpm perf:diagnose`   | 상세 audit 출력 (메인스레드 분해·DOM 크기·번들) — 원인 진단용 |
 | `pnpm dev:login`       | 테스트 계정 세션을 띄운 브라우저에 주입                       |
+| `pnpm e2e:provision`   | 테스트 계정 생성 + 기준 계정 데이터 복제 (`docs/perf/accounts.md`) |
 | `pnpm db:new <이름>`   | 새 마이그레이션 파일 생성                                    |
 | `pnpm db:push`         | 마이그레이션을 원격 Supabase에 적용                          |
 | `pnpm db:link`         | 로컬 저장소를 Supabase 프로젝트에 연결 (최초 1회)             |
