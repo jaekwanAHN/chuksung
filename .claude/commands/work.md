@@ -51,10 +51,14 @@ argument-hint: "[이슈번호 | 문제 설명 | 생략 시 priority 목록에서
    **지우지 않은 브랜치는 한 줄로 보고한다.** 조용히 넘어가면 열린 채 잊힌 PR이
    계속 쌓인다. 예: `남은 브랜치: chore/foo (PR #58 OPEN), bar (PR 없음)`
 
-2. **worktree 정리.** `git worktree list` 에 머지된 브랜치의 worktree가 있으면
-   `git worktree remove <경로>` 로 제거한다. 이 저장소는 worktree를 기본으로 쓰지 않는다
-   — `.env.local`·`node_modules`·`.claude/settings.local.json` 이 gitignore 대상이라
-   새 worktree는 부트스트랩 없이는 빌드·E2E가 실패한다.
+2. **worktree 정리.** `pnpm wt:ls` 로 현황을 보고, 머지된 브랜치의 worktree는
+   `pnpm wt:rm <브랜치>` 로 제거한다. 미푸시 커밋이나 더티 트리가 있으면 스크립트가
+   멈추므로, 그때는 무엇이 남았는지 보고하고 묻는다.
+
+   **`git worktree remove` 를 직접 쓰지 않는다** — 부트스트랩 없이 만들어진 worktree는
+   빌드도 E2E도 못 돌고, 손으로 만든 worktree는 포트·E2E 계정을 기본 체크아웃과 공유해
+   조용한 오탐을 만든다. 새 worktree는 항상 `pnpm wt:new <브랜치>` 로 만든다
+   (배경·슬롯 모델: `docs/parallel-work.md`).
 
 3. **더티 트리 확인.** `git status --porcelain` 에 변경이 있으면 **여기서 멈추고**
    커밋할지, 스태시할지, 버릴지 묻는다.
@@ -175,6 +179,10 @@ npx tsc --noEmit && pnpm lint && pnpm build
 
 `tsc --noEmit` 을 먼저 돌린다. `pnpm build` 도 타입을 보지만 훨씬 느리고, 타입
 오류를 먼저 걷어내면 build 를 한 번만 돌려도 된다.
+
+**단, 갓 만든 worktree 에서의 첫 검증만 `pnpm build` 를 먼저 돌린다.** `RouteContext`
+같은 전역 타입을 Next 가 `.next/types/` 에 생성하는데, 빌드를 한 번도 돌리지 않은
+worktree 에는 그게 없어 **실제로 없는 타입 오류**가 뜬다 (`docs/parallel-work.md`).
 
 - E2E가 필요하면 `pnpm test:e2e <spec>` 으로 좁혀 돌리고, 마지막에 전체를 한 번
 - `performance` 라벨이면 수정 후 측정 + **`docs/perf/` 에 전후 델타 기록**
