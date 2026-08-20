@@ -32,38 +32,68 @@ argument-hint: "[이슈번호 | 문제 설명 | 생략 시 priority 목록에서
 
 ## CP0. 프리플라이트 — 지난 작업 정리 + 시작 상태 확보
 
-물어보지 않고 실행한다. 단, 3번에서 더티 트리를 발견하면 멈춘다.
+물어보지 않고 실행한다. 단, 0번·4번에서 멈출 수 있다.
 
-1. **머지된 로컬 브랜치 정리.** 로컬 브랜치마다 PR 상태를 확인해 머지된 것을 지운다.
+**작업은 워크트리에서 한다.** CP0 는 그 워크트리를 만들기 전, **기본 체크아웃에서**
+도는 구간이다. 순서가 중요하다 — 워크트리를 먼저 치워야 브랜치도 지워지고 슬롯도 빈다.
+
+0. **여기가 기본 체크아웃인지 확인한다.**
 
    ```bash
-   git branch --format='%(refname:short)' | grep -v '^main$'
-   # 각 브랜치에 대해:
+   pnpm wt:ls   # 첫 줄이 기본 체크아웃 경로다
+   ```
+
+   현재 디렉터리가 그 경로가 아니면 **워크트리 안에 있는 것이다. 멈추고 보고한다** —
+   여기서는 아래 5번(`git checkout main`)이 git 에게 거부당한다.
+
+   ```
+   fatal: 'main' is already used by worktree at '...'
+   ```
+
+   같은 브랜치는 두 워크트리에 동시에 체크아웃되지 않는다. 사용자에게 기본 체크아웃
+   경로를 알리고 거기서 다시 시작하도록 안내한다.
+
+1. **worktree 정리.** `pnpm wt:ls` 의 현황에서 각 워크트리의 브랜치가 머지됐는지 본다.
+
+   ```bash
    gh pr list --head <브랜치> --state merged --json number,title
    ```
 
+   머지 확인된 것은 `pnpm wt:rm <브랜치> --delete-branch` — 워크트리와 로컬 브랜치를
+   한 번에 정리한다. 미푸시 커밋이나 더티 트리가 있으면 스크립트가 멈추므로, 그때는
+   무엇이 남았는지 보고하고 묻는다.
+
+   **브랜치 정리보다 먼저 해야 한다.** 워크트리가 잡고 있는 브랜치는 `git branch -D`
+   가 거부한다.
+
+   **`git worktree remove` 를 직접 쓰지 않는다** — 슬롯 반납과 안전장치를 건너뛴다.
+
+2. **남은 로컬 브랜치 정리.** 1번을 하고도 남은 브랜치가 있으면(워크트리 없이 만들어진
+   것) 같은 방식으로 머지 여부를 확인해 `git branch -D <브랜치>` 로 지운다.
+
+   ```bash
+   git branch --format='%(refname:short)' | grep -v '^main$'
+   ```
+
    `git branch --merged` 만으로 판정하지 말 것 — 스쿼시 머지된 브랜치는 잡히지 않는다.
-   머지 확인된 브랜치는 `git branch -D <브랜치>` 로 삭제한다.
 
    **원격 브랜치는 지우지 않는다.** 머지 후에 문제를 발견할 수 있어 의도적으로 남긴다
    (저장소도 `delete_branch_on_merge: false` 로 맞춰져 있다).
 
-   **지우지 않은 브랜치는 한 줄로 보고한다.** 조용히 넘어가면 열린 채 잊힌 PR이
-   계속 쌓인다. 예: `남은 브랜치: chore/foo (PR #58 OPEN), bar (PR 없음)`
+   **지우지 않은 브랜치·워크트리는 한 줄로 보고한다.** 조용히 넘어가면 열린 채 잊힌
+   PR이 계속 쌓인다. 예: `남은 브랜치: chore/foo (PR #58 OPEN), bar (PR 없음)`
 
-2. **worktree 정리.** `pnpm wt:ls` 로 현황을 보고, 머지된 브랜치의 worktree는
-   `pnpm wt:rm <브랜치>` 로 제거한다. 미푸시 커밋이나 더티 트리가 있으면 스크립트가
-   멈추므로, 그때는 무엇이 남았는지 보고하고 묻는다.
+3. **빈 슬롯 확인.** `pnpm wt:ls` 에 빈 슬롯이 없으면 **멈추고 보고한다.** 새 작업을
+   시작할 자리가 없다는 뜻이다. 대개 1번에서 풀리지만, 진행 중인 작업이 슬롯을 다
+   쓰고 있으면 계정을 늘려야 한다 (`docs/parallel-work.md` 「계정 풀 만들기」).
 
-   **`git worktree remove` 를 직접 쓰지 않는다** — 부트스트랩 없이 만들어진 worktree는
-   빌드도 E2E도 못 돌고, 손으로 만든 worktree는 포트·E2E 계정을 기본 체크아웃과 공유해
-   조용한 오탐을 만든다. 새 worktree는 항상 `pnpm wt:new <브랜치>` 로 만든다
-   (배경·슬롯 모델: `docs/parallel-work.md`).
-
-3. **더티 트리 확인.** `git status --porcelain` 에 변경이 있으면 **여기서 멈추고**
+4. **더티 트리 확인.** `git status --porcelain` 에 변경이 있으면 **여기서 멈추고**
    커밋할지, 스태시할지, 버릴지 묻는다.
 
-4. **main 최신화.** `git checkout main && git pull origin main`
+   기본 체크아웃에서는 아무도 작업하지 않으므로 여기는 늘 깨끗해야 한다 —
+   **더티하다는 것 자체가 뭔가 잘못됐다는 신호다.**
+
+5. **main 최신화.** `git checkout main && git pull origin main`
 
 ---
 
@@ -155,10 +185,23 @@ gh issue create --title "<제목>" --body-file <초안> \
   --label "<bug|tech-debt|...>" --label "priority: <high|medium|low>"
 ```
 
-승인 후 브랜치를 만든다. 이름은 `<type>/<kebab-case-요약>`.
+승인 후 **작업할 워크트리를 만든다.** 이름은 `<type>/<kebab-case-요약>`.
 
 ```bash
-git checkout -b fix/header-today-label
+pnpm wt:new fix/header-today-label
+```
+
+`wt:new` 가 한 번에 처리한다 — `origin/main` fetch → **워크트리와 브랜치를 동시에 생성**
+→ 슬롯(포트·E2E 계정) 배정 → `.env.local`·`settings.local.json` 이식 → `pnpm install`.
+브랜치를 따로 만들지 않는다.
+
+**분기 기준은 로컬 main 이 아니라 `origin/main` 이다.** 로컬이 뒤처져 있어도 새
+워크트리는 최신에서 시작한다.
+
+출력된 경로로 이동해 **이후 모든 단계를 그 안에서 진행한다.**
+
+```bash
+cd .claude/worktrees/fix+header-today-label
 ```
 
 ---
@@ -180,16 +223,22 @@ git checkout -b fix/header-today-label
 
 ## 6. 검증
 
+**이 워크트리에서의 첫 검증은 `pnpm build` 부터다.**
+
+```bash
+pnpm build && npx tsc --noEmit && pnpm lint
+```
+
+`RouteContext` 같은 전역 타입을 Next 가 `.next/types/` 에 **생성하는데**, 빌드를 한 번도
+돌리지 않은 워크트리에는 그게 없어 `tsc` 가 **실제로 없는 타입 오류**를 뱉는다
+(`docs/parallel-work.md`). 작업은 늘 새 워크트리에서 시작하므로 매번 해당된다.
+
+두 번째부터는 `tsc` 를 먼저 돌린다 — `pnpm build` 도 타입을 보지만 훨씬 느리고, 타입
+오류를 먼저 걷어내면 build 를 한 번만 돌려도 된다.
+
 ```bash
 npx tsc --noEmit && pnpm lint && pnpm build
 ```
-
-`tsc --noEmit` 을 먼저 돌린다. `pnpm build` 도 타입을 보지만 훨씬 느리고, 타입
-오류를 먼저 걷어내면 build 를 한 번만 돌려도 된다.
-
-**단, 갓 만든 worktree 에서의 첫 검증만 `pnpm build` 를 먼저 돌린다.** `RouteContext`
-같은 전역 타입을 Next 가 `.next/types/` 에 생성하는데, 빌드를 한 번도 돌리지 않은
-worktree 에는 그게 없어 **실제로 없는 타입 오류**가 뜬다 (`docs/parallel-work.md`).
 
 - E2E가 필요하면 `pnpm test:e2e <spec>` 으로 좁혀 돌리고, 마지막에 전체를 한 번
 - `performance` 라벨이면 수정 후 측정 + **`docs/perf/` 에 전후 델타 기록**
@@ -259,22 +308,29 @@ gh run view <run-id> --log-failed
 
 ## 7~8. 머지 후 정리
 
-머지가 확인된 뒤에만 실행한다.
+머지가 확인된 뒤에만 실행한다. **기본 체크아웃으로 돌아가서** 한다.
 
 ```bash
-git checkout main && git pull origin main
-git branch -D <작업 브랜치>
+cd <기본 체크아웃>            # pnpm wt:ls 의 첫 줄
+git pull origin main
+pnpm wt:rm <작업 브랜치> --delete-branch
 ```
 
+`wt:rm` 이 워크트리·로컬 브랜치·슬롯을 한 번에 정리한다.
+
+- **자기가 서 있는 워크트리는 지울 수 없다.** 기본 체크아웃으로 나오지 못하는 상황이면
+  (세션이 그 워크트리에 묶여 있는 등) **지우지 말고 남긴 채 보고한다** — 다음 `/work`
+  의 CP0 1번이 치운다. 정리가 안 됐다고 억지로 `git worktree remove --force` 를 쓰지 말 것
 - **원격 브랜치는 남긴다** (CP0과 같은 이유)
 - 이슈는 `Fixes #<번호>` 로 **main 머지 시점에 자동으로 닫힌다.** 따로 닫지 않는다
 - **머지된 PR 브랜치에 추가 커밋을 푸시하지 말 것** — 반영되지 않는다.
-  후속 작업이 있으면 새 브랜치로, 즉 `/work` 를 새로 시작한다
+  후속 작업이 있으면 새 워크트리로, 즉 `/work` 를 새로 시작한다
 
-마지막으로 한 줄 요약을 남긴다.
+마지막으로 한 줄 요약을 남긴다. 슬롯 현황을 함께 적는다.
 
 ```
-✅ #71 머지 완료 (PR #82) — 로컬 브랜치 정리, 원격 유지
+✅ #71 머지 완료 (PR #82) — 워크트리·로컬 브랜치 정리, 원격 유지
+   슬롯 0/2 사용 중
    남은 priority: high — #75
 ```
 
