@@ -22,6 +22,7 @@ import {
   portForSlot,
   readEnvFile,
   slugify,
+  withSlotLock,
 } from './slots.mjs'
 
 const HELP = `병렬 작업용 워크트리 생성 (포트·E2E 계정 슬롯 자동 배정)
@@ -133,24 +134,34 @@ function main() {
   }
   const baseEnv = readEnvFile(baseEnvPath)
 
-  const slot = leaseSlot(baseEnv, cwd)
-  const account = accountForSlot(baseEnv, slot)
-  if (!account) throw new Error(`슬롯 ${slot} 의 계정이 없습니다 (E2E_TEST_USER_EMAIL_${slot}).`)
+  // 임차한 슬롯은 `.env.local` 을 써야 남들에게 보인다(역산 방식). 그 사이가 열려
+  // 있으면 두 프로세스가 같은 번호를 집는다 — 그래서 통째로 잠근다 (#140).
+  // fetch 도 안에 둔다: 동시 fetch 는 refs/remotes/origin/main 잠금 충돌을 낸다.
+  // `pnpm install` 은 밖이다 — 그때는 이미 `.env.local` 이 있어 역산에 잡힌다.
+  const { slot, account, dir } = withSlotLock(base, () => {
+    const slot = leaseSlot(baseEnv, cwd)
+    const account = accountForSlot(baseEnv, slot)
+    if (!account) throw new Error(`슬롯 ${slot} 의 계정이 없습니다 (E2E_TEST_USER_EMAIL_${slot}).`)
 
-  const dir = path.join(base, '.claude', 'worktrees', slugify(opts.branch))
-  if (fs.existsSync(dir)) {
-    throw new Error(`디렉터리가 이미 있습니다: ${dir}\n남은 것이면 pnpm wt:rm 으로 지우세요.`)
-  }
+    const dir = path.join(base, '.claude', 'worktrees', slugify(opts.branch))
+    if (fs.existsSync(dir)) {
+      throw new Error(`디렉터리가 이미 있습니다: ${dir}\n남은 것이면 pnpm wt:rm 으로 지우세요.`)
+    }
 
-  // 분기 기준을 최신으로. origin/main 에서 시작하는 것이 저장소 규칙이다.
-  if (opts.from.startsWith('origin/')) {
-    run('git', ['fetch', 'origin', opts.from.slice('origin/'.length)], base)
-  }
+    // 분기 기준을 최신으로. origin/main 에서 시작하는 것이 저장소 규칙이다.
+    if (opts.from.startsWith('origin/')) {
+      run('git', ['fetch', 'origin', opts.from.slice('origin/'.length)], base)
+    }
 
-  console.log(`\n워크트리 생성 — 슬롯 ${slot}, 포트 ${portForSlot(slot)}`)
-  run('git', ['worktree', 'add', '-b', opts.branch, dir, opts.from], base)
+    console.log(`\n워크트리 생성 — 슬롯 ${slot}, 포트 ${portForSlot(slot)}`)
+    run('git', ['worktree', 'add', '-b', opts.branch, dir, opts.from], base)
 
-  fs.writeFileSync(path.join(dir, '.env.local'), renderEnv(fs.readFileSync(baseEnvPath, 'utf8'), { slot, account }))
+    fs.writeFileSync(
+      path.join(dir, '.env.local'),
+      renderEnv(fs.readFileSync(baseEnvPath, 'utf8'), { slot, account })
+    )
+    return { slot, account, dir }
+  })
   console.log('  .env.local          이식 (슬롯 값으로 치환, PERF_TEST_USER_* 제외)')
 
   // gitignore 대상이라 워크트리에 딸려오지 않는다. 없으면 그냥 넘어간다.
