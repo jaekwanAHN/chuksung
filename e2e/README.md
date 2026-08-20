@@ -59,6 +59,7 @@ pnpm test:e2e:report   # 마지막 HTML 리포트 열기
 | `e2e/task-filters.spec.ts` | 일간 카테고리·우선순위 필터 |
 | `e2e/progress.spec.ts` | 일간 진행률 토글 반영 · 주간/월간 달성률 · 미니 캘린더 |
 | `e2e/template.spec.ts` | 템플릿 CRUD + 일간 시딩 · 하루 시작 시각 설정 |
+| `e2e/seeding-race.spec.ts` | 시딩 RPC 동시 호출 — 템플릿당 태스크 1개 (`docs/task-race-guards.md`) |
 | `e2e/weekly-monthly.spec.ts` | 주간/월간 목표 CRUD |
 | `e2e/dday.spec.ts` | D-day 추가/수정/삭제 |
 | `e2e/jobs.spec.ts` | 취업공고 CRUD · 상태 전이 배지 |
