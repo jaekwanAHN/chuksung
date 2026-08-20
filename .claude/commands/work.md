@@ -78,9 +78,16 @@ gh issue view 75 --json number,title,state,labels,body \
   --jq '"[\(.state)] #\(.number) \(.title)\n라벨: \(.labels|map(.name)|join(", "))\n\n\(.body)"'
 ```
 
-**`--json` 없이 `gh issue view` 를 쓰지 말 것.** 이 환경의 gh(2.46.0)는 폐기된
-Projects classic 필드를 함께 요청해 GraphQL 에러로 실패한다. `--json` 을 붙이거나
-`gh api repos/:owner/:repo/issues/<번호>` 를 쓰면 정상 동작한다.
+**이 환경의 gh(2.46.0)는 폐기된 Projects classic 필드를 함께 요청해 GraphQL 에러로
+실패하는 서브커맨드가 있다.** 이슈든 PR이든 같은 원인이고, `--json` 으로 필드를
+좁히거나 REST API 로 우회하면 정상 동작한다.
+
+| 실패하는 것 | 대신 쓸 것 |
+|---|---|
+| `gh issue view <번호>` | `gh issue view <번호> --json ...` 또는 `gh api repos/:owner/:repo/issues/<번호>` |
+| `gh pr edit <번호> --body-file <파일>` | `gh api -X PATCH repos/:owner/:repo/pulls/<번호> -F body=@<파일>` |
+
+`gh pr create` · `gh pr checks` · `gh pr merge` 는 영향을 받지 않는다.
 
 **(b) 문제 설명 (`/work "헤더 날짜가 안 맞음"`)** — **자동으로 중복을 판정하지 않는다.**
 
