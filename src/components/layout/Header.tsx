@@ -89,11 +89,13 @@ export function Header() {
         </p>
       </div>
       <div className="flex items-center gap-3">
-        {/* 테마 드롭다운 */}
+        {/* 테마 드롭다운 — 접근 이름·역할 선택 근거는 docs/a11y.md */}
         <div ref={dropdownRef} className="relative">
           <button
             type="button"
             onClick={() => setDropdownOpen((o) => !o)}
+            aria-label={`테마 선택 (현재: ${currentTheme.label})`}
+            aria-expanded={dropdownOpen}
             className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
           >
             <span

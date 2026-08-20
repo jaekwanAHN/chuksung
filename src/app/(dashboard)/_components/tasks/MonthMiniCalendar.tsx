@@ -43,7 +43,7 @@ export function MonthMiniCalendar({
               title={n ? `${key} 완료 ${n}건` : key}
               className={cn(
                 'flex aspect-square flex-col items-center justify-center rounded-md text-[11px]',
-                inMonth ? 'bg-zinc-50 text-zinc-800' : 'text-zinc-300',
+                inMonth ? 'bg-zinc-50 text-zinc-800' : 'text-zinc-500',
                 n > 0 && inMonth && 'bg-emerald-100 font-semibold text-emerald-900'
               )}
             >

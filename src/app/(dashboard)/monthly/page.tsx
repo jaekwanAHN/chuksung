@@ -111,6 +111,7 @@ export default function MonthlyPlannerPage() {
       ) : (
         <>
           <TaskList
+            heading="월간 목표"
             tasks={tasks}
             filterMode={filterMode}
             categoryFilter={categoryFilter}

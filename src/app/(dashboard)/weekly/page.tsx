@@ -108,6 +108,7 @@ export default function WeeklyPlannerPage() {
       ) : (
         <>
           <TaskList
+            heading="주간 목표"
             tasks={tasks}
             filterMode={filterMode}
             categoryFilter={categoryFilter}
