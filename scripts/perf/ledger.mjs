@@ -2,6 +2,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { formatVolume, VOLUME_KEYS, volumeDrift } from './volume.mjs'
 
+export const LOCAL_SNAPSHOT_SCHEMA_VERSION = 2
+
 // 원장에 기록/추적하는 지표 정의. higherBetter=true 는 값이 클수록 개선.
 export const METRICS = [
   { key: 'score', label: 'Perf', higherBetter: true },
@@ -71,6 +73,8 @@ export function findPreviousSnapshot(snapDir, currentFile, measuredPages) {
   for (const f of files) {
     try {
       const snap = JSON.parse(fs.readFileSync(path.join(snapDir, f), 'utf8'))
+      // legacy·오측정 파일이 우연히 활성 디렉토리에 남아도 기준선으로 쓰지 않는다.
+      if (snap.schemaVersion !== LOCAL_SNAPSHOT_SCHEMA_VERSION || snap.valid !== true) continue
       if (measuredPages.some((p) => snap.results?.[p])) return snap
     } catch {
       // 손상된 스냅샷은 건너뛴다.
@@ -84,6 +88,15 @@ export function comparisonProblems(snapshot, prev) {
   if (!prev) return []
   const problems = []
 
+  if (
+    snapshot.schemaVersion !== LOCAL_SNAPSHOT_SCHEMA_VERSION ||
+    prev.schemaVersion !== LOCAL_SNAPSHOT_SCHEMA_VERSION ||
+    snapshot.valid !== true ||
+    prev.valid !== true
+  ) {
+    problems.push('한쪽 스냅샷이 현재 신뢰 스키마가 아니다')
+  }
+
   if (snapshot.account !== 'perf' || prev.account !== 'perf') {
     problems.push(
       `계정이 perf 전용으로 일치하지 않는다 ` +
@@ -94,10 +107,29 @@ export function comparisonProblems(snapshot, prev) {
     problems.push(`실행 횟수가 다르다 (${prev.runs ?? '미기록'} → ${snapshot.runs ?? '미기록'})`)
   }
 
-  const fields = ['formFactor', 'throttling']
+  const fields = [
+    'formFactor',
+    'throttling',
+    'disableStorageReset',
+    'lighthouseVersion',
+  ]
   const changedConfig = fields.filter((key) => prev.config?.[key] !== snapshot.config?.[key])
   if (changedConfig.length) {
     problems.push(`Lighthouse 조건이 다르다 (${changedConfig.join(', ')})`)
+  }
+
+  const environmentFields = ['kind', 'backendOrigin']
+  const changedEnvironment = environmentFields.filter(
+    (key) => prev.environment?.[key] !== snapshot.environment?.[key]
+  )
+  const runnerFields = ['platform', 'arch', 'node', 'browser']
+  const changedRunner = runnerFields.filter(
+    (key) => prev.environment?.runner?.[key] !== snapshot.environment?.runner?.[key]
+  )
+  if (changedEnvironment.length || changedRunner.length) {
+    problems.push(
+      `실행 환경이 다르다 (${[...changedEnvironment, ...changedRunner].join(', ')})`
+    )
   }
 
   const missingVolumeKeys = VOLUME_KEYS.filter(
@@ -143,6 +175,12 @@ export function renderHistorySection(snapshot, prev) {
   // 측정 조건(데이터 볼륨)을 매 섹션에 남긴다. 지표는 데이터 양에 좌우되므로
   // 볼륨을 모르면 이 표가 무엇과 비교 가능한지 알 수 없다.
   const volumeLine = formatVolume(snapshot.volume)
+  const env = snapshot.environment
+  const git = env?.git
+  const environmentLine = env
+    ? `환경: ${env.kind} · commit \`${git?.sha?.slice(0, 7) ?? '미기록'}\`` +
+      `${git?.dirty ? ' (dirty)' : ''} · backend \`${env.backendOrigin ?? '미기록'}\``
+    : null
 
   const comparisonWarning = problems.length
     ? `> ⚠️ **직전 측정과 비교하지 않았다.**\n` +
@@ -154,6 +192,7 @@ export function renderHistorySection(snapshot, prev) {
     `## ${stamp(snapshot.timestamp)} · ${snapshot.runs} runs · ` +
     `${cfg.formFactor}/${cfg.throttling} · ${compared}\n\n` +
     comparisonWarning +
+    (environmentLine ? `${environmentLine}\n\n` : '') +
     (volumeLine ? `데이터: ${volumeLine}\n\n` : '') +
     [head, sep, ...rows].join('\n') +
     '\n'
@@ -169,7 +208,7 @@ export function appendHistory(historyPath, snapshot, prev) {
     '`pnpm perf` 로 자동 기록됨. 최신 측정이 맨 위. 셀 형식: `현재값 🟢/🔴델타`.\n' +
     '🟢=이전 대비 개선, 🔴=회귀, (—)=오차 범위. 시간은 낮을수록, 점수(Perf/A11y/SEO)는 높을수록 좋음.\n' +
     'A11y/SEO 는 Perf 점수의 median run 에서 함께 읽은 값이다 (`README.md` 참조).\n' +
-    '원본 데이터는 `snapshots/` 참조. 지표 의미는 `README.md`.\n\n'
+    'run별 측정값과 대상 URL은 `snapshots/` 참조. 지표 의미는 `README.md`.\n\n'
 
   let body = ''
   if (fs.existsSync(historyPath)) {

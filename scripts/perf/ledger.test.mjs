@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import test from 'node:test'
 
-import { comparisonProblems, renderHistorySection } from './ledger.mjs'
+import { comparisonProblems, findPreviousSnapshot, renderHistorySection } from './ledger.mjs'
 
 const volume = (tasks = 100) => ({
   tasks,
@@ -13,10 +16,23 @@ const volume = (tasks = 100) => ({
 })
 
 const snapshot = (over = {}) => ({
+  schemaVersion: 2,
+  valid: true,
   timestamp: '2026-08-25T00:00:00.000Z',
   runs: 5,
   account: 'perf',
-  config: { formFactor: 'mobile', throttling: 'simulated' },
+  config: {
+    formFactor: 'mobile',
+    throttling: 'simulated',
+    disableStorageReset: true,
+    lighthouseVersion: '13.4.0',
+  },
+  environment: {
+    kind: 'local-production-build',
+    backendOrigin: 'https://project.supabase.co',
+    git: { sha: 'abcdef123456', branch: 'fix/test', dirty: false },
+    runner: { platform: 'linux', arch: 'x64', node: 'v22.0.0', browser: 'Chrome/140' },
+  },
   volume: volume(),
   results: {
     '/daily': {
@@ -77,11 +93,52 @@ test('실행 횟수나 Lighthouse 설정이 다르면 델타를 만들지 않는
   const prev = snapshot()
   const cur = snapshot({
     runs: 3,
-    config: { formFactor: 'desktop', throttling: 'provided' },
+    config: {
+      formFactor: 'desktop',
+      throttling: 'provided',
+      disableStorageReset: false,
+      lighthouseVersion: '13.5.0',
+    },
   })
   const problems = comparisonProblems(cur, prev)
 
   assert.ok(problems.some((problem) => /실행 횟수/.test(problem)))
   assert.ok(problems.some((problem) => /Lighthouse 조건/.test(problem)))
   assert.doesNotMatch(renderHistorySection(cur, prev), /🟢|🔴/)
+})
+
+test('실행 환경이 다르면 델타를 만들지 않는다', () => {
+  const prev = snapshot()
+  const cur = snapshot({
+    environment: {
+      ...snapshot().environment,
+      backendOrigin: 'https://other.supabase.co',
+    },
+  })
+
+  assert.ok(comparisonProblems(cur, prev).some((problem) => /실행 환경/.test(problem)))
+  assert.doesNotMatch(renderHistorySection(cur, prev), /🟢|🔴/)
+})
+
+test('직전 스냅샷 검색은 legacy와 invalid 파일을 건너뛴다', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'perf-ledger-test-'))
+  try {
+    fs.writeFileSync(
+      path.join(dir, '2026-08-20T00-00-00.json'),
+      JSON.stringify(snapshot({ schemaVersion: undefined }))
+    )
+    fs.writeFileSync(
+      path.join(dir, '2026-08-21T00-00-00.json'),
+      JSON.stringify(snapshot({ valid: false }))
+    )
+    const trusted = snapshot({ timestamp: '2026-08-19T00:00:00.000Z' })
+    fs.writeFileSync(path.join(dir, '2026-08-19T00-00-00.json'), JSON.stringify(trusted))
+
+    assert.deepEqual(
+      findPreviousSnapshot(dir, path.join(dir, 'current.json'), ['/daily']),
+      trusted
+    )
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
 })

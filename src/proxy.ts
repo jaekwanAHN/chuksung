@@ -14,7 +14,7 @@ import {
  * - `x-deploy-sha` — 지금 응답하는 배포의 커밋. 어느 코드에서 잰 값인지 모르면
  *   `pnpm perf:deploy` 의 회차 간 델타가 무엇의 결과인지 알 수 없다.
  *
- * 배경은 docs/perf/function-region.md, docs/perf/deploy-latency.md 「방법」
+ * 배경은 docs/perf/function-region.md, docs/perf/measurement-contract.md
  */
 function withRegion(response: NextResponse) {
   const region = process.env.VERCEL_REGION

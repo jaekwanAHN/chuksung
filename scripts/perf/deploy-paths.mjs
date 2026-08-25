@@ -2,24 +2,43 @@
 // 보는 것은 렌더링이 아니라 TTFB 이고, 같은 경로라도 인증 여부에 따라 응답
 // 주체(프록시 / 페이지 함수)가 갈리므로 그 조합이 곧 측정 단위다.
 //
-// 이 목록은 docs/perf/deploy-latency.md 의 수동 측정이 쓰던 경로를 그대로
-// 옮긴 것이다. 회차 간 비교가 성립하려면 목록이 흔들리지 않아야 한다.
+// legacy 수동 측정이 쓰던 경로를 고정 목록으로 옮긴 것이다. 회차 간 비교가
+// 성립하려면 목록이 흔들리지 않아야 한다. 배경은 docs/perf/measurement-contract.md.
 
 /**
  * @typedef {object} DeployPath
  * @property {string} path   요청 경로 (쿼리 포함)
  * @property {boolean} auth  인증 쿠키를 실을지
  * @property {string} note   원장 표에 붙일 설명
+ * @property {number} expectedStatus
+ * @property {string} [expectedLocation]
  */
 
 /** @type {DeployPath[]} */
 export const DEPLOY_PATHS = [
-  { path: '/login', auth: false, note: '200, 페이지 함수 기동' },
-  { path: '/login', auth: true, note: '307, 순수 프록시 비용' },
-  { path: '/', auth: true, note: '307 → /daily' },
-  { path: '/daily', auth: true, note: 'SSR 셸' },
-  { path: '/api/profile', auth: true, note: 'getUser + 1행 조회' },
-  { path: '/api/tasks?scope=weekly', auth: true, note: '프록시 밖(matcher 제외)' },
+  { path: '/login', auth: false, expectedStatus: 200, note: '200, 페이지 함수 기동' },
+  {
+    path: '/login',
+    auth: true,
+    expectedStatus: 307,
+    expectedLocation: '/daily',
+    note: '307, 순수 프록시 비용',
+  },
+  {
+    path: '/',
+    auth: true,
+    expectedStatus: 307,
+    expectedLocation: '/daily',
+    note: '307 → /daily',
+  },
+  { path: '/daily', auth: true, expectedStatus: 200, note: 'SSR 셸' },
+  { path: '/api/profile', auth: true, expectedStatus: 200, note: 'getUser + 1행 조회' },
+  {
+    path: '/api/tasks?scope=weekly',
+    auth: true,
+    expectedStatus: 200,
+    note: '프록시 밖(matcher 제외)',
+  },
 ]
 
 /**
@@ -28,7 +47,7 @@ export const DEPLOY_PATHS = [
  * `/api/tasks` 의 `daily` 스코프는 `client_now` 로 템플릿 시딩(INSERT)을 유발한다.
  * 측정이 데이터 볼륨을 바꾸면 이후 **로컬 원장의 비교까지** 오염된다 — 볼륨 경고가
  * 잡아내는 그 사건(2026-07-27)과 같은 계열이다. 규약을 문서에만 두면 다음 사람이
- * `--path` 로 우회하므로 코드로 막는다. 배경은 docs/perf/deploy-latency.md 「방법」
+ * `--path` 로 우회하므로 코드로 막는다. 배경은 docs/perf/measurement-contract.md.
  */
 const WRITE_EFFECT_PATTERNS = [
   {
