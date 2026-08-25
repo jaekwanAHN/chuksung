@@ -82,7 +82,9 @@ docs/
 ├── perf/
 │   ├── README.md               # 지표 해설·측정 방법
 │   ├── history.md              # 로컬 측정 원장 (pnpm perf 가 자동 기록)
-│   ├── deploy-latency.md       # 배포 URL 지연 측정 원장 (수동)
+│   ├── deploy-latency.md       # 배포 URL TTFB 자동 원장
+│   ├── archive/                # 현재 비교에서 제외한 legacy·오측정 기록
+│   ├── incidents/              # 원장 오염 사건과 재발 방지 결정
 │   └── function-region.md      # Vercel 함수 리전 결정과 프록시 배치의 사각지대
 ├── security/                   # API 남용 방어 목록·근거(README.md)·검증 절차(verification.md)
 ├── auth-redirects.md           # 리다이렉트 상호작용·프록시의 낙관적 세션 검증
@@ -143,7 +145,7 @@ pnpm dev
 | `pnpm test:e2e:trace`  | 트레이스를 항상 남기며 실행 (실패 원인 추적)                  |
 | `pnpm test:e2e:report` | 마지막 E2E HTML 리포트 열기                                  |
 | `pnpm test:e2e:view`   | 리포트를 외부 접속 가능한 호스트/포트로 열기                  |
-| `pnpm perf`            | Lighthouse 측정 → `docs/perf/history.md`에 델타 기록          |
+| `pnpm perf`            | 신뢰 조건을 검증한 Lighthouse 측정 → 로컬 원장 기록          |
 | `pnpm perf:diagnose`   | 상세 audit 출력 (메인스레드 분해·DOM 크기·번들) — 원인 진단용 |
 | `pnpm dev:login`       | 테스트 계정 세션을 띄운 브라우저에 주입                       |
 | `pnpm e2e:provision`   | 테스트 계정 생성 + 기준 계정 데이터 복제 (`docs/perf/accounts.md`) |
@@ -170,13 +172,13 @@ RLS로 남의 데이터를 막고 zod 화이트리스트로 임의 컬럼 주입
 
 ## 성능 측정
 
-`pnpm perf`가 프로덕션 빌드를 띄우고 페이지마다 5회 측정해 **중앙값**을 `docs/perf/history.md`에 델타로 쌓습니다. 지표 의미와 사용법은 [`docs/perf/README.md`](docs/perf/README.md) 참조.
+`pnpm perf`가 현재 체크아웃의 로컬 production-mode 빌드를 띄우고 페이지마다 5회 측정해 **중앙 run**을 `docs/perf/history.md`에 기록합니다. 지표 의미와 사용법은 [`docs/perf/README.md`](docs/perf/README.md) 참조.
 
-**측정 원장이 둘이고 서로 다른 것을 잽니다.** `history.md`는 **로컬** 프로덕션 빌드의 렌더링 지표(Perf·LCP·TBT…)를, [`docs/perf/deploy-latency.md`](docs/perf/deploy-latency.md)는 **배포된 URL**의 서버 응답 지연(TTFB)을 기록합니다. 로컬 측정은 사용자↔함수 거리와 콜드스타트가 없어 배포 환경의 지연을 구조적으로 보지 못합니다 — 실제로 로컬 원장이 양호한 동안 배포에서는 인증 API 하나가 1초를 썼습니다. 함수 리전 결정과 프록시 배치의 사각지대는 [`docs/perf/function-region.md`](docs/perf/function-region.md) 참조.
+**측정 원장이 둘이고 서로 다른 것을 잽니다.** `history.md`는 로컬 production-mode 앱의 렌더링 지표(Perf·LCP·TBT…)를, [`docs/perf/deploy-latency.md`](docs/perf/deploy-latency.md)는 **배포된 production URL**의 서버 응답 지연(TTFB)을 기록합니다. 로컬 앱도 호스팅된 Supabase를 사용하지만 사용자↔배포·리전·첫 요청 비용은 보지 못하므로 두 원장의 값을 직접 비교하지 않습니다. 함수 리전 결정은 [`docs/perf/function-region.md`](docs/perf/function-region.md), 비교에서 제외한 과거 기록은 [`docs/perf/archive/README.md`](docs/perf/archive/README.md) 참조.
 
 측정 도구를 쓰면서 정한 규칙이 셋 있습니다.
 
-- **측정값은 데이터 볼륨과 한 쌍입니다.** 측정마다 행 수를 함께 기록하고, 직전 측정과 볼륨이 다르면 원장에 "비교 불가" 경고를 붙입니다. 이게 없으면 데이터가 늘어난 걸 코드 회귀로 오해하게 됩니다 — 실제로 겪었고, 커밋 이분 탐색으로는 찾을 수 없는 원인이었습니다.
+- **측정값은 대상 URL·환경·데이터 볼륨과 한 쌍입니다.** 하나라도 확인할 수 없거나 다르면 델타를 만들지 않습니다. 배경 사건은 [`docs/perf/incidents/`](docs/perf/incidents/)에 분리했습니다.
 - **원인을 진단하기 전에 최적화하지 않습니다.** `pnpm perf:diagnose <경로>`로 `mainthread-work-breakdown`·`dom-size`를 먼저 봅니다. 지표 조합으로 원인을 추론하면 틀립니다 — 레이아웃 비용도 LCP·CLS를 안 건드리고 TBT만 올립니다.
 - **노이즈 임계값 이하 변화(`(—)`)는 개선으로 보고하지 않습니다.** 한 번 잰 값은 값이 아니라 산포 중 하나입니다.
 

@@ -1,11 +1,16 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { getAuthCookieHeader } from './auth.mjs'
+import {
+  applySetCookieHeaders,
+  getAuthCookies,
+  serializeCookieHeader,
+} from './auth.mjs'
 import { perfCredentials } from './account.mjs'
 import { loadPerfEnvironment } from './environment.mjs'
 import { withPerfLock } from './perf-lock.mjs'
 import { DEPLOY_PATHS, pathKey, writeEffectReason } from './deploy-paths.mjs'
+import { assertDeployResponse } from './deploy-response.mjs'
 import {
   CONTROL_KEY,
   appendDeployLedger,
@@ -32,7 +37,7 @@ const HELP = `배포 URL 지연 측정 (TTFB) — 결과를 docs/perf/deploy-lat
   pnpm perf:deploy                      전 경로, 경로당 7회
   pnpm perf:deploy --path /             특정 경로만
   pnpm perf:deploy --path /,/daily      여러 경로
-  pnpm perf:deploy --runs 5             요청 횟수 조정 (기본 7, 1회차는 cold)
+  pnpm perf:deploy --runs 5             요청 횟수 조정 (기본 7, 첫 요청 분리)
   pnpm perf:deploy --base <url>         측정 대상 오리진 (기본 ${DEFAULT_BASE})
   pnpm perf:deploy --dry-run            측정만 하고 원장·스냅샷은 쓰지 않는다
 
@@ -66,44 +71,67 @@ function parseArgs(argv) {
  * 본문은 끝까지 읽는다: 읽지 않고 버리면 연결이 재사용되지 않아 다음 회차에
  * 핸드셰이크 비용이 섞인다.
  */
-async function probe(url, cookie) {
+function setCookieHeaders(headers) {
+  if (typeof headers.getSetCookie === 'function') return headers.getSetCookie()
+  const value = headers.get('set-cookie')
+  return value ? [value] : []
+}
+
+async function probe(url, target, jar) {
   const started = performance.now()
   const res = await fetch(url, {
     redirect: 'manual',
     cache: 'no-store',
-    headers: cookie ? { Cookie: cookie } : {},
+    headers: target.auth ? { Cookie: serializeCookieHeader(jar.cookies) } : {},
   })
   const ttfb = performance.now() - started
+  if (target.auth) {
+    jar.cookies = applySetCookieHeaders(jar.cookies, setCookieHeaders(res.headers))
+  }
   await res.arrayBuffer()
   return {
     ms: ttfb,
     status: res.status,
+    location: res.headers.get('location'),
     vercelId: res.headers.get('x-vercel-id'),
     proxyRegion: res.headers.get('x-proxy-region'),
     deploySha: res.headers.get('x-deploy-sha'),
   }
 }
 
-/** 경로 하나를 N회 재고, 1회차(cold)와 나머지 median(warm)을 나눠 돌려준다. */
-async function measurePath(base, target, cookie, runs) {
+/** 경로 하나를 N회 재고, 첫 요청과 나머지 repeat median을 나눠 돌려준다. */
+async function measurePath(base, target, jar, runs) {
   const samples = []
   for (let i = 0; i < runs; i++) {
-    samples.push(await probe(`${base}${target.path}`, target.auth ? cookie : null))
+    const sample = await probe(`${base}${target.path}`, target, jar)
+    assertDeployResponse(target, sample, base)
+    samples.push(sample)
     process.stdout.write(`  ${i + 1}/${runs}\r`)
   }
-  const [cold, ...warm] = samples
-  const id = parseVercelId(cold.vercelId)
+  const [first, ...repeats] = samples
+  const repeatMedian = median(repeats.map((sample) => sample.ms))
+  const representative = repeats.find((sample) => sample.ms === repeatMedian) ?? first
+  const id = parseVercelId(representative.vercelId)
   return {
-    cold: cold.ms,
-    warm: median(warm.map((s) => s.ms)),
-    status: cold.status,
+    first: first.ms,
+    repeatMedian,
+    status: representative.status,
     segments: id.segments,
     edge: id.edge,
     functionRegion: id.functionRegion,
-    proxyRegion: cold.proxyRegion,
-    deploySha: cold.deploySha,
+    proxyRegion: representative.proxyRegion,
+    deploySha: representative.deploySha,
     note: target.note ?? '',
-    samples: samples.map((s) => Math.round(s.ms)),
+    samples: samples.map((sample, index) => ({
+      run: index + 1,
+      ms: Math.round(sample.ms),
+      status: sample.status,
+      location: sample.location,
+      edge: parseVercelId(sample.vercelId).edge,
+      functionRegion: parseVercelId(sample.vercelId).functionRegion,
+      proxyRegion: sample.proxyRegion,
+      deploySha: sample.deploySha,
+    })),
   }
 }
 
@@ -129,7 +157,7 @@ async function measure(opts) {
     // `--path` 가 목록에 없는 경로면 임의 경로로 받아들이되 인증은 붙인다.
     for (const p of opts.only) {
       if (!targets.some((t) => t.path.split('?')[0] === p)) {
-        targets.push({ path: p, auth: true, note: '--path 로 지정' })
+        targets.push({ path: p, auth: true, expectedStatus: 200, note: '--path 로 지정' })
       }
     }
   }
@@ -145,7 +173,7 @@ async function measure(opts) {
   const creds = perfCredentials()
   console.log(`▸ 대상: ${opts.base}`)
   console.log('▸ 인증 세션 발급…')
-  const cookie = await getAuthCookieHeader()
+  const jar = { cookies: await getAuthCookies() }
 
   const results = {}
 
@@ -154,11 +182,16 @@ async function measure(opts) {
     console.log(`▸ 대조군: ${control}`)
     results[CONTROL_KEY] = await measurePath(
       opts.base,
-      { path: control, auth: false, note: 'CDN 엣지 — 회선 상태 판정용' },
-      cookie,
+      {
+        path: control,
+        auth: false,
+        expectedStatus: 200,
+        note: 'CDN 엣지 — 회선 상태 판정용',
+      },
+      jar,
       opts.runs
     )
-    console.log(`  → warm ${Math.round(results[CONTROL_KEY].warm)}ms        `)
+    console.log(`  → repeat median ${Math.round(results[CONTROL_KEY].repeatMedian)}ms        `)
   } else {
     console.log('▸ ⚠️ 대조군 정적 파일을 찾지 못했습니다 — 회선 상태 판정이 생략됩니다')
   }
@@ -166,22 +199,53 @@ async function measure(opts) {
   for (const target of targets) {
     const key = pathKey(target)
     console.log(`▸ 측정: ${key}`)
-    results[key] = await measurePath(opts.base, target, cookie, opts.runs)
+    results[key] = await measurePath(opts.base, target, jar, opts.runs)
     const r = results[key]
-    console.log(`  → ${r.status} · cold ${Math.round(r.cold)}ms · warm ${Math.round(r.warm)}ms`)
+    console.log(
+      `  → ${r.status} · first ${Math.round(r.first)}ms · ` +
+        `repeat median ${Math.round(r.repeatMedian)}ms`
+    )
   }
 
   const vercelJson = JSON.parse(fs.readFileSync(path.join(ROOT, 'vercel.json'), 'utf8'))
   const observed = Object.values(results)
+  const samples = observed.flatMap((result) => result.samples)
+  const deployShas = [...new Set(samples.map((sample) => sample.deploySha).filter(Boolean))]
+  const proxyRegions = [...new Set(samples.map((sample) => sample.proxyRegion).filter(Boolean))]
+  if (deployShas.length !== 1) {
+    throw new Error(
+      deployShas.length
+        ? `측정 중 배포 커밋이 바뀌었습니다: ${deployShas.join(', ')}`
+        : '배포 커밋을 관측하지 못해 원장에 기록할 수 없습니다.'
+    )
+  }
+  if (proxyRegions.length !== 1) {
+    throw new Error(
+      proxyRegions.length
+        ? `측정 중 프록시 리전이 바뀌었습니다: ${proxyRegions.join(', ')}`
+        : '프록시 리전을 관측하지 못해 원장에 기록할 수 없습니다.'
+    )
+  }
   const snapshot = {
+    schemaVersion: 2,
+    valid: true,
     timestamp: new Date().toISOString(),
     runs: opts.runs,
     base: opts.base,
     account: creds?.source ?? null,
-    // 프록시 리전·배포 SHA 는 경로마다 같아야 한다. 다르면 측정 중 재배포가
-    // 있었다는 뜻이므로 그대로 다 남긴다.
-    proxyRegion: observed.find((r) => r.proxyRegion)?.proxyRegion ?? null,
-    deploySha: observed.find((r) => r.deploySha)?.deploySha ?? null,
+    // 프록시를 통과한 sample에서 리전·배포 SHA가 하나로 모여야 한다. 다르면
+    // 측정 중 재배포 또는 실행 조건 변화로 보고 위에서 기록을 중단한다.
+    environment: {
+      kind: 'deployed-production',
+      origin: opts.base,
+      runner: {
+        platform: process.platform,
+        arch: process.arch,
+        node: process.version,
+      },
+    },
+    proxyRegion: proxyRegions[0],
+    deploySha: deployShas[0],
     expectedFunctionRegion: expectedFunctionRegion(vercelJson),
     controlPath: control,
     results,

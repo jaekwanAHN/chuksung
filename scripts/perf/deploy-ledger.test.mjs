@@ -1,11 +1,17 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import os from 'node:os'
+import path from 'node:path'
 import test from 'node:test'
 import {
   CONTROL_KEY,
+  LEDGER_MARKER,
+  appendDeployLedger,
   controlDrift,
   conditionNotes,
   deployComparisonProblems,
   expectedFunctionRegion,
+  findPreviousDeploySnapshot,
   ledgerWarnings,
   median,
   parseVercelId,
@@ -17,18 +23,32 @@ import {
 // (`docs/parallel-work.md` 가 워크트리 잠금을 단위 테스트로 두는 것과 같은 이유.)
 
 const snapshot = (over = {}) => ({
+  schemaVersion: 2,
+  valid: true,
   timestamp: '2026-08-20T05:00:00.000Z',
   runs: 7,
   base: 'https://example.com',
+  environment: {
+    kind: 'deployed-production',
+    origin: 'https://example.com',
+    runner: { platform: 'linux', arch: 'x64', node: 'v24.18.0' },
+  },
   account: 'perf',
   proxyRegion: 'sin1',
   deploySha: 'abc1234',
   expectedFunctionRegion: 'icn1',
   results: {
-    [CONTROL_KEY]: { cold: 40, warm: 14, status: 200, segments: 1, edge: 'icn1', note: '' },
+    [CONTROL_KEY]: {
+      first: 40,
+      repeatMedian: 14,
+      status: 200,
+      segments: 1,
+      edge: 'icn1',
+      note: '',
+    },
     '/daily (인증)': {
-      cold: 300,
-      warm: 130,
+      first: 300,
+      repeatMedian: 130,
       status: 200,
       segments: 2,
       edge: 'icn1',
@@ -112,13 +132,28 @@ test('진입 엣지가 회차 안에서 갈리면 경고한다', () => {
   assert.match(warnings[0], /진입 엣지가 회차 안에서 갈렸다/)
 })
 
+test('대표 run이 같아도 개별 sample의 진입 엣지가 갈리면 비교하지 않는다', () => {
+  const snap = snapshot()
+  snap.results['/daily (인증)'].samples = [
+    { edge: 'icn1' },
+    { edge: 'kix1' },
+  ]
+
+  assert.ok(deployComparisonProblems(snap, snapshot()).includes('edges'))
+  assert.ok(ledgerWarnings(snap, snapshot()).some((warning) => /진입 엣지/.test(warning)))
+  assert.doesNotMatch(renderSection(snap, snapshot()), /🟢|🔴/)
+})
+
 test('대조군이 크게 흔들린 회차는 세로 비교 불가로 표시된다', () => {
   // 2026-08-11 회차의 실제 값 (14ms → 120ms)
-  const drift = controlDrift(snapshot({ results: { [CONTROL_KEY]: { warm: 120 } } }), snapshot())
+  const drift = controlDrift(
+    snapshot({ results: { [CONTROL_KEY]: { repeatMedian: 120 } } }),
+    snapshot()
+  )
   assert.deepEqual(drift, { from: 14, to: 120 })
 
   const warnings = ledgerWarnings(
-    snapshot({ results: { [CONTROL_KEY]: { warm: 120 } } }),
+    snapshot({ results: { [CONTROL_KEY]: { repeatMedian: 120 } } }),
     snapshot()
   )
   assert.ok(warnings.some((w) => /대조군/.test(w)))
@@ -126,10 +161,13 @@ test('대조군이 크게 흔들린 회차는 세로 비교 불가로 표시된�
 
 test('대조군의 작은 변동은 경고하지 않는다', () => {
   // 비율은 넘지만(14→20, 43%) 절대량 20ms 미만
-  assert.equal(controlDrift(snapshot({ results: { [CONTROL_KEY]: { warm: 20 } } }), snapshot()), null)
+  assert.equal(
+    controlDrift(snapshot({ results: { [CONTROL_KEY]: { repeatMedian: 20 } } }), snapshot()),
+    null
+  )
   // 절대량은 넘지만(130→155) 비율 50% 미만
-  const prev = snapshot({ results: { [CONTROL_KEY]: { warm: 130 } } })
-  const cur = snapshot({ results: { [CONTROL_KEY]: { warm: 155 } } })
+  const prev = snapshot({ results: { [CONTROL_KEY]: { repeatMedian: 130 } } })
+  const cur = snapshot({ results: { [CONTROL_KEY]: { repeatMedian: 155 } } })
   assert.equal(controlDrift(cur, prev), null)
 })
 
@@ -141,17 +179,17 @@ test('한쪽에 대조군이 없으면 판단하지 않는다 — 근거 없는 
 test('델타는 노이즈 임계를 넘을 때만 표시된다', () => {
   const prev = snapshot({ account: 'perf' })
   const cur = snapshot({ account: 'perf' })
-  cur.results['/daily (인증)'].warm = 60 // 130 → 60, 개선
+  cur.results['/daily (인증)'].repeatMedian = 60 // 130 → 60, 개선
 
   const improved = renderSection(cur, prev)
   assert.match(improved, /🟢-70ms/)
 
   const same = snapshot({ account: 'perf' })
-  same.results['/daily (인증)'].warm = 140 // +10ms, max(20, 19.5) 미만
+  same.results['/daily (인증)'].repeatMedian = 140 // +10ms, max(20, 19.5) 미만
   assert.match(renderSection(same, prev), /140ms \(—\)/)
 
   const worse = snapshot({ account: 'perf' })
-  worse.results['/daily (인증)'].warm = 200 // +70ms
+  worse.results['/daily (인증)'].repeatMedian = 200 // +70ms
   assert.match(renderSection(worse, prev), /🔴\+70ms/)
 })
 
@@ -167,9 +205,23 @@ test('계정·오리진·횟수가 다르면 델타 없는 새 기준선으로 �
   assert.doesNotMatch(section, /🟢|🔴/)
 })
 
+test('측정 runner가 다르면 델타 없는 새 기준선으로 만든다', () => {
+  const prev = snapshot()
+  const cur = snapshot({
+    environment: {
+      ...snapshot().environment,
+      runner: { ...snapshot().environment.runner, node: 'v25.0.0' },
+    },
+  })
+
+  assert.ok(deployComparisonProblems(cur, prev).includes('environment'))
+  assert.ok(ledgerWarnings(cur, prev).some((warning) => /측정 runner가 다르다/.test(warning)))
+  assert.doesNotMatch(renderSection(cur, prev), /🟢|🔴/)
+})
+
 test('프록시 리전이나 대조군을 확인할 수 없으면 델타를 만들지 않는다', () => {
   const noProxy = snapshot({ proxyRegion: null })
-  const noControl = snapshot({ results: { '/daily (인증)': { warm: 120 } } })
+  const noControl = snapshot({ results: { '/daily (인증)': { repeatMedian: 120 } } })
 
   assert.ok(deployComparisonProblems(noProxy, snapshot()).includes('proxyRegion'))
   assert.ok(deployComparisonProblems(noControl, snapshot()).includes('control'))
@@ -182,5 +234,47 @@ test('프록시 리전이나 대조군을 확인할 수 없으면 델타를 만�
 test('비교 대상이 없으면 baseline 으로 적는다', () => {
   const section = renderSection(snapshot(), null)
   assert.match(section, /baseline/)
+  assert.match(section, /2026-08-20 05:00 UTC/)
+  assert.match(section, /linux\/x64/)
   assert.doesNotMatch(section, /🟢|🔴/)
+})
+
+test('직전 배포 스냅샷 검색은 legacy와 invalid 파일을 건너뛴다', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'perf-deploy-ledger-test-'))
+  try {
+    fs.writeFileSync(
+      path.join(dir, '2026-08-20T00-00-00.json'),
+      JSON.stringify(snapshot({ schemaVersion: undefined }))
+    )
+    fs.writeFileSync(
+      path.join(dir, '2026-08-21T00-00-00.json'),
+      JSON.stringify(snapshot({ valid: false }))
+    )
+    const trusted = snapshot({ timestamp: '2026-08-19T00:00:00.000Z' })
+    fs.writeFileSync(path.join(dir, '2026-08-19T00-00-00.json'), JSON.stringify(trusted))
+
+    assert.deepEqual(
+      findPreviousDeploySnapshot(dir, path.join(dir, 'current.json'), ['/daily (인증)']),
+      trusted
+    )
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('원장 삽입은 기존 기록을 보존하고 파일 끝에 빈 줄을 만들지 않는다', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'perf-deploy-append-test-'))
+  const ledger = path.join(dir, 'deploy-latency.md')
+  try {
+    fs.writeFileSync(ledger, `머리말\n\n${LEDGER_MARKER}\n\n# 기존 기록\n`)
+    appendDeployLedger(ledger, snapshot(), null)
+
+    const written = fs.readFileSync(ledger, 'utf8')
+    assert.match(written, /자동 측정/)
+    assert.match(written, /# 기존 기록/)
+    assert.ok(written.endsWith('# 기존 기록\n'))
+    assert.ok(!written.endsWith('\n\n'))
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
 })

@@ -54,7 +54,8 @@ Editor 로 수동 적용해 와서 오탐이 나기 쉬운 구조다. 그래서 
 | `anon` revoke 가 살아 있나 | 같은 호출을 anon 키로 | 401 |
 
 읽기 전용(`stable`) 함수에만 쓸 것. 쓰기 부작용이 있는 RPC 를 이렇게 두드리면 데이터
-볼륨이 바뀌어 `docs/perf` 원장이 오염된다(`docs/perf/README.md` 의 2026-07-27 사건).
+볼륨이 바뀌어 성능 원장이 오염된다
+(`docs/perf/incidents/data-volume-contamination.md`).
 
 ## 남은 것
 

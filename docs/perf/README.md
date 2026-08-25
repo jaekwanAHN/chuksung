@@ -1,131 +1,102 @@
-# 성능 측정 (Lighthouse)
+# 성능 측정
 
-로컬에서 앱 성능을 명령어 하나로 측정하고, 이전 대비 개선/회귀를 문서로 축적한다.
-
-## 원장이 둘이다 — 무엇을 재는지가 다르다
+성능 숫자는 실행 환경과 분리해서 읽을 수 없다. 이 저장소는 서로 다른 두 축을 **별도
+원장**에 기록한다. 두 값을 한 델타로 합치지 않는다.
 
 | | `pnpm perf` → `history.md` | `pnpm perf:deploy` → `deploy-latency.md` |
 |---|---|---|
-| 대상 | 로컬 프로덕션 빌드 (`localhost:3111`) | 배포 URL (`chuksung.vercel.app`) |
-| 축 | 렌더링 (Lighthouse 5회 median) | 서버 응답 지연 (TTFB, 7회) |
-| 보는 것 | 번들·하이드레이션·레이아웃 | 리전 배치·콜드스타트·리다이렉트 비용 |
-| 기록하는 조건 | 데이터 볼륨·계정 | 배포 커밋·리전·대조군 |
+| 환경 | 로컬 Next.js production-mode 빌드 + 로컬 Chromium + 호스팅된 Supabase | 배포된 production URL |
+| 지표 | Lighthouse 렌더링 지표, 페이지당 5회 | HTTP TTFB, 경로당 7회 |
+| 보는 것 | 번들·하이드레이션·레이아웃 | 리전·리다이렉트·서버 응답 |
+| 비교 조건 | 최종 URL·runtime error·계정·데이터·도구/실행 환경 | 상태·Location·배포 SHA·리전·대조군 |
 
-**둘 다 필요하다.** 로컬 측정은 사용자↔함수 거리와 리전 분열을 구조적으로 보지
-못하고(`function-region.md`), 배포 측정은 렌더링 지표를 보지 않는다.
-아래는 로컬 쪽 문서이고, 배포 쪽은 `deploy-latency.md` 「방법」에 있다.
+로컬 앱만 로컬이다. DB는 `.env.local`의 `NEXT_PUBLIC_SUPABASE_URL`이 가리키는 원격
+Supabase다. 반대로 배포 TTFB는 브라우저 렌더링 지표를 보지 않는다. 그래서 둘 다
+필요하지만 **서로의 기준선은 될 수 없다**.
 
-## 사용법
+## 로컬 Lighthouse
 
 ```bash
-pnpm perf                         # 전체 대시보드 페이지, 5회 median
-pnpm perf --page /daily           # 특정 페이지만 (수정한 페이지만 재측정)
+pnpm perf                         # 전체 대시보드 페이지, 5회
+pnpm perf --page /daily           # 특정 페이지
 pnpm perf --page /daily,/weekly   # 여러 페이지
-pnpm perf --runs 3                # 실행 횟수 조정 (기본 5)
-pnpm perf --no-build --port 3101  # 이미 떠 있는 프로덕션 서버 재사용
-pnpm perf --help                  # 옵션 전체
+pnpm perf --runs 3                # 진단용 실행 횟수 조정
+pnpm perf --no-build --port 3101  # 이미 뜬 서버 진단 — 원장에는 기록하지 않음
+pnpm perf:diagnose /jobs          # 원본 LHR과 상세 audit을 임시 디렉토리에 저장
 ```
 
-기본 동작: `pnpm build` → `pnpm start`(포트 3111) → 인증 세션 주입 →
-각 페이지를 N회 측정해 **Perf 점수의 median run** 을 채택 → 결과 기록.
+기록 경로는 항상 `pnpm build`와 `pnpm start`로 현재 체크아웃을 직접 띄운다. 인증 쿠키는
+Lighthouse가 붙는 Playwright 브라우저 저장소에 넣고 저장소 초기화를 끈다. 그래야 서버의
+토큰 회전이 다음 run에도 이어진다. 각 run은 다음 조건을 모두 통과해야 한다.
 
-기본 체크아웃과 `pnpm wt:new`로 만든 작업 워크트리 모두에서 실행할 수 있다. 결과는
-현재 체크아웃의 `docs/perf/`에 기록되고, 계정·잠금·비교 가능성 규칙은
-`measurement-contract.md`가 정의한다.
+- `lhr.runtimeError`가 없다
+- `lhr.finalDisplayedUrl`이 요청 URL과 정확히 같다
+- 모든 run의 요청·최종 URL과 지표가 스냅샷에 남는다
 
-## 왜 이렇게 측정하나
+하나라도 실패하면 명령 전체가 실패하고 원장과 스냅샷을 쓰지 않는다. `--no-build`는
+어느 체크아웃이 서버를 띄웠는지 증명할 수 없으므로 진단 결과만 출력한다.
 
-- **5회 median**: Lighthouse lab 지표는 실행마다 ±10% 튀므로, 1회 측정으론
-  before/after 비교가 노이즈에 묻힌다. Perf 점수 기준 median run 을 골라 지표
-  집합의 내부 일관성을 유지한다 (Lighthouse 권장).
-- **프로덕션 빌드 대상**: dev 서버는 소스맵/HMR 오버헤드로 점수가 실제보다 낮게
-  나와 비교가 왜곡된다. 항상 `build && start` 결과를 측정한다.
-- **인증**: 대시보드 페이지는 세션이 필요하다. `e2e/auth.setup.ts` 와 동일하게
-  테스트 계정으로 로그인해 발급한 쿠키를 Lighthouse `Cookie` 헤더로 주입한다
-  (`scripts/perf/auth.mjs`). 필요한 환경변수는 `.env.local` 의
-  `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`, 기본 체크아웃 `.env.local` 의
-  `PERF_TEST_USER_EMAIL/PASSWORD`. 전용 계정이 없으면 E2E로 폴백하지 않고 실패한다.
-- **비용 0**: Lighthouse·chrome-launcher 모두 무료 OSS. 측정 결과를 외부로
-  보내지 않고, 로컬 서버를 로컬 Chrome(Playwright chromium)으로 측정한다.
-- **로컬인 것은 앱까지다 — DB 는 원격이다**: `.env.local` 의
-  `NEXT_PUBLIC_SUPABASE_URL` 이 가리키는 **호스팅된 Supabase(서울)** 에 그대로
-  붙는다. 그래서 로컬에서 0 이 되는 구간은 앱↔DB 가 아니라 브라우저↔앱이고,
-  아래 「측정 조건: 데이터 볼륨」이 필요한 이유이기도 하다 — 측정이 보는 데이터는
-  perf 측정 회차들이 함께 사용하는 **원격 전용 계정의 실제 행**이다. E2E 계정과는
-  분리되어 있다. 배포 환경과의 나머지 차이는 `deploy-latency.md` 의 구간 표를 볼 것.
+각 페이지는 Perf 점수로 정렬한 아래쪽 중앙 run을 표의 대표값으로 사용한다. 개별 run은
+JSON에 함께 남아 분산과 대상 URL을 다시 확인할 수 있다.
 
-## 측정 지표
+활성 원장의 시각은 실행 위치와 무관하게 UTC로 표기한다.
 
-모바일 폼팩터 + simulated throttling(Lighthouse 기본) 기준.
+## 배포 TTFB
 
-| 지표 | 의미 | 좋은 값 |
-|------|------|---------|
-| **Perf** | 아래 성능 지표 가중 합산 점수 (0–100) | ≥ 90 |
-| **A11y** (Accessibility) | 접근성 카테고리 점수 (0–100) | ≥ 95 |
-| **SEO** | 검색 노출 기본 요건 카테고리 점수 (0–100) | ≥ 95 |
-| **LCP** (Largest Contentful Paint) | 가장 큰 콘텐츠가 뜨는 시점 = 로딩 체감 | < 2.5s |
-| **TBT** (Total Blocking Time) | 메인스레드 blocking 총합 = 상호작용성 (실사용 INP 의 lab 대용) | < 200ms |
-| **CLS** (Cumulative Layout Shift) | 레이아웃 밀림 = 시각 안정성 | < 0.1 |
-| **FCP** (First Contentful Paint) | 첫 픽셀이 뜨는 시점 | < 1.8s |
-| **SI** (Speed Index) | 화면이 시각적으로 채워지는 속도 | < 3.4s |
+```bash
+pnpm perf:deploy                 # 등록된 전체 경로
+pnpm perf:deploy --path /daily   # 특정 경로
+pnpm perf:deploy --dry-run       # 측정만 하고 기록하지 않음
+```
 
-> 실사용자 상호작용 지연(INP)은 필드 데이터라 lab(Lighthouse)에선 못 잡는다.
-> lab 에선 TBT 가 대용 지표.
+첫 요청은 별도로 기록하고 나머지 요청의 median을 대표값으로 쓴다. 첫 요청이 실제
+서버리스 cold start였다는 보장은 없으므로 `cold`라고 부르지 않는다.
 
-### A11y / SEO 를 읽는 법
+인증 응답의 `Set-Cookie`를 다음 요청에 반영하며, 모든 sample의 기대 상태와 리다이렉트
+Location을 확인한다. 배포 SHA나 프록시 리전을 관측하지 못하거나 측정 중 값이 바뀌면
+원장에 기록하지 않는다. 진입 엣지와 정적 자산 대조군이 흔들리거나 측정 runner가
+달라진 회차는 델타를 만들지 않는다.
 
-- **추가 실행 비용은 없다.** Lighthouse 를 `onlyCategories` 없이 돌려 왔으므로
-  접근성·SEO 카테고리는 이전부터 매 run 감사되고 있었고, 점수만 버려졌을 뿐이다.
-- **median run 선정 기준은 여전히 Perf 점수다.** A11y/SEO 는 그 run 에서 함께
-  읽은 값이다. 두 카테고리는 정적 audit 위주라 run 간 편차가 사실상 없어
-  별도 median 을 뽑을 실익이 없다. 다만 값이 흔들리면 이 가정을 의심할 것.
-- **점수는 자동 audit 만 반영한다.** Lighthouse 접근성 점수 100 은 "접근성 문제
-  없음"이 아니라 "자동으로 잡히는 문제 없음"이다. 키보드 이동·포커스 순서·
-  스크린리더 흐름은 수동 확인 영역으로 남는다.
-- **점수만으로는 원인을 못 찾는다.** 원장은 점수만 남긴다. 어떤 audit 이 깎였는지는
-  `pnpm perf:diagnose` 가 떨어뜨리는 원본 LHR JSON(`categories.accessibility.auditRefs`
-  → `audits[id].score < 1`)에서 봐야 한다. diagnose 의 콘솔 출력 자체는 TBT 진단용이라
-  접근성 항목을 따로 정리해주지 않는다.
-- 옛 스냅샷에는 `a11y`/`seo` 가 없다. 그런 스냅샷과 비교할 때는 델타 없이 현재값만
-  찍힌다 (없는 값을 0 으로 보지 않는다 — 근거 없는 🔴 을 만들지 않기 위해서다).
+`/login (비인증)`과 `/login (인증)`은 의도된 측정 대상이다. 각각 페이지 함수와 인증
+프록시 리다이렉트 비용을 격리한다. 대시보드 경로를 요청했는데 로그인 화면으로 이동한
+로컬 Lighthouse 오측정과는 다르다.
 
-## 산출물
+## 지표
 
-- `history.md` — 측정마다 델타 표가 최신순으로 쌓이는 **원장**. 셀은 `현재값 🟢/🔴델타`
-  형식(🟢 개선 / 🔴 회귀 / (—) 오차 범위). 커밋 대상.
-- `snapshots/<타임스탬프>.json` — 원본 측정값. 다음 측정의 비교 기준으로 쓰인다.
-  용량이 부담되면 gitignore 하고 `history.md` 만 커밋해도 된다.
+로컬 Lighthouse는 모바일 폼팩터와 simulated throttling을 사용한다.
 
-## 소요시간 (대략)
+| 지표 | 의미 | 프로젝트 기준 |
+|---|---|---:|
+| Perf | Lighthouse 성능 종합 점수 | ≥ 90 |
+| A11y | 자동 접근성 audit 점수 | ≥ 95 |
+| SEO | 검색 노출 기본 audit 점수 | ≥ 95 |
+| LCP | 가장 큰 콘텐츠가 뜨는 시점 | < 2.5s |
+| TBT | 메인스레드 blocking 총합 | < 200ms |
+| CLS | 레이아웃 밀림 | < 0.1 |
+| FCP | 첫 콘텐츠가 뜨는 시점 | < 1.8s |
+| SI | 화면이 시각적으로 채워지는 속도 | < 3.4s |
 
-1회 audit ≈ 15~25s, 순차 실행. 전체(8p×5회) ≈ 빌드 포함 15분 안팎,
-특정 페이지(3~5회) ≈ 1~2분.
+A11y 100은 자동 audit 통과일 뿐이다. 키보드 이동·포커스 순서·스크린리더 흐름은 별도
+검증 영역이다. 실사용 INP도 lab 측정이 아니라 필드 데이터가 필요하다.
 
-## 측정 조건: 데이터 볼륨
+## 비교 계약과 산출물
 
-`pnpm perf` 는 측정할 때마다 테스트 계정의 행 수를 세어 스냅샷과 원장에 남긴다
-(`scripts/perf/volume.mjs`). 직전 측정과 볼륨이 크게 다르면 원장 섹션에 `⚠️` 경고가
-붙고, 색상 델타를 만들지 않은 새 기준선으로 기록한다.
+비교 가능성의 단일 기준은 `measurement-contract.md`다. 요약하면 같은 계정·데이터·
+설정·실행 환경이어야 하며, 숫자 델타가 성공 기준인 작업에서만 전후 측정한다.
 
-**왜 필요한가**: Lighthouse 지표는 데이터 양에 크게 좌우된다. 2026-07-27 에 테스트
-계정으로 성능용 데이터가 시딩되면서, 07-21 대비 07-28 측정에 🔴 델타가 무더기로
-찍혔다. 코드 회귀로 보였지만 원인 커밋은 존재하지 않았다 — 이분 탐색을 했다면
-영원히 찾지 못했을 것이다. **비교 조건을 기록하지 않는 측정 도구는 언젠가 조용히
-거짓말을 한다.**
+- `history.md`: 신뢰 조건을 통과한 로컬 측정만 있는 활성 원장
+- `deploy-latency.md`: 신뢰 조건을 통과한 배포 TTFB 활성 원장
+- `snapshots/`: 다음 비교에 사용하는 schema v2 JSON. **원장과 함께 커밋한다**
+- `archive/`: 현재 비교기에서 제외된 legacy·오측정 자료
+- `incidents/`: 오염 원인과 재발 방지 결정
 
-경고 임계값은 **비율 5% 초과 AND 절대 10행 이상**(`volume.mjs`). 둘 다 넘어야 경고한다 —
-비율만 보면 분모가 작을 때 오탐이 나고(e2e 가 템플릿 3개 만들면 54→57 = 5.5%),
-절대량만 보면 큰 테이블의 의미 있는 변화를 놓친다.
+과거 기록의 분류는 `archive/README.md`에 있다. 데이터 볼륨 오염과 로그인 화면
+오측정의 교훈은 각각 `incidents/data-volume-contamination.md`,
+`incidents/login-page-mismeasurement.md`에 남긴다.
 
-볼륨을 세지 못해도 측정값 자체는 기록하지만 직전 회차와 비교하지 않는다. 옛 스냅샷처럼
-볼륨 정보가 없는 쪽도 같은 데이터셋이라고 볼 근거가 없으므로 새 기준선이 된다.
+## 계정과 데이터
 
-## 측정 조건: 계정
-
-**perf 는 전용 계정(`PERF_TEST_USER_*`)으로 측정한다. E2E 는 이 계정에 절대
-로그인하지 않는다.** 계정을 공유하면 E2E 가 만든 행이 계속 쌓여 위의 볼륨 경고가
-상시 점등되고, 그러면 경고는 곧 무시된다. 계정 분리는 그 조건 자체를 없앤다.
-
-계정 생성·복제 방법과 제약은 `accounts.md`. 스냅샷에는 어느 계정에서 잰 값인지
-(`account`) 함께 남는다. 양쪽 모두 perf 전용 계정이라는 근거가 없으면 원장에 경고를
-붙이고 색상 델타 없이 **새 기준선**으로 기록한다.
+두 명령 모두 `PERF_TEST_USER_EMAIL/PASSWORD` 전용 계정만 사용한다. E2E 계정으로
+폴백하지 않는다. 로컬 원장은 측정마다 데이터 행 수를 기록하며, 직전 회차와 볼륨이
+다르거나 읽을 수 없으면 델타 없이 새 기준선으로 취급한다. 계정 생성과 복제 규칙은
+`accounts.md`에 있다.

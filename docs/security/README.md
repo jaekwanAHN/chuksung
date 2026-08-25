@@ -105,7 +105,8 @@ GET /api/tasks?scope=daily&target_date=2030-01-01&client_now=2030-01-01T23:59
 ## 5. 프록시의 검증은 낙관적이다 — 인가는 여기서 하지 않는다
 
 이후 프록시의 `getUser()` 도 `getClaims()`(JWKS 로 서명·만료를 **로컬 검증**)로 바뀌었다.
-성능 근거는 `docs/perf/deploy-latency.md`, 설계 배경은 `docs/auth-redirects.md` 에 있다.
+legacy 성능 근거는 `docs/perf/archive/deploy-history-2026-08-10--2026-08-20.md`,
+설계 배경은 `docs/auth-redirects.md`에 있다.
 
 **보안 관점에서 이 문서가 짚어야 할 것은 하나다.**
 

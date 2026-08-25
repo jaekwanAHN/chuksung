@@ -15,7 +15,7 @@
 // (쿠키는 httpOnly 가 아니라 document.cookie 로 설정 가능).
 import fs from 'node:fs'
 import { chromium } from '@playwright/test'
-import { getAuthCookieHeader } from './perf/auth.mjs'
+import { getAuthCookies, toBrowserCookies } from './perf/auth.mjs'
 
 for (const f of ['.env.local', '.env.test']) {
   if (fs.existsSync(f)) process.loadEnvFile(f)
@@ -40,26 +40,14 @@ const e2eEmail = process.env.E2E_TEST_USER_EMAIL
 const e2ePassword = process.env.E2E_TEST_USER_PASSWORD
 const e2eCredentials =
   e2eEmail && e2ePassword ? { email: e2eEmail, password: e2ePassword } : null
-const cookieHeader = await getAuthCookieHeader(
+const authCookies = await getAuthCookies(
   e2eCredentials,
   'E2E_TEST_USER_EMAIL / E2E_TEST_USER_PASSWORD'
 )
-const cookies = cookieHeader.split('; ').map((pair) => {
-  const i = pair.indexOf('=')
-  return {
-    name: pair.slice(0, i),
-    value: pair.slice(i + 1),
-    domain: 'localhost',
-    path: '/',
-    httpOnly: false,
-    secure: false,
-    sameSite: 'Lax',
-  }
-})
 
 const browser = await chromium.launch({ headless: false, args: ['--no-sandbox'] })
 const context = await browser.newContext({ viewport: null })
-await context.addCookies(cookies)
+await context.addCookies(toBrowserCookies(authCookies, base))
 const page = await context.newPage()
 await page.goto(`${base}${path}`)
 

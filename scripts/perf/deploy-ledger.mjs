@@ -10,6 +10,7 @@ import path from 'node:path'
 
 /** 배포 원장에 자동 섹션을 끼워 넣는 지점. 이 줄 **바로 아래**에 최신 섹션이 온다. */
 export const LEDGER_MARKER = '<!-- perf:deploy — 자동 기록은 이 줄 바로 아래에 삽입된다 -->'
+export const DEPLOY_SNAPSHOT_SCHEMA_VERSION = 2
 
 /**
  * 노이즈 임계값. 배포 TTFB 는 회선 상태에 그대로 좌우되므로 로컬 지표보다
@@ -97,6 +98,18 @@ export function ledgerWarnings(snapshot, prev) {
         `median 안정성이 달라 회차 간 델타를 만들지 않는다.`
     )
   }
+  const runnerFields = ['platform', 'arch', 'node']
+  const changedRunner = prev
+    ? runnerFields.filter(
+        (key) => prev.environment?.runner?.[key] !== snapshot.environment?.runner?.[key]
+      )
+    : []
+  if (changedRunner.length) {
+    warnings.push(
+      `**측정 runner가 다르다** (${changedRunner.join(', ')}). ` +
+        `클라이언트 실행 조건이 달라 회차 간 델타를 만들지 않는다.`
+    )
+  }
 
   const expected = snapshot.expectedFunctionRegion
   if (expected) {
@@ -131,13 +144,7 @@ export function ledgerWarnings(snapshot, prev) {
     )
   }
 
-  const edges = [
-    ...new Set(
-      Object.values(snapshot.results)
-        .map((r) => r.edge)
-        .filter(Boolean)
-    ),
-  ]
+  const edges = observedEdges(snapshot)
   if (edges.length > 1) {
     warnings.push(
       `**진입 엣지가 회차 안에서 갈렸다** (${edges.map((e) => `\`${e}\``).join(', ')}). ` +
@@ -145,8 +152,8 @@ export function ledgerWarnings(snapshot, prev) {
     )
   }
 
-  const currentControl = snapshot.results?.[CONTROL_KEY]?.warm
-  const previousControl = prev?.results?.[CONTROL_KEY]?.warm
+  const currentControl = snapshot.results?.[CONTROL_KEY]?.repeatMedian
+  const previousControl = prev?.results?.[CONTROL_KEY]?.repeatMedian
   const drift = controlDrift(snapshot, prev)
   if (prev && (currentControl == null || previousControl == null)) {
     warnings.push(
@@ -166,16 +173,34 @@ export function ledgerWarnings(snapshot, prev) {
 
 /** 색상 델타를 만들 수 없는 회차 간 조건 차이. */
 export function deployComparisonProblems(snapshot, prev) {
-  if (!prev) return []
   const problems = []
+  if (snapshot.schemaVersion !== DEPLOY_SNAPSHOT_SCHEMA_VERSION || snapshot.valid !== true) {
+    problems.push('schema')
+  }
+  if (observedEdges(snapshot).length > 1) problems.push('edges')
+  if (!prev) return problems
+  if (prev.schemaVersion !== DEPLOY_SNAPSHOT_SCHEMA_VERSION || prev.valid !== true) {
+    problems.push('schema')
+  }
+  if (observedEdges(prev).length > 1) problems.push('edges')
   if (snapshot.account !== 'perf' || prev.account !== 'perf') problems.push('account')
   if (snapshot.base !== prev.base) problems.push('base')
   if (snapshot.runs !== prev.runs) problems.push('runs')
+  const environmentFields = ['kind', 'origin']
+  const runnerFields = ['platform', 'arch', 'node']
+  if (
+    environmentFields.some((key) => prev.environment?.[key] !== snapshot.environment?.[key]) ||
+    runnerFields.some(
+      (key) => prev.environment?.runner?.[key] !== snapshot.environment?.runner?.[key]
+    )
+  ) {
+    problems.push('environment')
+  }
   if (!prev.proxyRegion || !snapshot.proxyRegion || prev.proxyRegion !== snapshot.proxyRegion) {
     problems.push('proxyRegion')
   }
-  const hasCurrentControl = snapshot.results?.[CONTROL_KEY]?.warm != null
-  const hasPreviousControl = prev.results?.[CONTROL_KEY]?.warm != null
+  const hasCurrentControl = snapshot.results?.[CONTROL_KEY]?.repeatMedian != null
+  const hasPreviousControl = prev.results?.[CONTROL_KEY]?.repeatMedian != null
   if (!hasCurrentControl || !hasPreviousControl || controlDrift(snapshot, prev)) {
     problems.push('control')
   }
@@ -184,14 +209,26 @@ export function deployComparisonProblems(snapshot, prev) {
 
 /** 대조군 median 이 비교 불가 수준으로 달라졌으면 그 값을, 아니면 null 을 반환한다. */
 export function controlDrift(snapshot, prev) {
-  const to = snapshot?.results?.[CONTROL_KEY]?.warm
-  const from = prev?.results?.[CONTROL_KEY]?.warm
+  const to = snapshot?.results?.[CONTROL_KEY]?.repeatMedian
+  const from = prev?.results?.[CONTROL_KEY]?.repeatMedian
   if (to == null || from == null) return null
   const diff = Math.abs(to - from)
   if (diff >= CONTROL_DRIFT_MIN_MS && diff / Math.max(from, 1) > CONTROL_DRIFT_RATIO) {
     return { from, to }
   }
   return null
+}
+
+function observedEdges(snapshot) {
+  return [
+    ...new Set(
+      Object.values(snapshot?.results ?? {})
+        .flatMap((result) =>
+          result.samples?.length ? result.samples.map((sample) => sample.edge) : [result.edge]
+        )
+        .filter(Boolean)
+    ),
+  ]
 }
 
 /** 매 섹션에 남기는 측정 조건 한 줄들. 경고가 아니라 상시 기록이다. */
@@ -202,6 +239,12 @@ export function conditionNotes(snapshot) {
   const expected = snapshot.expectedFunctionRegion ?? '미설정'
   notes.push(`프록시 리전: \`${snapshot.proxyRegion ?? '미관측'}\``)
   notes.push(`함수 리전 기대값: \`${expected}\` (\`vercel.json\`)`)
+  const runner = snapshot.environment?.runner
+  if (runner) {
+    notes.push(
+      `측정 runner: \`${runner.platform}/${runner.arch}\` · Node \`${runner.node}\``
+    )
+  }
 
   // 계정은 TTFB 자체보다 응답 크기를 통해 들어온다 — `/api/tasks` 는 그 계정의 행을
   // 실어 보낸다. 어느 계정에서 잰 값인지 모르면 회차 간 비교가 성립하지 않는다
@@ -228,14 +271,14 @@ export function conditionNotes(snapshot) {
   return notes
 }
 
-const stamp = (iso) => iso.slice(0, 16).replace('T', ' ')
+const stamp = (iso) => `${iso.slice(0, 16).replace('T', ' ')} UTC`
 
 function fmtMs(v) {
   return v == null ? '—' : `${Math.round(v)}ms`
 }
 
 /** "128ms 🟢-63ms" 형태의 셀. 낮을수록 좋은 지표뿐이라 방향이 하나다. */
-function warmCell(cur, prev) {
+function repeatCell(cur, prev) {
   const base = fmtMs(cur)
   if (cur == null || prev == null) return base
   const diff = cur - prev
@@ -268,6 +311,7 @@ export function findPreviousDeploySnapshot(snapDir, currentFile, measuredKeys) {
   for (const f of files) {
     try {
       const snap = JSON.parse(fs.readFileSync(path.join(snapDir, f), 'utf8'))
+      if (snap.schemaVersion !== DEPLOY_SNAPSHOT_SCHEMA_VERSION || snap.valid !== true) continue
       if (measuredKeys.some((k) => snap.results?.[k])) return snap
     } catch {
       // 손상된 스냅샷은 건너뛴다.
@@ -295,7 +339,7 @@ export function renderSection(snapshot, prev) {
     ? '> 색상 델타를 만들지 않고 이 회차를 새 기준선으로 삼는다.\n\n'
     : ''
 
-  const head = '| 경로 | 상태 | cold | warm median (델타) | 세그먼트 | 비고 |'
+  const head = '| 경로 | 상태 | first | repeat median (델타) | 세그먼트 | 비고 |'
   const sep = '|---|---|---|---|---|---|'
   const rows = keys.map((key) => {
     const cur = snapshot.results[key]
@@ -303,8 +347,8 @@ export function renderSection(snapshot, prev) {
     const cells = [
       key,
       cur.status ?? '—',
-      fmtMs(cur.cold),
-      warmCell(cur.warm, before?.warm),
+      fmtMs(cur.first),
+      repeatCell(cur.repeatMedian, before?.repeatMedian),
       cur.segments ? String(cur.segments) : '—',
       cur.note ?? '',
     ]
@@ -318,7 +362,7 @@ export function renderSection(snapshot, prev) {
     conditionNotes(snapshot)
       .map((n) => `- ${n}`)
       .join('\n') +
-    `\n- 경로당 ${snapshot.runs}회 (1회차 cold 로 분리, 나머지 median) · ${compared}\n\n` +
+    `\n- 경로당 ${snapshot.runs}회 (첫 요청 분리, 나머지 median) · ${compared}\n\n` +
     [head, sep, ...rows].join('\n') +
     '\n'
   )
@@ -341,8 +385,10 @@ export function appendDeployLedger(ledgerPath, snapshot, prev) {
   }
   const cut = at + LEDGER_MARKER.length
   const section = renderSection(snapshot, prev)
+  const tail = existing.slice(cut).trim()
+  const suffix = tail ? `\n\n${tail}\n` : '\n'
   fs.writeFileSync(
     ledgerPath,
-    `${existing.slice(0, cut)}\n\n${section}\n---\n${existing.slice(cut).replace(/^\n+/, '\n')}`
+    `${existing.slice(0, cut)}\n\n${section}\n---${suffix}`
   )
 }

@@ -66,8 +66,9 @@ state 를 쓰지 않아 `react-hooks/set-state-in-effect` 예외 주석이 필�
 | 수정 전 | 18건 | 92 | 2.69s | 114ms | 3.66s |
 | 수정 후 | 0건 | 95 | 2.39s | 89ms | 1.52s |
 
-`pnpm perf --page /daily` 5회 median, 같은 데이터 볼륨(태스크 9,151). 원장은
-`docs/perf/history.md` 의 2026-08-05 항목.
+당시 `pnpm perf --page /daily` 5회 median, 같은 데이터 볼륨(태스크 9,151)으로 잰
+legacy 기록이다. 현재 기준선이 아니라
+`docs/perf/archive/local-history-2026-07-21--2026-08-20.md`의 2026-08-05 항목에 보관한다.
 
 로딩을 한 프레임 더 보여주는 변경인데 지표가 좋아지는 게 역설적으로 보이지만,
 서브트리를 통째로 다시 그리는 비용이 그보다 크다. 이게 하이드레이션 불일치를 성능
