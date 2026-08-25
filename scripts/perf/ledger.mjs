@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { formatVolume, volumeDrift } from './volume.mjs'
+import { formatVolume, VOLUME_KEYS, volumeDrift } from './volume.mjs'
 
 // 원장에 기록/추적하는 지표 정의. higherBetter=true 는 값이 클수록 개선.
 export const METRICS = [
@@ -79,55 +79,90 @@ export function findPreviousSnapshot(snapDir, currentFile, measuredPages) {
   return null
 }
 
-/** 이번 측정 결과를 델타와 함께 history.md 상단(최신이 위)에 덧붙인다. */
-export function appendHistory(historyPath, snapshot, prev) {
+/** 직전 회차와 코드 전후 델타로 비교할 수 없는 이유. */
+export function comparisonProblems(snapshot, prev) {
+  if (!prev) return []
+  const problems = []
+
+  if (snapshot.account !== 'perf' || prev.account !== 'perf') {
+    problems.push(
+      `계정이 perf 전용으로 일치하지 않는다 ` +
+        `(${prev.account ?? '미기록'} → ${snapshot.account ?? '미기록'})`
+    )
+  }
+  if (snapshot.runs !== prev.runs) {
+    problems.push(`실행 횟수가 다르다 (${prev.runs ?? '미기록'} → ${snapshot.runs ?? '미기록'})`)
+  }
+
+  const fields = ['formFactor', 'throttling']
+  const changedConfig = fields.filter((key) => prev.config?.[key] !== snapshot.config?.[key])
+  if (changedConfig.length) {
+    problems.push(`Lighthouse 조건이 다르다 (${changedConfig.join(', ')})`)
+  }
+
+  const missingVolumeKeys = VOLUME_KEYS.filter(
+    (key) => snapshot.volume?.[key] == null || prev.volume?.[key] == null
+  )
+  if (missingVolumeKeys.length) {
+    problems.push('한쪽 데이터 볼륨이 없어 같은 데이터셋인지 확인할 수 없다')
+  } else {
+    const drift = volumeDrift(snapshot.volume, prev.volume)
+    if (drift.length) {
+      problems.push(
+        `데이터 볼륨이 다르다 (${drift
+          .map((item) => `${item.key} ${item.from.toLocaleString()} → ${item.to.toLocaleString()}`)
+          .join(', ')})`
+      )
+    }
+  }
+
+  return problems
+}
+
+/** 원장에 넣을 이번 측정 섹션. 비교 불가 조건이면 델타 없이 새 기준선으로 렌더한다. */
+export function renderHistorySection(snapshot, prev) {
+  const problems = comparisonProblems(snapshot, prev)
+  const comparablePrev = problems.length ? null : prev
   const pages = Object.keys(snapshot.results)
   const head = `| Page | ${METRICS.map((m) => m.label).join(' | ')} |`
   const sep = `|${'------|'.repeat(METRICS.length + 1)}`
   const rows = pages.map((p) => {
     const cur = snapshot.results[p]
-    const before = prev?.results?.[p]
+    const before = comparablePrev?.results?.[p]
     const cells = METRICS.map((m) => cell(m, cur[m.key], before?.[m.key]))
     return `| ${p} | ${cells.join(' | ')} |`
   })
 
   const cfg = snapshot.config
-  const compared = prev
-    ? `vs ${stamp(prev.timestamp)}`
-    : 'baseline (첫 측정 — 비교 대상 없음)'
+  const compared = comparablePrev
+    ? `vs ${stamp(comparablePrev.timestamp)}`
+    : prev
+      ? 'baseline (직전 측정과 비교 조건 불일치)'
+      : 'baseline (첫 측정 — 비교 대상 없음)'
 
   // 측정 조건(데이터 볼륨)을 매 섹션에 남긴다. 지표는 데이터 양에 좌우되므로
   // 볼륨을 모르면 이 표가 무엇과 비교 가능한지 알 수 없다.
   const volumeLine = formatVolume(snapshot.volume)
 
-  // 계정이 다르면 볼륨 차이는 드리프트가 아니라 "다른 데이터셋"이다. 델타를
-  // 코드 변화로 읽으면 안 되므로 드리프트 경고보다 먼저 알린다.
-  // 계정을 기록하기 전(2026-08-20 이전) 스냅샷은 account 가 없다. 그것도 "다르다"로
-  // 본다 — 같다고 볼 근거가 없는데 같다고 치면 경고가 조용히 사라진다.
-  const crossAccount = Boolean(snapshot.account) && Boolean(prev) && prev.account !== snapshot.account
-  const accountLine = crossAccount
-    ? `> ⚠️ **직전 측정과 계정이 다르다** (${prev.account ?? '미기록'} → ${snapshot.account}).\n` +
-      `> 아래 델타는 코드 비교가 아니다. 이 측정을 새 기준선으로 삼을 것.\n\n`
-    : snapshot.account === 'e2e'
-      ? `> ⚠️ **E2E 공유 계정으로 측정했다** — \`PERF_TEST_USER_*\` 미설정.\n` +
-        `> E2E 가 이 계정의 데이터를 바꾸므로 볼륨이 고정되지 않는다 (\`accounts.md\`).\n\n`
-      : ''
-
-  const drift = crossAccount ? [] : volumeDrift(snapshot.volume, prev?.volume)
-  const driftLine = drift.length
-    ? `> ⚠️ **직전 측정과 데이터 볼륨이 다르다** — ` +
-      drift.map((d) => `${d.key} ${d.from.toLocaleString()} → ${d.to.toLocaleString()}`).join(', ') +
-      `.\n> 아래 델타는 코드 변화가 아니라 데이터 변화의 결과일 수 있다. 코드 회귀로 읽지 말 것.\n\n`
+  const comparisonWarning = problems.length
+    ? `> ⚠️ **직전 측정과 비교하지 않았다.**\n` +
+      problems.map((problem) => `> - ${problem}`).join('\n') +
+      `\n> 색상 델타를 만들지 않고 이 회차를 새 기준선으로 삼는다.\n\n`
     : ''
 
-  const section =
+  return (
     `## ${stamp(snapshot.timestamp)} · ${snapshot.runs} runs · ` +
     `${cfg.formFactor}/${cfg.throttling} · ${compared}\n\n` +
-    accountLine +
-    driftLine +
+    comparisonWarning +
     (volumeLine ? `데이터: ${volumeLine}\n\n` : '') +
     [head, sep, ...rows].join('\n') +
     '\n'
+  )
+}
+
+/** 이번 측정 결과를 history.md 상단(최신이 위)에 덧붙인다. */
+export function appendHistory(historyPath, snapshot, prev) {
+  const section = renderHistorySection(snapshot, prev)
 
   const header =
     '# 성능 지표 원장 (Lighthouse)\n\n' +

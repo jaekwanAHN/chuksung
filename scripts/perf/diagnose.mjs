@@ -4,14 +4,14 @@ import fs from 'node:fs'
 import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
 import lighthouse from 'lighthouse'
 import { getAuthCookieHeader } from './auth.mjs'
+import { loadPerfEnvironment } from './environment.mjs'
+import { withPerfLock } from './perf-lock.mjs'
 
-for (const f of ['.env.local', '.env.test']) {
-  if (fs.existsSync(f)) process.loadEnvFile(f)
-}
-
+const ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
 const PAGES = process.argv.slice(2).length ? process.argv.slice(2) : ['/jobs', '/history']
 const PORT = 3111
 // 원본 LHR JSON 을 떨어뜨릴 위치. 세션별 임시 디렉토리를 쓰고 싶으면 환경변수로 넘긴다.
@@ -43,7 +43,7 @@ async function waitForServer(url, timeoutMs = 60_000) {
 const ms = (n) => `${Math.round(n)}ms`
 const kb = (n) => `${(n / 1024).toFixed(1)}KB`
 
-async function main() {
+async function diagnose() {
   const cookie = await getAuthCookieHeader()
   await waitForServer(`http://localhost:${PORT}/login`, 10_000)
 
@@ -128,6 +128,11 @@ async function main() {
   }
 
   await browser.close()
+}
+
+async function main() {
+  const baseRoot = loadPerfEnvironment(ROOT)
+  await withPerfLock(baseRoot, diagnose)
 }
 
 main().catch((e) => {

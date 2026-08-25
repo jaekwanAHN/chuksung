@@ -36,7 +36,8 @@ pnpm perf:deploy --help          # 옵션 전체
 새로 쓴 임시 스크립트의 결과이고, 규약은 같다.
 
 - `scripts/perf/auth.mjs` 의 `getAuthCookieHeader()` 로 테스트 계정 세션 쿠키를
-  발급해 `Cookie` 헤더로 주입 (Lighthouse 측정과 동일한 방식)
+  발급해 `Cookie` 헤더로 주입 (Lighthouse 측정과 동일한 방식). perf 전용 계정이
+  없으면 E2E 계정으로 폴백하지 않고 실패한다
 - 경로별 7회 요청. **1회차는 cold 로 따로 기록**하고 나머지 6회의 median 을 채택
 - 리다이렉트는 따라가지 않는다(`redirect: 'manual'`) — 리다이렉트 자체의 비용을 재기 위해
 - **쓰기 부작용이 있는 경로는 측정하지 않는다.** `/api/tasks` 의 `daily` 스코프는
@@ -57,7 +58,7 @@ pnpm perf:deploy --help          # 옵션 전체
 | 프록시 실행 리전 | `x-proxy-region` (`src/proxy.ts`) | 직전 회차에서 바뀌면 ⚠️ |
 | 진입 엣지 | `x-vercel-id` 의 첫 세그먼트 | 회차 안에서 갈리면 ⚠️ |
 | 대조군(정적 파일) median | `_next/static` 자산 1개 | 크게 흔들리면 세로 비교 불가 ⚠️ |
-| 측정 계정 | `PERF_TEST_USER_*` / `E2E_TEST_USER_*` | 응답 크기가 달라진다 |
+| 측정 계정 | `PERF_TEST_USER_*` 전용 | 과거 E2E·미기록 회차와는 델타를 만들지 않는다 |
 
 **함수 리전만 기대값(`vercel.json`)과 비교한다.** 프록시 리전은 Hobby 플랜에서 지정할
 수 없어 `icn1` 과 어긋난 상태가 정상이고, 그걸 매 회차 ⚠️ 로 찍으면 경고가 곧 무시된다.

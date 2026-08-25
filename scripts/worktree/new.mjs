@@ -37,7 +37,8 @@ const HELP = `병렬 작업용 워크트리 생성 (포트·E2E 계정 슬롯 �
 `
 
 // 워크트리에 넘기지 않는 키. 배경은 docs/parallel-work.md 「워크트리에 주지 않는 것」.
-//   PERF_TEST_USER_*        perf 계정에 닿을 수 없게 만든다
+//   PERF_TEST_USER_*        사본을 만들지 않는다. perf 스크립트만 기본 체크아웃에서
+//                           두 키를 런타임에 읽는다 (docs/perf/measurement-contract.md)
 //   SUPABASE_SERVICE_ROLE_  RLS 를 통째로 우회하는 키. 쓰는 곳이 provision-account.mjs
 //                           뿐이고 그건 기본 체크아웃에서 도는 작업이다
 const STRIPPED_PREFIXES = ['PERF_TEST_USER_', 'SUPABASE_SERVICE_ROLE_']
@@ -105,8 +106,8 @@ WT_SLOT=${slot}
 E2E_PORT=${portForSlot(slot)}
 E2E_TEST_USER_EMAIL=${account.email}
 E2E_TEST_USER_PASSWORD=${account.password}
-# PERF_TEST_USER_* 와 SUPABASE_SERVICE_ROLE_KEY 는 일부러 뺐다 —
-# perf 측정과 계정 프로비저닝은 기본 체크아웃에서만 한다.
+# PERF_TEST_USER_* 와 SUPABASE_SERVICE_ROLE_KEY 는 일부러 뺐다.
+# perf 스크립트만 전용 계정 두 키를 기본 체크아웃에서 런타임에 읽는다.
 `
 }
 
@@ -185,7 +186,7 @@ function main() {
 
   포트        ${portForSlot(slot)}   (pnpm dev --port ${portForSlot(slot)} / E2E 는 자동)
   E2E 계정    ${account.email}
-  perf        이 워크트리에서는 돌릴 수 없다 (기본 체크아웃에서)
+  perf        이 워크트리 코드를 측정 (기본 체크아웃의 전용 계정, 전역 직렬)
 
   첫 검증은 pnpm build 를 먼저 돌린다. Next 가 .next/types 에 만드는 전역 타입
   (RouteContext 등)이 아직 없어 tsc --noEmit 이 먼저면 없는 오류가 뜬다.

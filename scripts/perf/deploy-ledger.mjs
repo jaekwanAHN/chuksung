@@ -77,6 +77,27 @@ export function expectedFunctionRegion(vercelJson) {
 export function ledgerWarnings(snapshot, prev) {
   const warnings = []
 
+  if (prev && (snapshot.account !== 'perf' || prev.account !== 'perf')) {
+    warnings.push(
+      `**계정이 perf 전용으로 일치하지 않는다** ` +
+        `(${prev.account ?? '미기록'} → ${snapshot.account ?? '미기록'}). ` +
+        `응답 데이터셋이 다를 수 있어 회차 간 델타를 만들지 않는다.`
+    )
+  }
+  if (prev && prev.base !== snapshot.base) {
+    warnings.push(
+      `**측정 대상 오리진이 다르다** (\`${prev.base ?? '미기록'}\` → ` +
+        `\`${snapshot.base ?? '미기록'}\`). ` +
+        `서로 다른 배포를 기준선으로 직접 비교하지 않는다.`
+    )
+  }
+  if (prev && prev.runs !== snapshot.runs) {
+    warnings.push(
+      `**실행 횟수가 바뀌었다** (${prev.runs ?? '미기록'} → ${snapshot.runs ?? '미기록'}). ` +
+        `median 안정성이 달라 회차 간 델타를 만들지 않는다.`
+    )
+  }
+
   const expected = snapshot.expectedFunctionRegion
   if (expected) {
     const wrong = [
@@ -96,7 +117,13 @@ export function ledgerWarnings(snapshot, prev) {
     }
   }
 
-  if (prev?.proxyRegion && snapshot.proxyRegion && prev.proxyRegion !== snapshot.proxyRegion) {
+  if (prev && (!prev.proxyRegion || !snapshot.proxyRegion)) {
+    warnings.push(
+      `**한쪽 프록시 실행 리전이 미관측이다** ` +
+        `(\`${prev.proxyRegion ?? '미관측'}\` → \`${snapshot.proxyRegion ?? '미관측'}\`). ` +
+        `같은 실행 조건인지 확인할 수 없어 회차 간 델타를 만들지 않는다.`
+    )
+  } else if (prev && prev.proxyRegion !== snapshot.proxyRegion) {
     warnings.push(
       `**프록시 실행 리전이 바뀌었다** (\`${prev.proxyRegion}\` → \`${snapshot.proxyRegion}\`). ` +
         `Hobby 플랜에서는 배치를 지정할 수 없으므로 코드 변경이 아니라 Vercel 정책 변화다. ` +
@@ -118,8 +145,15 @@ export function ledgerWarnings(snapshot, prev) {
     )
   }
 
+  const currentControl = snapshot.results?.[CONTROL_KEY]?.warm
+  const previousControl = prev?.results?.[CONTROL_KEY]?.warm
   const drift = controlDrift(snapshot, prev)
-  if (drift) {
+  if (prev && (currentControl == null || previousControl == null)) {
+    warnings.push(
+      `**한쪽 대조군(정적 파일)이 없다.** 회선 상태가 같은지 확인할 수 없어 ` +
+        `회차 간 델타를 만들지 않는다.`
+    )
+  } else if (drift) {
     warnings.push(
       `**대조군(정적 파일)이 크게 흔들렸다** (${drift.from}ms → ${drift.to}ms). ` +
         `이 회차의 회선 상태가 직전과 다르다는 뜻이므로 **세로(회차 간) 비교를 믿지 말 것.** ` +
@@ -128,6 +162,24 @@ export function ledgerWarnings(snapshot, prev) {
   }
 
   return warnings
+}
+
+/** 색상 델타를 만들 수 없는 회차 간 조건 차이. */
+export function deployComparisonProblems(snapshot, prev) {
+  if (!prev) return []
+  const problems = []
+  if (snapshot.account !== 'perf' || prev.account !== 'perf') problems.push('account')
+  if (snapshot.base !== prev.base) problems.push('base')
+  if (snapshot.runs !== prev.runs) problems.push('runs')
+  if (!prev.proxyRegion || !snapshot.proxyRegion || prev.proxyRegion !== snapshot.proxyRegion) {
+    problems.push('proxyRegion')
+  }
+  const hasCurrentControl = snapshot.results?.[CONTROL_KEY]?.warm != null
+  const hasPreviousControl = prev.results?.[CONTROL_KEY]?.warm != null
+  if (!hasCurrentControl || !hasPreviousControl || controlDrift(snapshot, prev)) {
+    problems.push('control')
+  }
+  return problems
 }
 
 /** 대조군 median 이 비교 불가 수준으로 달라졌으면 그 값을, 아니면 null 을 반환한다. */
@@ -226,21 +278,28 @@ export function findPreviousDeploySnapshot(snapDir, currentFile, measuredKeys) {
 
 /** 이번 회차의 원장 섹션(마크다운)을 만든다. */
 export function renderSection(snapshot, prev) {
+  const problems = deployComparisonProblems(snapshot, prev)
+  const comparablePrev = problems.length ? null : prev
   const keys = Object.keys(snapshot.results)
-  const compared = prev
-    ? `vs ${stamp(prev.timestamp)}`
-    : 'baseline (자동 측정 첫 회차 — 비교 대상 없음)'
+  const compared = comparablePrev
+    ? `vs ${stamp(comparablePrev.timestamp)}`
+    : prev
+      ? 'baseline (직전 측정과 비교 조건 불일치)'
+      : 'baseline (자동 측정 첫 회차 — 비교 대상 없음)'
 
   const warnings = ledgerWarnings(snapshot, prev)
   const warningBlock = warnings.length
     ? warnings.map((w) => `> ⚠️ ${w}`).join('\n>\n') + '\n\n'
+    : ''
+  const comparisonBlock = problems.length
+    ? '> 색상 델타를 만들지 않고 이 회차를 새 기준선으로 삼는다.\n\n'
     : ''
 
   const head = '| 경로 | 상태 | cold | warm median (델타) | 세그먼트 | 비고 |'
   const sep = '|---|---|---|---|---|---|'
   const rows = keys.map((key) => {
     const cur = snapshot.results[key]
-    const before = prev?.results?.[key]
+    const before = comparablePrev?.results?.[key]
     const cells = [
       key,
       cur.status ?? '—',
@@ -255,6 +314,7 @@ export function renderSection(snapshot, prev) {
   return (
     `# ${stamp(snapshot.timestamp)} · 자동 측정 (\`pnpm perf:deploy\`)\n\n` +
     warningBlock +
+    comparisonBlock +
     conditionNotes(snapshot)
       .map((n) => `- ${n}`)
       .join('\n') +

@@ -56,9 +56,11 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 성능 측정: `pnpm perf` (전체) / `pnpm perf --page /daily` (특정 페이지) — Lighthouse 5회 median, 결과·델타는 `docs/perf/`에 기록. 상세는 `docs/perf/README.md`
 - 병렬 작업: `pnpm wt:preflight` (main 최신화·잔재 보고) / `pnpm wt:new <브랜치>`
   (생성·부트스트랩) / `pnpm wt:rm <브랜치>` (삭제) / `pnpm wt:ls` (슬롯 현황).
-  워크트리마다 포트와 E2E 계정이 갈린다. **`pnpm perf` 와
-  `pnpm db:push` 는 기본 체크아웃에서만** — 둘 다 공유 자원이 하나뿐이라 직렬이다.
-  슬롯 모델·계정 풀 만들기·한계는 `docs/parallel-work.md`
+  워크트리마다 포트와 E2E 계정이 갈린다. `pnpm perf`/`perf:diagnose`/`perf:deploy`는
+  현재 워크트리 코드를 측정하되 기본 체크아웃의 perf 전용 계정만 빌리고 전역 잠금으로
+  한 번에 하나만 돈다. **`pnpm db:push` 는 기본 체크아웃에서만** 실행한다.
+  슬롯 모델·계정 풀 만들기·한계는 `docs/parallel-work.md`, 측정 실행 계약은
+  `docs/perf/measurement-contract.md`
 - DB 스키마 변경: `supabase/schema.sql` 수정 + `pnpm db:new <이름>` → `pnpm db:push`.
   `schema.sql` 이 소스 오브 트루스이고 마이그레이션은 거기 도달하는 경로다 — 반영 누락은
   **`pnpm db:check` 가 집행한다**(CI 의 `lint-and-build` 에서도 실행). 배경은

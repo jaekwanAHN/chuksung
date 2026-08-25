@@ -3,21 +3,19 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { getAuthCookieHeader } from './auth.mjs'
 import { perfCredentials } from './account.mjs'
+import { loadPerfEnvironment } from './environment.mjs'
+import { withPerfLock } from './perf-lock.mjs'
 import { DEPLOY_PATHS, pathKey, writeEffectReason } from './deploy-paths.mjs'
 import {
   CONTROL_KEY,
   appendDeployLedger,
+  deployComparisonProblems,
   expectedFunctionRegion,
   findPreviousDeploySnapshot,
   median,
   parseVercelId,
   saveDeploySnapshot,
 } from './deploy-ledger.mjs'
-
-// .env.local 을 직접 로드 (Node 는 자동 로드하지 않음) — `run.mjs` 와 동일.
-for (const f of ['.env.local', '.env.test']) {
-  if (fs.existsSync(f)) process.loadEnvFile(f)
-}
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
 const OUT_DIR = path.join(ROOT, 'docs', 'perf')
@@ -38,7 +36,8 @@ const HELP = `배포 URL 지연 측정 (TTFB) — 결과를 docs/perf/deploy-lat
   pnpm perf:deploy --base <url>         측정 대상 오리진 (기본 ${DEFAULT_BASE})
   pnpm perf:deploy --dry-run            측정만 하고 원장·스냅샷은 쓰지 않는다
 
-렌더링 지표는 이 도구가 보지 않는다 — 그쪽은 \`pnpm perf\` 다 (docs/perf/README.md).`
+현재 체크아웃의 원장에 기록합니다. 계정과 전역 잠금 규칙은
+docs/perf/measurement-contract.md. 렌더링 지표는 \`pnpm perf\` 가 담당합니다.`
 
 function parseArgs(argv) {
   const opts = { runs: 7, base: process.env.PERF_DEPLOY_BASE_URL || DEFAULT_BASE, dryRun: false }
@@ -123,13 +122,7 @@ async function findControlAsset(base) {
   return match ? match[0] : null
 }
 
-async function main() {
-  const opts = parseArgs(process.argv.slice(2))
-  if (opts.help) {
-    console.log(HELP)
-    return
-  }
-
+async function measure(opts) {
   let targets = DEPLOY_PATHS
   if (opts.only) {
     targets = DEPLOY_PATHS.filter((t) => opts.only.some((p) => t.path.split('?')[0] === p))
@@ -153,11 +146,6 @@ async function main() {
   console.log(`▸ 대상: ${opts.base}`)
   console.log('▸ 인증 세션 발급…')
   const cookie = await getAuthCookieHeader()
-  if (creds?.source === 'e2e') {
-    console.log(
-      '  ⚠️ PERF_TEST_USER_* 미설정 — E2E 공유 계정으로 측정합니다 (docs/perf/accounts.md).'
-    )
-  }
 
   const results = {}
 
@@ -207,12 +195,28 @@ async function main() {
 
   const file = saveDeploySnapshot(SNAP_DIR, snapshot)
   const prev = findPreviousDeploySnapshot(SNAP_DIR, file, Object.keys(results))
+  const problems = deployComparisonProblems(snapshot, prev)
   appendDeployLedger(LEDGER, snapshot, prev)
 
   console.log(`\n✔ 스냅샷: ${path.relative(ROOT, file)}`)
   console.log(`✔ 원장 갱신: ${path.relative(ROOT, LEDGER)}`)
-  if (prev) console.log(`  (직전 ${prev.timestamp.slice(0, 16).replace('T', ' ')} 대비 델타 기록)`)
-  else console.log('  (자동 측정 첫 회차 — baseline 으로 기록)')
+  if (prev && !problems.length) {
+    console.log(`  (직전 ${prev.timestamp.slice(0, 16).replace('T', ' ')} 대비 델타 기록)`)
+  } else if (prev) {
+    console.log('  (비교 조건 불일치 — 새 baseline, 델타 없음)')
+  } else {
+    console.log('  (자동 측정 첫 회차 — baseline 으로 기록)')
+  }
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2))
+  if (opts.help) {
+    console.log(HELP)
+    return
+  }
+  const baseRoot = loadPerfEnvironment(ROOT)
+  await withPerfLock(baseRoot, () => measure(opts))
 }
 
 main().catch((err) => {
