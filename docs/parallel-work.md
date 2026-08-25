@@ -7,7 +7,7 @@
 pnpm wt:preflight              # main 최신화 + 지난 작업의 잔재 보고 (아래 「정리의 주인」)
 pnpm wt:new fix/header-date    # 워크트리+브랜치 동시 생성, 부트스트랩, 슬롯 배정
 cd .claude/worktrees/fix+header-date
-pnpm build                     # 첫 검증은 build 부터 (아래 「부트스트랩」)
+pnpm build                     # 앱 코드 검증을 선택했을 때 (아래 「부트스트랩」)
 # … 작업 · PR · 머지 …
 
 # 다시 기본 체크아웃에서
@@ -209,7 +209,7 @@ CI 의 `lint-and-build`). 실패가 조용하기 때문이다 — 둘이 함께 
 Playwright 브라우저 바이너리는 `~/.cache/ms-playwright` 에 있어 머신 전체가 공유한다 —
 워크트리마다 다시 받지 않는다.
 
-### 새 워크트리에서는 `pnpm build` 를 먼저 돌린다
+### 새 워크트리에서 타입 검사가 필요하면 `pnpm build`가 맡는다
 
 `npx tsc --noEmit` 을 먼저 돌리면 실제로 없는 오류가 뜬다.
 
@@ -218,10 +218,10 @@ src/app/api/tasks/[id]/route.ts(4,31): error TS2304: Cannot find name 'RouteCont
 ```
 
 `RouteContext` 는 Next 가 `.next/types/` 에 **생성하는** 전역 타입이라 빌드를 한 번도
-돌리지 않은 워크트리에는 없다. `pnpm build` 후에는 `tsc` 가 통과한다.
-
-작업은 늘 새 워크트리에서 시작하므로 이 순서 뒤집기는 **매 작업의 첫 검증마다**
-해당된다. 두 번째부터는 `.next` 가 있으므로 평소대로 `tsc` 를 먼저 돌리는 게 빠르다.
+돌리지 않은 워크트리에는 없다. 이 저장소의 `next build`는 생성과 타입 검사를 함께 한다.
+따라서 `/work`의 앱 코드 최종 게이트는 `pnpm lint && pnpm build`이고, 직후 별도
+`tsc --noEmit`을 다시 돌리지 않는다. 문서·절차만 바꾼 작업은 증거 라우팅에 따라 앱
+빌드 자체를 선택하지 않을 수 있다 (`docs/work-evidence-routing.md`).
 
 ## 워크트리에 주지 않는 것
 

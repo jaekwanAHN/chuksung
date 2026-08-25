@@ -10,10 +10,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 1. **대상 선정** — `gh issue list` 에서 `priority:` 라벨 기준으로 고른다 (→ 이슈)
 2. **워크트리** — `pnpm wt:new <브랜치명>` 으로 작업할 자리를 만든다 (→ Git 워크플로)
-3. **재현·계측** — 이슈의 관측이 현재도 재현되는지 먼저 확인하고, 성능 작업이면 수정 전 기준선을 측정한다. 원인이 여럿으로 갈리면 분리한다
+3. **전제 확인·증거 선택** — 성공 기준에 맞춰 행동 재현·구조 확인·정량 기준선·외부 관측 중
+   가장 싼 충분한 증거만 고른다. 실행 재현은 동작 결함에, 수정 전 측정은 정량 델타가
+   성공 기준일 때만 한다. 원인이 여럿으로 갈리면 분리한다 (→ `docs/work-evidence-routing.md`)
 4. **계획 보고 → 승인** — 원인 요약·수정 방향(대안이 있으면 권고안 명시)·영향 범위·검증 계획을 보고하고, **승인받은 뒤에만 코드를 수정한다**
 5. **구현** — 하드 룰·컨벤션 준수. 설계 배경·근거·한계는 코드 주석이 아니라 `docs/` 문서로 남기고 코드에는 포인터만 둔다
-6. **검증** — `pnpm lint && pnpm build` + E2E, 성능 작업이면 전후 측정 (→ 명령어)
+6. **검증** — `git diff --check` 후 변경 경로에 맞는 검증만 실행한다. 앱 코드·설정은
+   lint/build, 스크립트는 lint+관련 unit, 런타임 동작은 관련 E2E, 정량 작업은 같은 조건의
+   수정 후 측정을 고른다. 선택하지 않은 게이트를 관성적으로 덧붙이지 않는다 (→ 명령어)
 7. **커밋 → PR** — 템플릿 3절 + `Fixes #<번호>` (→ Git 워크플로, 이슈)
 8. **머지 후 정리** — **작업한 세션이 자기 워크트리를 치운다.** 기본 체크아웃으로 나가 `pnpm wt:rm <브랜치> --delete-branch` (→ Git 워크플로). **머지된 PR 브랜치에 추가 커밋을 푸시하지 말 것** — 반영되지 않는다. 후속 작업은 새 워크트리로
 
@@ -50,10 +54,18 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## 명령어
 
 - 패키지 매니저: **pnpm** (npm 사용 금지)
-- 검증: `pnpm lint && pnpm build`
-- 워크트리 스크립트 단위 테스트: `pnpm test:unit` (`scripts/**/*.test.mjs`). 워크트리 도구를 고쳤을 때만 필요하다 — 잠금의 실패는 조용해서 lint·build 가 보지 못한다 (`docs/parallel-work.md`)
-- E2E 테스트: `pnpm test:e2e` (UI 모드: `pnpm test:e2e:ui`)
-- 성능 측정: `pnpm perf` (전체) / `pnpm perf --page /daily` (특정 페이지) — Lighthouse 5회 median, 결과·델타는 `docs/perf/`에 기록. 상세는 `docs/perf/README.md`
+- 공통 최소 검증: `git diff --check`. 나머지는 변경 경로·성공 기준에 따라 고른다
+  (`docs/work-evidence-routing.md`)
+- 앱 코드·빌드 설정: `pnpm lint && pnpm build`. `next build`가 타입 검사까지 하므로 최종
+  게이트에 별도 `tsc --noEmit`을 중복하지 않는다
+- 워크트리 스크립트 단위 테스트: `pnpm test:unit` (`scripts/**/*.test.mjs`). 워크트리 도구를
+  고쳤을 때만 필요하다 — 잠금의 실패는 조용해서 lint·build가 보지 못한다
+  (`docs/parallel-work.md`)
+- E2E 테스트: 로컬은 `pnpm test:e2e <spec>`으로 영향 경로를 좁힌다. 인증·공통 내비·테스트
+  인프라처럼 전역 영향이면 전체 `pnpm test:e2e`; 모든 PR의 전체 스위트는 CI가 집행한다
+  (UI 모드: `pnpm test:e2e:ui`)
+- 정량 측정: 숫자 델타가 성공 기준일 때만 수정 전·후 같은 명령을 쓴다. Lighthouse는
+  `pnpm perf` (전체) / `pnpm perf --page /daily` (특정 페이지), 상세는 `docs/perf/README.md`
 - 병렬 작업: `pnpm wt:preflight` (main 최신화·잔재 보고) / `pnpm wt:new <브랜치>`
   (생성·부트스트랩) / `pnpm wt:rm <브랜치>` (삭제) / `pnpm wt:ls` (슬롯 현황).
   워크트리마다 포트와 E2E 계정이 갈린다. `pnpm perf`/`perf:diagnose`/`perf:deploy`는

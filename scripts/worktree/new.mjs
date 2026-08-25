@@ -188,8 +188,8 @@ function main() {
   E2E 계정    ${account.email}
   perf        이 워크트리 코드를 측정 (기본 체크아웃의 전용 계정, 전역 직렬)
 
-  첫 검증은 pnpm build 를 먼저 돌린다. Next 가 .next/types 에 만드는 전역 타입
-  (RouteContext 등)이 아직 없어 tsc --noEmit 이 먼저면 없는 오류가 뜬다.
+  검증은 변경 경로에 맞춰 고른다 (docs/work-evidence-routing.md).
+  앱 코드라면 pnpm lint && pnpm build — 별도 tsc 를 중복하지 않는다.
 
 끝나면: pnpm wt:rm ${opts.branch}
 `)
