@@ -55,6 +55,7 @@ test('같은 계정·횟수·Lighthouse 조건·볼륨이면 델타를 만든다
   cur.results['/daily'].score = 97
 
   assert.deepEqual(comparisonProblems(cur, prev), [])
+  assert.match(renderHistorySection(cur, prev), /2026-08-25 00:00 UTC/)
   assert.match(renderHistorySection(cur, prev), /🟢\+2/)
 })
 

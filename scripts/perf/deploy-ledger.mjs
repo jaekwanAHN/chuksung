@@ -98,6 +98,18 @@ export function ledgerWarnings(snapshot, prev) {
         `median 안정성이 달라 회차 간 델타를 만들지 않는다.`
     )
   }
+  const runnerFields = ['platform', 'arch', 'node']
+  const changedRunner = prev
+    ? runnerFields.filter(
+        (key) => prev.environment?.runner?.[key] !== snapshot.environment?.runner?.[key]
+      )
+    : []
+  if (changedRunner.length) {
+    warnings.push(
+      `**측정 runner가 다르다** (${changedRunner.join(', ')}). ` +
+        `클라이언트 실행 조건이 달라 회차 간 델타를 만들지 않는다.`
+    )
+  }
 
   const expected = snapshot.expectedFunctionRegion
   if (expected) {
@@ -174,7 +186,16 @@ export function deployComparisonProblems(snapshot, prev) {
   if (snapshot.account !== 'perf' || prev.account !== 'perf') problems.push('account')
   if (snapshot.base !== prev.base) problems.push('base')
   if (snapshot.runs !== prev.runs) problems.push('runs')
-  if (snapshot.environment?.kind !== prev.environment?.kind) problems.push('environment')
+  const environmentFields = ['kind', 'origin']
+  const runnerFields = ['platform', 'arch', 'node']
+  if (
+    environmentFields.some((key) => prev.environment?.[key] !== snapshot.environment?.[key]) ||
+    runnerFields.some(
+      (key) => prev.environment?.runner?.[key] !== snapshot.environment?.runner?.[key]
+    )
+  ) {
+    problems.push('environment')
+  }
   if (!prev.proxyRegion || !snapshot.proxyRegion || prev.proxyRegion !== snapshot.proxyRegion) {
     problems.push('proxyRegion')
   }
@@ -218,6 +239,12 @@ export function conditionNotes(snapshot) {
   const expected = snapshot.expectedFunctionRegion ?? '미설정'
   notes.push(`프록시 리전: \`${snapshot.proxyRegion ?? '미관측'}\``)
   notes.push(`함수 리전 기대값: \`${expected}\` (\`vercel.json\`)`)
+  const runner = snapshot.environment?.runner
+  if (runner) {
+    notes.push(
+      `측정 runner: \`${runner.platform}/${runner.arch}\` · Node \`${runner.node}\``
+    )
+  }
 
   // 계정은 TTFB 자체보다 응답 크기를 통해 들어온다 — `/api/tasks` 는 그 계정의 행을
   // 실어 보낸다. 어느 계정에서 잰 값인지 모르면 회차 간 비교가 성립하지 않는다
@@ -244,7 +271,7 @@ export function conditionNotes(snapshot) {
   return notes
 }
 
-const stamp = (iso) => iso.slice(0, 16).replace('T', ' ')
+const stamp = (iso) => `${iso.slice(0, 16).replace('T', ' ')} UTC`
 
 function fmtMs(v) {
   return v == null ? '—' : `${Math.round(v)}ms`
@@ -358,8 +385,10 @@ export function appendDeployLedger(ledgerPath, snapshot, prev) {
   }
   const cut = at + LEDGER_MARKER.length
   const section = renderSection(snapshot, prev)
+  const tail = existing.slice(cut).trim()
+  const suffix = tail ? `\n\n${tail}\n` : '\n'
   fs.writeFileSync(
     ledgerPath,
-    `${existing.slice(0, cut)}\n\n${section}\n---\n${existing.slice(cut).replace(/^\n+/, '\n')}`
+    `${existing.slice(0, cut)}\n\n${section}\n---${suffix}`
   )
 }

@@ -1,0 +1,604 @@
+{
+  "schemaVersion": 2,
+  "valid": true,
+  "timestamp": "2026-08-25T08:17:37.219Z",
+  "runs": 7,
+  "base": "https://chuksung.vercel.app",
+  "account": "perf",
+  "environment": {
+    "kind": "deployed-production",
+    "origin": "https://chuksung.vercel.app",
+    "runner": {
+      "platform": "linux",
+      "arch": "x64",
+      "node": "v24.18.0"
+    }
+  },
+  "proxyRegion": "sin1",
+  "deploySha": "7fba09a",
+  "expectedFunctionRegion": "icn1",
+  "controlPath": "/_next/static/chunks/0vr-j-2_18oyf.css",
+  "results": {
+    "정적 파일 (대조군)": {
+      "first": 15.432800000000043,
+      "repeatMedian": 11.428499999999985,
+      "status": 200,
+      "segments": 1,
+      "edge": "icn1",
+      "functionRegion": null,
+      "proxyRegion": null,
+      "deploySha": null,
+      "note": "CDN 엣지 — 회선 상태 판정용",
+      "samples": [
+        {
+          "run": 1,
+          "ms": 15,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 2,
+          "ms": 14,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 3,
+          "ms": 12,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 4,
+          "ms": 11,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 5,
+          "ms": 11,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 6,
+          "ms": 12,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 7,
+          "ms": 10,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": null,
+          "deploySha": null
+        }
+      ]
+    },
+    "/login (비인증)": {
+      "first": 140.6860999999999,
+      "repeatMedian": 129.058399,
+      "status": 200,
+      "segments": 2,
+      "edge": "icn1",
+      "functionRegion": "icn1",
+      "proxyRegion": "sin1",
+      "deploySha": "7fba09a",
+      "note": "200, 페이지 함수 기동",
+      "samples": [
+        {
+          "run": 1,
+          "ms": 141,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 2,
+          "ms": 140,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 3,
+          "ms": 128,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 4,
+          "ms": 132,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 5,
+          "ms": 143,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 6,
+          "ms": 129,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 7,
+          "ms": 123,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        }
+      ]
+    },
+    "/login (인증)": {
+      "first": 476.0488970000001,
+      "repeatMedian": 113.22689899999932,
+      "status": 307,
+      "segments": 1,
+      "edge": "icn1",
+      "functionRegion": null,
+      "proxyRegion": "sin1",
+      "deploySha": "7fba09a",
+      "note": "307, 순수 프록시 비용",
+      "samples": [
+        {
+          "run": 1,
+          "ms": 476,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 2,
+          "ms": 166,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 3,
+          "ms": 113,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 4,
+          "ms": 118,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 5,
+          "ms": 113,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 6,
+          "ms": 103,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 7,
+          "ms": 106,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        }
+      ]
+    },
+    "/ (인증)": {
+      "first": 106.02520000000004,
+      "repeatMedian": 166.25689899999998,
+      "status": 307,
+      "segments": 1,
+      "edge": "icn1",
+      "functionRegion": null,
+      "proxyRegion": "sin1",
+      "deploySha": "7fba09a",
+      "note": "307 → /daily",
+      "samples": [
+        {
+          "run": 1,
+          "ms": 106,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 2,
+          "ms": 104,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 3,
+          "ms": 166,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 4,
+          "ms": 167,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 5,
+          "ms": 168,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 6,
+          "ms": 104,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 7,
+          "ms": 175,
+          "status": 307,
+          "location": "/daily",
+          "edge": "icn1",
+          "functionRegion": null,
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        }
+      ]
+    },
+    "/daily (인증)": {
+      "first": 215.3395989999999,
+      "repeatMedian": 138.85699899999963,
+      "status": 200,
+      "segments": 2,
+      "edge": "icn1",
+      "functionRegion": "icn1",
+      "proxyRegion": "sin1",
+      "deploySha": "7fba09a",
+      "note": "SSR 셸",
+      "samples": [
+        {
+          "run": 1,
+          "ms": 215,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 2,
+          "ms": 139,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 3,
+          "ms": 169,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 4,
+          "ms": 145,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 5,
+          "ms": 132,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 6,
+          "ms": 203,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        },
+        {
+          "run": 7,
+          "ms": 132,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": "sin1",
+          "deploySha": "7fba09a"
+        }
+      ]
+    },
+    "/api/profile (인증)": {
+      "first": 839.9917960000002,
+      "repeatMedian": 110.42829900000106,
+      "status": 200,
+      "segments": 2,
+      "edge": "icn1",
+      "functionRegion": "icn1",
+      "proxyRegion": null,
+      "deploySha": null,
+      "note": "getUser + 1행 조회",
+      "samples": [
+        {
+          "run": 1,
+          "ms": 840,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 2,
+          "ms": 173,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 3,
+          "ms": 127,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 4,
+          "ms": 177,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 5,
+          "ms": 93,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 6,
+          "ms": 110,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 7,
+          "ms": 107,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        }
+      ]
+    },
+    "/api/tasks?scope=weekly (인증)": {
+      "first": 250.44889800000055,
+      "repeatMedian": 161.05499899999995,
+      "status": 200,
+      "segments": 2,
+      "edge": "icn1",
+      "functionRegion": "icn1",
+      "proxyRegion": null,
+      "deploySha": null,
+      "note": "프록시 밖(matcher 제외)",
+      "samples": [
+        {
+          "run": 1,
+          "ms": 250,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 2,
+          "ms": 177,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 3,
+          "ms": 165,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 4,
+          "ms": 161,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 5,
+          "ms": 162,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 6,
+          "ms": 146,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        },
+        {
+          "run": 7,
+          "ms": 150,
+          "status": 200,
+          "location": null,
+          "edge": "icn1",
+          "functionRegion": "icn1",
+          "proxyRegion": null,
+          "deploySha": null
+        }
+      ]
+    }
+  }
+}

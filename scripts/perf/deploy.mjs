@@ -235,7 +235,15 @@ async function measure(opts) {
     account: creds?.source ?? null,
     // 프록시를 통과한 sample에서 리전·배포 SHA가 하나로 모여야 한다. 다르면
     // 측정 중 재배포 또는 실행 조건 변화로 보고 위에서 기록을 중단한다.
-    environment: { kind: 'deployed-production', origin: opts.base },
+    environment: {
+      kind: 'deployed-production',
+      origin: opts.base,
+      runner: {
+        platform: process.platform,
+        arch: process.arch,
+        node: process.version,
+      },
+    },
     proxyRegion: proxyRegions[0],
     deploySha: deployShas[0],
     expectedFunctionRegion: expectedFunctionRegion(vercelJson),

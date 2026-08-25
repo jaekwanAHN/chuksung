@@ -48,7 +48,7 @@ function cell(metric, cur, prev) {
   return `${base} ${improved ? '🟢' : '🔴'}${fmtDelta(metric.key, diff)}`
 }
 
-const stamp = (iso) => iso.slice(0, 16).replace('T', ' ') // 2026-07-22 14:30
+const stamp = (iso) => `${iso.slice(0, 16).replace('T', ' ')} UTC`
 
 /** 스냅샷 JSON 을 snapshots/ 에 저장하고 파일 경로를 반환한다. */
 export function saveSnapshot(snapDir, snapshot) {

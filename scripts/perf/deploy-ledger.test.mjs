@@ -5,6 +5,8 @@ import path from 'node:path'
 import test from 'node:test'
 import {
   CONTROL_KEY,
+  LEDGER_MARKER,
+  appendDeployLedger,
   controlDrift,
   conditionNotes,
   deployComparisonProblems,
@@ -26,7 +28,11 @@ const snapshot = (over = {}) => ({
   timestamp: '2026-08-20T05:00:00.000Z',
   runs: 7,
   base: 'https://example.com',
-  environment: { kind: 'deployed-production', origin: 'https://example.com' },
+  environment: {
+    kind: 'deployed-production',
+    origin: 'https://example.com',
+    runner: { platform: 'linux', arch: 'x64', node: 'v24.18.0' },
+  },
   account: 'perf',
   proxyRegion: 'sin1',
   deploySha: 'abc1234',
@@ -199,6 +205,20 @@ test('계정·오리진·횟수가 다르면 델타 없는 새 기준선으로 �
   assert.doesNotMatch(section, /🟢|🔴/)
 })
 
+test('측정 runner가 다르면 델타 없는 새 기준선으로 만든다', () => {
+  const prev = snapshot()
+  const cur = snapshot({
+    environment: {
+      ...snapshot().environment,
+      runner: { ...snapshot().environment.runner, node: 'v25.0.0' },
+    },
+  })
+
+  assert.ok(deployComparisonProblems(cur, prev).includes('environment'))
+  assert.ok(ledgerWarnings(cur, prev).some((warning) => /측정 runner가 다르다/.test(warning)))
+  assert.doesNotMatch(renderSection(cur, prev), /🟢|🔴/)
+})
+
 test('프록시 리전이나 대조군을 확인할 수 없으면 델타를 만들지 않는다', () => {
   const noProxy = snapshot({ proxyRegion: null })
   const noControl = snapshot({ results: { '/daily (인증)': { repeatMedian: 120 } } })
@@ -214,6 +234,8 @@ test('프록시 리전이나 대조군을 확인할 수 없으면 델타를 만�
 test('비교 대상이 없으면 baseline 으로 적는다', () => {
   const section = renderSection(snapshot(), null)
   assert.match(section, /baseline/)
+  assert.match(section, /2026-08-20 05:00 UTC/)
+  assert.match(section, /linux\/x64/)
   assert.doesNotMatch(section, /🟢|🔴/)
 })
 
@@ -235,6 +257,23 @@ test('직전 배포 스냅샷 검색은 legacy와 invalid 파일을 건너뛴다
       findPreviousDeploySnapshot(dir, path.join(dir, 'current.json'), ['/daily (인증)']),
       trusted
     )
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+})
+
+test('원장 삽입은 기존 기록을 보존하고 파일 끝에 빈 줄을 만들지 않는다', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'perf-deploy-append-test-'))
+  const ledger = path.join(dir, 'deploy-latency.md')
+  try {
+    fs.writeFileSync(ledger, `머리말\n\n${LEDGER_MARKER}\n\n# 기존 기록\n`)
+    appendDeployLedger(ledger, snapshot(), null)
+
+    const written = fs.readFileSync(ledger, 'utf8')
+    assert.match(written, /자동 측정/)
+    assert.match(written, /# 기존 기록/)
+    assert.ok(written.endsWith('# 기존 기록\n'))
+    assert.ok(!written.endsWith('\n\n'))
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }
