@@ -4,6 +4,7 @@ import {
   CONTROL_KEY,
   controlDrift,
   conditionNotes,
+  deployComparisonProblems,
   expectedFunctionRegion,
   ledgerWarnings,
   median,
@@ -19,6 +20,7 @@ const snapshot = (over = {}) => ({
   timestamp: '2026-08-20T05:00:00.000Z',
   runs: 7,
   base: 'https://example.com',
+  account: 'perf',
   proxyRegion: 'sin1',
   deploySha: 'abc1234',
   expectedFunctionRegion: 'icn1',
@@ -97,9 +99,9 @@ test('제어 불가한 프록시/함수 분열은 경고가 아니라 상시 표
 
 test('어느 계정에서 잰 값인지 원장에 남는다', () => {
   assert.ok(conditionNotes(snapshot({ account: 'perf' })).some((n) => /계정: `perf`/.test(n)))
-  // 공유 계정이면 볼륨이 고정되지 않는다는 사실까지 적는다
+  // 과거 스냅샷은 그대로 읽을 수 있어야 한다.
   assert.ok(conditionNotes(snapshot({ account: 'e2e' })).some((n) => /E2E 가 이 계정의 데이터를 바꾼다/.test(n)))
-  assert.ok(!conditionNotes(snapshot()).some((n) => /계정:/.test(n)))
+  assert.ok(!conditionNotes(snapshot({ account: null })).some((n) => /계정:/.test(n)))
 })
 
 test('진입 엣지가 회차 안에서 갈리면 경고한다', () => {
@@ -137,20 +139,44 @@ test('한쪽에 대조군이 없으면 판단하지 않는다 — 근거 없는 
 })
 
 test('델타는 노이즈 임계를 넘을 때만 표시된다', () => {
-  const prev = snapshot()
-  const cur = snapshot()
+  const prev = snapshot({ account: 'perf' })
+  const cur = snapshot({ account: 'perf' })
   cur.results['/daily (인증)'].warm = 60 // 130 → 60, 개선
 
   const improved = renderSection(cur, prev)
   assert.match(improved, /🟢-70ms/)
 
-  const same = snapshot()
+  const same = snapshot({ account: 'perf' })
   same.results['/daily (인증)'].warm = 140 // +10ms, max(20, 19.5) 미만
   assert.match(renderSection(same, prev), /140ms \(—\)/)
 
-  const worse = snapshot()
+  const worse = snapshot({ account: 'perf' })
   worse.results['/daily (인증)'].warm = 200 // +70ms
   assert.match(renderSection(worse, prev), /🔴\+70ms/)
+})
+
+test('계정·오리진·횟수가 다르면 델타 없는 새 기준선으로 만든다', () => {
+  const prev = snapshot({ account: 'e2e' })
+  const cur = snapshot({ account: 'perf', base: 'https://other.example.com', runs: 5 })
+  const problems = deployComparisonProblems(cur, prev)
+  const section = renderSection(cur, prev)
+
+  assert.deepEqual(problems.sort(), ['account', 'base', 'runs'])
+  assert.match(section, /baseline \(직전 측정과 비교 조건 불일치\)/)
+  assert.match(section, /색상 델타를 만들지 않고/)
+  assert.doesNotMatch(section, /🟢|🔴/)
+})
+
+test('프록시 리전이나 대조군을 확인할 수 없으면 델타를 만들지 않는다', () => {
+  const noProxy = snapshot({ proxyRegion: null })
+  const noControl = snapshot({ results: { '/daily (인증)': { warm: 120 } } })
+
+  assert.ok(deployComparisonProblems(noProxy, snapshot()).includes('proxyRegion'))
+  assert.ok(deployComparisonProblems(noControl, snapshot()).includes('control'))
+  assert.ok(ledgerWarnings(noProxy, snapshot()).some((warning) => /미관측/.test(warning)))
+  assert.ok(ledgerWarnings(noControl, snapshot()).some((warning) => /대조군/.test(warning)))
+  assert.doesNotMatch(renderSection(noProxy, snapshot()), /🟢|🔴/)
+  assert.doesNotMatch(renderSection(noControl, snapshot()), /🟢|🔴/)
 })
 
 test('비교 대상이 없으면 baseline 으로 적는다', () => {

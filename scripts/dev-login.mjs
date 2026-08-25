@@ -36,7 +36,14 @@ if (!res) {
 }
 
 console.log('▸ 테스트 계정 세션 발급…')
-const cookieHeader = await getAuthCookieHeader()
+const e2eEmail = process.env.E2E_TEST_USER_EMAIL
+const e2ePassword = process.env.E2E_TEST_USER_PASSWORD
+const e2eCredentials =
+  e2eEmail && e2ePassword ? { email: e2eEmail, password: e2ePassword } : null
+const cookieHeader = await getAuthCookieHeader(
+  e2eCredentials,
+  'E2E_TEST_USER_EMAIL / E2E_TEST_USER_PASSWORD'
+)
 const cookies = cookieHeader.split('; ').map((pair) => {
   const i = pair.indexOf('=')
   return {

@@ -1,6 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
 import { perfCredentials } from './account.mjs'
 
+export const VOLUME_KEYS = [
+  'tasks',
+  'tasks_completed',
+  'job_postings',
+  'task_templates',
+  'ddays',
+  'quiz_histories',
+]
+
 /**
  * 측정 시점의 데이터 볼륨(행 수)을 센다.
  *
@@ -9,11 +18,13 @@ import { perfCredentials } from './account.mjs'
  * 테스트 데이터가 시딩되면서, 07-21 대비 07-28 의 🔴 델타가 코드 회귀로 오해됐다.
  * 커밋 이분 탐색으로는 절대 찾을 수 없는 원인이었다.
  *
- * 그래서 측정마다 볼륨을 스냅샷에 남기고, 직전 측정과 다르면 원장에 경고를 붙인다.
+ * 그래서 측정마다 볼륨을 스냅샷에 남기고, 직전 측정과 다르거나 일부를 읽지 못하면
+ * 원장에 경고를 붙이고 델타를 만들지 않는다.
  * 계정은 getAuthCookieHeader 와 같은 것을 써야 한다 — 다른 계정을 세면 스냅샷의
  * 볼륨이 측정 대상과 어긋난다 (`account.mjs`).
  *
- * 실패해도 측정을 막지 않는다 (best-effort). 볼륨을 못 세면 경고만 생략된다.
+ * 실패해도 측정값 기록은 막지 않는다 (best-effort). 볼륨을 못 세면 해당 회차가
+ * 새 기준선이 되어 근거 없는 전후 델타를 남기지 않는다.
  */
 export async function measureDataVolume() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -67,8 +78,8 @@ const DRIFT_MIN_ROWS = 10
 
 /**
  * 두 측정의 볼륨을 비교해, 비교를 무효화할 만큼 달라진 항목을 돌려준다.
- * 볼륨 정보가 한쪽이라도 없으면 판단하지 않는다(빈 배열) — 옛 스냅샷과의 비교에서
- * 근거 없는 경고를 띄우지 않기 위해서다.
+ * 이 함수는 존재하는 값의 드리프트만 판정한다. 볼륨 전체·일부 누락은 원장 비교기가
+ * 별도로 비교 불가 처리한다.
  */
 export function volumeDrift(current, previous) {
   if (!current || !previous) return []

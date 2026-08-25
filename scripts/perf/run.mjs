@@ -1,4 +1,3 @@
-import fs from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
@@ -6,15 +5,17 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from '@playwright/test'
 import lighthouse from 'lighthouse'
 import { getAuthCookieHeader } from './auth.mjs'
+import { loadPerfEnvironment } from './environment.mjs'
 import { PAGES } from './pages.mjs'
-import { saveSnapshot, findPreviousSnapshot, appendHistory } from './ledger.mjs'
+import {
+  appendHistory,
+  comparisonProblems,
+  findPreviousSnapshot,
+  saveSnapshot,
+} from './ledger.mjs'
 import { measureDataVolume, formatVolume } from './volume.mjs'
 import { perfCredentials } from './account.mjs'
-
-// .env.local 을 직접 로드 (Node 는 자동 로드하지 않음).
-for (const f of ['.env.local', '.env.test']) {
-  if (fs.existsSync(f)) process.loadEnvFile(f)
-}
+import { withPerfLock } from './perf-lock.mjs'
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
 const OUT_DIR = path.join(ROOT, 'docs', 'perf')
@@ -54,7 +55,10 @@ const HELP = `성능 측정 (Lighthouse) — 결과를 docs/perf/ 에 기록
   --runs <n>              페이지당 실행 횟수, median 선택 (기본 5)
   --port <n>              프로덕션 서버 포트 (기본 3111)
   --no-build              build/start 건너뛰고 --port 의 기존 서버 사용
-  --help                  이 도움말`
+  --help                  이 도움말
+
+현재 체크아웃의 코드를 측정·기록합니다. perf 전용 계정과 전역 잠금 규칙:
+  docs/perf/measurement-contract.md`
 
 // ── 프로덕션 서버 기동 ───────────────────────────────────────
 function run(cmd, args, opts = {}) {
@@ -157,23 +161,11 @@ async function measurePage(url, port, cookie, runs) {
 }
 
 // ── main ────────────────────────────────────────────────────
-async function main() {
-  const opts = parseArgs(process.argv.slice(2))
-  if (opts.help) {
-    console.log(HELP)
-    return
-  }
-
+async function measure(opts) {
   const base = `http://localhost:${opts.port}`
   const creds = perfCredentials()
   console.log(`▸ 인증 세션 발급…`)
   const cookie = await getAuthCookieHeader()
-  if (creds?.source === 'e2e') {
-    console.log(
-      '  ⚠️ PERF_TEST_USER_* 미설정 — E2E 공유 계정으로 측정합니다. ' +
-        'E2E 가 데이터를 바꾸므로 볼륨이 고정되지 않습니다 (docs/perf/accounts.md).'
-    )
-  }
 
   let server = null
   let browser = null
@@ -220,12 +212,18 @@ async function main() {
 
     const file = saveSnapshot(SNAP_DIR, snapshot)
     const prev = findPreviousSnapshot(SNAP_DIR, file, opts.pages)
+    const problems = comparisonProblems(snapshot, prev)
     appendHistory(path.join(OUT_DIR, 'history.md'), snapshot, prev)
 
     console.log(`\n✔ 스냅샷: ${path.relative(ROOT, file)}`)
     console.log(`✔ 원장 갱신: ${path.relative(ROOT, path.join(OUT_DIR, 'history.md'))}`)
-    if (prev) console.log(`  (직전 ${prev.timestamp.slice(0, 16).replace('T', ' ')} 대비 델타 기록)`)
-    else console.log('  (첫 측정 — baseline 으로 기록)')
+    if (prev && !problems.length) {
+      console.log(`  (직전 ${prev.timestamp.slice(0, 16).replace('T', ' ')} 대비 델타 기록)`)
+    } else if (prev) {
+      console.log(`  (비교 조건 불일치 — 새 baseline, 델타 없음)`)
+    } else {
+      console.log('  (첫 측정 — baseline 으로 기록)')
+    }
   } finally {
     // 각 정리 단계는 독립적으로 — 하나가 실패해도 나머지는 반드시 실행되게 한다
     // (특히 서버를 안 죽이면 detached 자식이 프로세스를 매달리게 함).
@@ -236,6 +234,16 @@ async function main() {
     }
     stopServer(server)
   }
+}
+
+async function main() {
+  const opts = parseArgs(process.argv.slice(2))
+  if (opts.help) {
+    console.log(HELP)
+    return
+  }
+  const baseRoot = loadPerfEnvironment(ROOT)
+  await withPerfLock(baseRoot, () => measure(opts))
 }
 
 main().catch((err) => {

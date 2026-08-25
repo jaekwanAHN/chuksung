@@ -8,25 +8,27 @@ import { perfCredentials } from './account.mjs'
  * 앱 로그인은 Google/Kakao OAuth 전용이므로 UI 자동화 대신
  * signInWithPassword 로 쿠키를 직접 발급한다.
  *
- * 계정은 PERF_TEST_USER_* → E2E_TEST_USER_* 순으로 고른다 (`account.mjs`).
- * 필요한 환경변수 (.env.local): NEXT_PUBLIC_SUPABASE_URL,
- * NEXT_PUBLIC_SUPABASE_ANON_KEY, PERF_TEST_USER_EMAIL, PERF_TEST_USER_PASSWORD
+ * 기본값은 전용 PERF_TEST_USER_* 이고, dev-login처럼 다른 용도는 계정을 명시한다.
+ * 필요한 공통 환경변수: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY.
  *
+ * @param {{email: string, password: string} | null} [credentials]
+ * @param {string} [credentialLabel]
  * @returns {Promise<string>} "name1=value1; name2=value2" 형태의 Cookie 헤더 값
  */
-export async function getAuthCookieHeader() {
+export async function getAuthCookieHeader(
+  credentials = perfCredentials(),
+  credentialLabel = 'PERF_TEST_USER_EMAIL / PERF_TEST_USER_PASSWORD'
+) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const creds = perfCredentials()
 
-  if (!url || !anonKey || !creds) {
+  if (!url || !anonKey || !credentials) {
     throw new Error(
       '인증 환경변수 누락: NEXT_PUBLIC_SUPABASE_URL / NEXT_PUBLIC_SUPABASE_ANON_KEY / ' +
-        'PERF_TEST_USER_EMAIL / PERF_TEST_USER_PASSWORD (또는 E2E_TEST_USER_*) 를 ' +
-        '.env.local 에 설정하세요.'
+        `${credentialLabel}.`
     )
   }
-  const { email, password } = creds
+  const { email, password } = credentials
 
   // 라이브러리 자신의 인코딩/청킹 로직으로 쿠키를 생성하기 위해
   // server client 에 커스텀 쿠키 스토어를 연결한다 (auth.setup.ts 와 동일).
