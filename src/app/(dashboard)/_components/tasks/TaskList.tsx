@@ -7,6 +7,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import type { FilterMode } from './TaskFilters'
 
 export function TaskList({
+  heading,
   tasks,
   filterMode,
   categoryFilter,
@@ -17,6 +18,8 @@ export function TaskList({
   deletingId,
   togglingIds,
 }: {
+  /** 화면에 보이지 않는 섹션 제목. h1 과 TaskCard 의 h3 사이 단계를 채운다 — docs/a11y.md */
+  heading: string
   tasks: Task[]
   filterMode: FilterMode
   categoryFilter: TaskCategory | 'all'
@@ -47,24 +50,29 @@ export function TaskList({
     })
   }, [filtered])
 
-  if (!sorted.length) {
-    return <EmptyState message="이 기간에 태스크가 없습니다. 새 목표를 추가해 보세요." />
-  }
-
+  // 빈 상태에서도 섹션·heading 을 유지한다 — 필터 전환으로 목록이 비었다 차는 동안
+  // 스크린리더의 heading 목록에서 섹션이 나타났다 사라지지 않게 (docs/a11y.md)
   return (
-    <ul className="flex flex-col gap-3">
-      {sorted.map((task) => (
-        <li key={task.id}>
-          <TaskCard
-            task={task}
-            onToggle={onToggle}
-            onDelete={onDelete}
-            onEdit={onEdit}
-            deleting={deletingId === task.id}
-            toggling={togglingIds?.has(task.id) ?? false}
-          />
-        </li>
-      ))}
-    </ul>
+    <section>
+      <h2 className="sr-only">{heading}</h2>
+      {!sorted.length ? (
+        <EmptyState message="이 기간에 태스크가 없습니다. 새 목표를 추가해 보세요." />
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {sorted.map((task) => (
+            <li key={task.id}>
+              <TaskCard
+                task={task}
+                onToggle={onToggle}
+                onDelete={onDelete}
+                onEdit={onEdit}
+                deleting={deletingId === task.id}
+                toggling={togglingIds?.has(task.id) ?? false}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
   )
 }
