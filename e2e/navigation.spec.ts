@@ -116,6 +116,11 @@ test.describe('일간 날짜 이동', () => {
     await expect(heading).toHaveText(/./) // 프로필 로드 후 렌더 대기
     const todayLabel = await heading.innerText()
 
+    // #102 회귀: h1 다음이 곧바로 TaskCard 의 h3 라 h2 단계가 비어 있었다 (docs/a11y.md)
+    await expect(
+      page.getByRole('heading', { name: '오늘의 태스크', level: 2 })
+    ).toBeAttached()
+
     await page.getByRole('button', { name: '새 태스크' }).click()
     await page.getByLabel('제목').fill(title)
     await page.getByRole('button', { name: '저장' }).click()

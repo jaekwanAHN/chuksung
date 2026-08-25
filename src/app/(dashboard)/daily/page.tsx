@@ -139,7 +139,7 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
             <span>
               오늘
               {todayRangeLabel && (
-                <span className="text-zinc-400"> · {todayRangeLabel}</span>
+                <span className="text-zinc-600"> · {todayRangeLabel}</span>
               )}
             </span>
           ) : (
@@ -196,6 +196,7 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
       ) : (
         <>
           <TaskList
+            heading="오늘의 태스크"
             tasks={tasks}
             filterMode={filterMode}
             categoryFilter={categoryFilter}

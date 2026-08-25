@@ -94,6 +94,9 @@ export function Header() {
           <button
             type="button"
             onClick={() => setDropdownOpen((o) => !o)}
+            aria-label={`테마 ${currentTheme.label}`}
+            aria-expanded={dropdownOpen}
+            aria-controls="theme-menu"
             className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
           >
             <span
@@ -105,7 +108,10 @@ export function Header() {
           </button>
 
           {dropdownOpen && (
-            <div className="absolute right-0 top-full z-50 mt-1 min-w-[7rem] overflow-hidden rounded-xl border border-zinc-200 bg-background shadow-lg">
+            <div
+              id="theme-menu"
+              className="absolute right-0 top-full z-50 mt-1 min-w-[7rem] overflow-hidden rounded-xl border border-zinc-200 bg-background shadow-lg"
+            >
               {THEME_IDS.map((id) => (
                 <button
                   key={id}

@@ -30,7 +30,7 @@ export function Footer() {
   return (
     <footer className="border-t border-zinc-200 bg-white px-4 py-4 md:px-6">
       <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
-        <p className="text-xs text-zinc-400">
+        <p className="text-xs text-zinc-600">
           © {new Date().getFullYear()} chuksung. All rights reserved.
         </p>
         <ul className="flex items-center gap-4">
@@ -43,7 +43,7 @@ export function Footer() {
                   target={href.startsWith('mailto') ? undefined : '_blank'}
                   rel={href.startsWith('mailto') ? undefined : 'noopener noreferrer'}
                   onClick={() => handleClick(copyValue)}
-                  className="flex items-center gap-1.5 text-xs text-zinc-400 transition hover:text-zinc-700"
+                  className="flex items-center gap-1.5 text-xs text-zinc-600 transition hover:text-zinc-700"
                 >
                   {isCopied ? (
                     <Check className="size-3.5 shrink-0 text-emerald-500" aria-hidden />

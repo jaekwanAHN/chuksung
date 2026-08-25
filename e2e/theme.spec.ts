@@ -65,6 +65,22 @@ test.describe('테마 전환', () => {
     await expect(trigger).toContainText(target.label)
   })
 
+  // #102 회귀: 라벨 <span> 이 sm 미만에서 숨겨져 트리거의 접근 이름이 빈 문자열이었다.
+  // 이름으로 버튼을 찾는 이 테스트는 수정 전 코드에서 성립하지 않는다 (docs/a11y.md).
+  test('테마 트리거는 모바일 폭에서도 접근 이름을 갖고 펼침 상태를 알린다', async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 375, height: 667 })
+    await page.goto('/daily')
+
+    const trigger = page.locator('header').getByRole('button', { name: /^테마 / })
+    await expect(trigger).toBeVisible()
+    await expect(trigger).toHaveAttribute('aria-expanded', 'false')
+
+    await trigger.click()
+    await expect(trigger).toHaveAttribute('aria-expanded', 'true')
+  })
+
   // #79 회귀: 첫 렌더의 입력이 서버(쿠키)와 클라이언트에서 갈리면 라벨이 어긋났다.
   test('비기본 테마로 진입해도 서버가 그 테마로 렌더하고 하이드레이션이 어긋나지 않는다', async ({
     page,
