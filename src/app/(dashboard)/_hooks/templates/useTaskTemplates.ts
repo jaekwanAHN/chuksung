@@ -1,7 +1,12 @@
 'use client'
 
 import { useCallback } from 'react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryKey,
+} from '@tanstack/react-query'
 import { format } from 'date-fns'
 import apiClient from '@/lib/axios'
 import type {
@@ -39,14 +44,33 @@ export function useTaskTemplates() {
   const queryClient = useQueryClient()
 
   /**
-   * 템플릿 추가·수정의 결과(그 자리에서 시딩된 태스크)를 일간 캐시에 직접 반영한다.
-   * 재조회가 없으므로 "낡은 응답이 신선한 데이터로 안착하는" 창이 열리지 않는다.
+   * 뮤테이션 결과를 목록 캐시에 직접 쓴다. 재조회가 없으므로 "낡은 응답이 신선한
+   * 데이터로 안착하는" 창이 열리지 않는다.
    *
    * cancelQueries 가 남아 있는 이유는 PR #65 때와 다르다. 예전에는 재요청이 진행 중인
    * 요청으로 dedupe 되는 것을 막으려는 것이었고, 지금은 **뮤테이션 이전에 이미 날아간
-   * 조회의 응답이 아래 쓰기를 덮어쓰는 것**을 막는다. 그 응답은 템플릿이 존재하기 전에
-   * 계산된 목록이다. (docs/task-race-guards.md)
+   * 조회의 응답이 이 쓰기를 덮어쓰는 것**을 막는다. 그 응답은 변경 이전에 계산된
+   * 목록이다. (docs/task-race-guards.md)
+   *
+   * 캐시가 아직 없으면(첫 조회가 진행 중이거나 그 키를 아무도 안 본 상태) 쓸 바탕이
+   * 없으므로 재조회에 맡긴다. 이 재조회는 뮤테이션 이후에 나가므로 서버가 변경을 본다.
+   * **취소만 하고 끝내면 안 된다** — 취소는 되돌리기만 할 뿐 재요청을 걸지 않아
+   * 목록이 빈 채로 남는다.
    */
+  const writeListCache = useCallback(
+    async <T>(key: QueryKey, update: (prev: T[]) => T[]) => {
+      await queryClient.cancelQueries({ queryKey: key })
+      const prev = queryClient.getQueryData<T[]>(key)
+      if (!prev) {
+        await queryClient.invalidateQueries({ queryKey: key })
+        return
+      }
+      queryClient.setQueryData<T[]>(key, update(prev))
+    },
+    [queryClient]
+  )
+
+  /** 템플릿 추가·수정의 결과(그 자리에서 시딩된 태스크)를 일간 캐시에 반영한다. */
   const applySeeding = useCallback(
     async ({ seeded_tasks, target_date }: TaskTemplateMutationResult) => {
       if (!target_date || !seeded_tasks) {
@@ -56,26 +80,29 @@ export function useTaskTemplates() {
         await queryClient.invalidateQueries({ queryKey: taskKeys.scope('daily') })
         return
       }
-
-      const key = taskKeys.byScope('daily', target_date)
-      const prev = queryClient.getQueryData<Task[]>(key)
-
-      // 캐시에 목록이 아직 없으면(첫 로딩이 진행 중이거나 다른 날짜를 보는 중) 병합할
-      // 대상이 없다. 진행 중인 조회를 끊고 재조회한다 — 이 재조회는 템플릿 생성 이후에
-      // 나가므로 서버가 새 템플릿을 보고 계산한다.
-      if (!prev) {
-        await queryClient.cancelQueries({ queryKey: key })
-        await queryClient.invalidateQueries({ queryKey: key })
-        return
-      }
-
+      // 새로 심긴 것이 없으면 일간 목록도 그대로다 — 진행 중인 조회를 끊을 이유가 없다.
       if (seeded_tasks.length === 0) return
 
-      await queryClient.cancelQueries({ queryKey: key })
-      queryClient.setQueryData<Task[]>(key, mergeSeededTasks(prev, seeded_tasks))
+      await writeListCache<Task>(
+        taskKeys.byScope('daily', target_date),
+        (prev) => mergeSeededTasks(prev, seeded_tasks)
+      )
     },
-    [queryClient]
+    [queryClient, writeListCache]
   )
+
+  /**
+   * 템플릿 목록 캐시 갱신. **덧붙이기가 아니라 upsert 다** — 진행 중이던 목록 조회가
+   * 서버의 생성 이후에 도착하면 그 응답에 이미 새 템플릿이 들어 있고, 거기에 또 붙이면
+   * 같은 항목이 두 벌 남는다(React 가 같은 key 로 경고한다). POST 가 시딩까지 하면서
+   * 그 창이 넓어져 E2E 에서 실제로 재현됐다.
+   */
+  const upsertTemplate =
+    (template: TaskTemplate) =>
+    (prev: TaskTemplate[]): TaskTemplate[] =>
+      prev.some((t) => t.id === template.id)
+        ? prev.map((t) => (t.id === template.id ? template : t))
+        : [...prev, template]
 
   const {
     data: templates = [],
@@ -99,10 +126,10 @@ export function useTaskTemplates() {
       return data
     },
     onSuccess: async (result) => {
-      queryClient.setQueryData<TaskTemplate[]>(templateKeys.all, (prev = []) => [
-        ...prev,
-        result.template,
-      ])
+      await writeListCache<TaskTemplate>(
+        templateKeys.all,
+        upsertTemplate(result.template)
+      )
       await applySeeding(result)
     },
   })
@@ -116,9 +143,10 @@ export function useTaskTemplates() {
       )
       return data
     },
-    onSuccess: async (result, { id }) => {
-      queryClient.setQueryData<TaskTemplate[]>(templateKeys.all, (prev = []) =>
-        prev.map((t) => (t.id === id ? result.template : t))
+    onSuccess: async (result) => {
+      await writeListCache<TaskTemplate>(
+        templateKeys.all,
+        upsertTemplate(result.template)
       )
       await applySeeding(result)
     },
@@ -129,8 +157,8 @@ export function useTaskTemplates() {
     mutationFn: async (id: string) => {
       await apiClient.delete(`/task-templates/${id}`)
     },
-    onSuccess: (_data, id) => {
-      queryClient.setQueryData<TaskTemplate[]>(templateKeys.all, (prev = []) =>
+    onSuccess: async (_data, id) => {
+      await writeListCache<TaskTemplate>(templateKeys.all, (prev) =>
         prev.filter((t) => t.id !== id)
       )
     },
