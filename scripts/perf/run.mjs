@@ -9,7 +9,9 @@ import lighthouse from 'lighthouse'
 import { getAuthCookies, toBrowserCookies } from './auth.mjs'
 import { loadPerfEnvironment } from './environment.mjs'
 import {
+  appliedAuditWeights,
   assertLighthouseResult,
+  SCORED_CATEGORIES,
   selectMedianLighthouseRun,
 } from './lighthouse-result.mjs'
 import { PAGES } from './pages.mjs'
@@ -142,6 +144,8 @@ function extract(lhr) {
   const a = lhr.audits
   return {
     score: (lhr.categories.performance.score ?? 0) * 100,
+    // 점수의 분모. 페이지 구조가 달라지면 W 가 변해 점수 델타가 성립하지 않는다.
+    weights: appliedAuditWeights(lhr),
     a11y: categoryScore(lhr, 'accessibility'),
     seo: categoryScore(lhr, 'seo'),
     lcp: a['largest-contentful-paint'].numericValue,
@@ -184,6 +188,12 @@ async function measurePage(url, port, runs) {
   }
   const median = selectMedianLighthouseRun(results)
   return { ...median, selectedRun: median.run, samples: results }
+}
+
+// 적용 audit 가중치(W)를 진단 출력에 함께 보여 준다. --no-build 는 원장을 쓰지 않으므로
+// 이 줄이 W 를 확인할 유일한 경로다.
+function formatWeights(weights) {
+  return SCORED_CATEGORIES.map((category) => weights?.[category] ?? '—').join('/')
 }
 
 function gitValue(args) {
@@ -249,7 +259,10 @@ async function measure(opts) {
     for (const page of opts.pages) {
       console.log(`▸ 측정: ${page}`)
       results[page] = await measurePage(`${base}${page}`, cdpPort, opts.runs)
-      console.log(`  → Perf ${Math.round(results[page].score)}                `)
+      console.log(
+        `  → Perf ${Math.round(results[page].score)} · ` +
+          `W ${formatWeights(results[page].weights)}                `
+      )
     }
 
     if (!opts.build) {
