@@ -58,6 +58,18 @@ export interface UpdateTaskTemplateInput extends Partial<CreateTaskTemplateInput
   is_active?: boolean
 }
 
+/**
+ * 템플릿 생성·수정 응답. 뮤테이션의 결과인 시딩을 재조회로 받아오지 않고 함께 싣는다
+ * (배경: docs/task-race-guards.md 「템플릿 변경과 일간 목록」).
+ */
+export interface TaskTemplateMutationResult {
+  template: TaskTemplate
+  /** 이번 호출이 새로 심은 일간 태스크. `null` 은 시딩 실패 — 클라이언트가 재조회로 복구한다 */
+  seeded_tasks: Task[] | null
+  /** 시딩 대상 날짜("유효 오늘"). `null` 은 시간 게이트 미통과 */
+  target_date: string | null
+}
+
 export interface Dday {
   id: string
   user_id: string
