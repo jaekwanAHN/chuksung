@@ -27,8 +27,12 @@ refresh token이 다음 run에도 이어지며, 옛 값으로 덮어써 인증�
 2. `lhr.finalDisplayedUrl`과 요청 URL이 동일함
 3. 모든 run이 통과한 뒤에만 스냅샷과 원장을 씀
 
-요청 URL·최종 URL·Lighthouse 버전·개별 지표를 모든 run에 저장한다. 대표값만 남기면
-같은 로그인 화면을 여러 경로에서 잰 사건을 사후 검증할 수 없다.
+요청 URL·최종 URL·Lighthouse 버전·개별 지표·적용 audit 가중치(W)를 모든 run에 저장한다.
+대표값만 남기면 같은 로그인 화면을 여러 경로에서 잰 사건을 사후 검증할 수 없다.
+
+W는 점수의 분모다. 같은 페이지의 W가 직전 회차와 다르면 그 카테고리(Perf/A11y/SEO) 열은
+값만 남기고 델타를 만들지 않는다. 한쪽에 W가 없는 회차는 이 검사를 건너뛴다. 근거는
+`README.md` 「적용 audit 가중치(W)」.
 
 ### 코드와 실행 환경
 
@@ -38,6 +42,7 @@ refresh token이 다음 run에도 이어지며, 옛 값으로 덮어써 인증�
 - `local-production-build` 환경과 앱·Supabase origin
 - OS·아키텍처·Node·Chromium·Lighthouse 버전
 - 계정 종류와 데이터 볼륨
+- 카테고리별 적용 audit 가중치(W)
 - 폼팩터·throttling·저장소 초기화 설정·run 수
 
 `--no-build`는 이미 떠 있는 서버의 코드 신원을 확인할 수 없어 원장에 쓰지 않는다.

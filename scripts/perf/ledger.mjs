@@ -22,6 +22,10 @@ const NOISE = { score: 0.5, a11y: 0.5, seo: 0.5, lcp: 20, tbt: 5, cls: 0.005, fc
 // 0~100 점수 계열 (나머지는 시간/비율 지표).
 const SCORE_KEYS = new Set(['score', 'a11y', 'seo'])
 
+// 점수 지표 ↔ 그 점수를 만든 Lighthouse 카테고리. 적용 audit 가중치(W)는 카테고리
+// 단위로 변하므로, 델타를 막을 때도 해당 열만 막는다.
+const METRIC_CATEGORY = { score: 'performance', a11y: 'accessibility', seo: 'seo' }
+
 function fmt(key, v) {
   if (v == null) return '—'
   if (SCORE_KEYS.has(key)) return String(Math.round(v))
@@ -151,6 +155,22 @@ export function comparisonProblems(snapshot, prev) {
   return problems
 }
 
+/**
+ * 같은 페이지에서 적용 audit 가중치(W)가 달라진 카테고리. W 는 점수의 분모이므로
+ * 다르면 두 회차의 그 점수는 같은 저울이 아니다. 한쪽에 W 가 없는 회차(기록 이전
+ * 스냅샷)는 비교하지 않는다 — 없는 값으로 기준선을 무효화하지 않기 위해서다.
+ */
+export function weightDrift(current, previous) {
+  const drift = []
+  for (const category of Object.values(METRIC_CATEGORY)) {
+    const from = previous?.weights?.[category]
+    const to = current?.weights?.[category]
+    if (from == null || to == null || from === to) continue
+    drift.push({ category, from, to })
+  }
+  return drift
+}
+
 /** 원장에 넣을 이번 측정 섹션. 비교 불가 조건이면 델타 없이 새 기준선으로 렌더한다. */
 export function renderHistorySection(snapshot, prev) {
   const problems = comparisonProblems(snapshot, prev)
@@ -158,10 +178,20 @@ export function renderHistorySection(snapshot, prev) {
   const pages = Object.keys(snapshot.results)
   const head = `| Page | ${METRICS.map((m) => m.label).join(' | ')} |`
   const sep = `|${'------|'.repeat(METRICS.length + 1)}`
+  const driftNotes = []
   const rows = pages.map((p) => {
     const cur = snapshot.results[p]
     const before = comparablePrev?.results?.[p]
-    const cells = METRICS.map((m) => cell(m, cur[m.key], before?.[m.key]))
+    const drift = weightDrift(cur, before)
+    for (const item of drift) {
+      driftNotes.push(`${p} · ${item.category} W ${item.from} → ${item.to}`)
+    }
+    const drifted = new Set(drift.map((item) => item.category))
+    const cells = METRICS.map((m) =>
+      drifted.has(METRIC_CATEGORY[m.key])
+        ? cell(m, cur[m.key], null)
+        : cell(m, cur[m.key], before?.[m.key])
+    )
     return `| ${p} | ${cells.join(' | ')} |`
   })
 
@@ -188,6 +218,14 @@ export function renderHistorySection(snapshot, prev) {
       `\n> 색상 델타를 만들지 않고 이 회차를 새 기준선으로 삼는다.\n\n`
     : ''
 
+  // 적용 audit 집합이 달라진 열은 값만 남기고 델타를 만들지 않는다. 이유를 표 아래
+  // 남기지 않으면 델타가 왜 빠졌는지 사후에 알 수 없다.
+  const weightWarning = driftNotes.length
+    ? `\n> ⚠️ **적용 audit 가중치(W)가 달라진 열은 델타를 만들지 않았다.**\n` +
+      driftNotes.map((note) => `> - ${note}`).join('\n') +
+      `\n> W 는 점수의 분모다 — 다르면 같은 저울이 아니다 (\`README.md\`).\n`
+    : ''
+
   return (
     `## ${stamp(snapshot.timestamp)} · ${snapshot.runs} runs · ` +
     `${cfg.formFactor}/${cfg.throttling} · ${compared}\n\n` +
@@ -195,7 +233,8 @@ export function renderHistorySection(snapshot, prev) {
     (environmentLine ? `${environmentLine}\n\n` : '') +
     (volumeLine ? `데이터: ${volumeLine}\n\n` : '') +
     [head, sep, ...rows].join('\n') +
-    '\n'
+    '\n' +
+    weightWarning
   )
 }
 

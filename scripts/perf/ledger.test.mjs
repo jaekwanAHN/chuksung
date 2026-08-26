@@ -39,6 +39,7 @@ const snapshot = (over = {}) => ({
       score: 95,
       a11y: 93,
       seo: 100,
+      weights: { performance: 100, accessibility: 184, seo: 100 },
       lcp: 2400,
       tbt: 80,
       cls: 0,
@@ -142,4 +143,32 @@ test('직전 스냅샷 검색은 legacy와 invalid 파일을 건너뛴다', () =
   } finally {
     fs.rmSync(dir, { recursive: true, force: true })
   }
+})
+
+test('적용 audit 가중치가 달라진 카테고리는 그 열만 델타를 만들지 않는다', () => {
+  // /login 을 대신 측정한 회차의 지문이 A11y W 184 → 143 이었다 (#115).
+  const prev = snapshot({ timestamp: '2026-08-24T00:00:00.000Z' })
+  const cur = snapshot()
+  cur.results['/daily'].score = 97
+  cur.results['/daily'].a11y = 96
+  cur.results['/daily'].weights = { performance: 100, accessibility: 143, seo: 100 }
+
+  const section = renderHistorySection(cur, prev)
+
+  assert.match(section, /accessibility W 184 → 143/)
+  assert.match(section, /🟢\+2/) // 분모가 그대로인 Perf 는 델타를 유지한다
+  assert.doesNotMatch(section, /🟢\+3/) // A11y 는 같은 저울이 아니라 값만 남는다
+})
+
+test('한쪽에 적용 audit 가중치가 없으면 기존 델타를 그대로 만든다', () => {
+  // W 기록 이전 스냅샷과 비교할 때 없는 값으로 기준선을 무효화하지 않는다.
+  const prev = snapshot({ timestamp: '2026-08-24T00:00:00.000Z' })
+  delete prev.results['/daily'].weights
+  const cur = snapshot()
+  cur.results['/daily'].a11y = 96
+
+  const section = renderHistorySection(cur, prev)
+
+  assert.doesNotMatch(section, /적용 audit 가중치/)
+  assert.match(section, /🟢\+3/)
 })
