@@ -1,22 +1,12 @@
-import { addDays, format } from 'date-fns'
 import { applyDailyTemplates } from '@/lib/apply-daily-templates'
 import { dbError, parseBody, withAuth } from '@/lib/api/route-helpers'
 import { createTaskSchema } from '@/lib/api/schemas'
 import {
-  DEFAULT_DAY_START_TIME,
-  getEffectiveTodayFromClientNow,
-} from '@/lib/task-dates'
-
-const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
-const CLIENT_NOW_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/
-const MAX_CLIENT_CLOCK_SKEW_MS = 24 * 60 * 60 * 1000
-
-function isTrustableClientNow(clientNow: string): boolean {
-  if (!CLIENT_NOW_PATTERN.test(clientNow)) return false
-  const asUtc = Date.parse(`${clientNow}:00Z`)
-  if (Number.isNaN(asUtc)) return false
-  return Math.abs(asUtc - Date.now()) <= MAX_CLIENT_CLOCK_SKEW_MS
-}
+  DATE_PATTERN,
+  isSeedCandidateDate,
+  isTrustableClientNow,
+  resolveSeedTargetDate,
+} from '@/lib/daily-seed'
 
 export const GET = withAuth(async (request, { supabase, user }) => {
   const { searchParams } = new URL(request.url)
@@ -29,36 +19,19 @@ export const GET = withAuth(async (request, { supabase, user }) => {
   // 걸려 조용히 잘렸으므로 제거했다.
   const clientNow = searchParams.get('client_now') // 로컬 현재시각 'yyyy-MM-ddTHH:mm'
 
-  // 시간 게이트: scope=daily이고, 조회 날짜가 "유효 오늘"(하루 시작 시각
-  // 이전이면 전날) 이후이며, 현재 로컬 시각이 그날의 하루 시작 시각을
-  // 지났을 때만 템플릿을 시딩한다.
+  // 시간 게이트: scope=daily 이고 조회 날짜가 그 사용자의 "유효 오늘"일 때만 시딩한다.
+  // 판정은 템플릿 뮤테이션과 공유한다 (`@/lib/daily-seed`) — 양쪽이 따로 판정하면
+  // "GET 은 심는데 POST 는 안 심는" 날짜가 생긴다.
   if (
     scope === 'daily' &&
     targetDate &&
     DATE_PATTERN.test(targetDate) &&
-    clientNow &&
-    isTrustableClientNow(clientNow)
+    isTrustableClientNow(clientNow) &&
+    isSeedCandidateDate(targetDate, clientNow)
   ) {
-    const calendarToday = clientNow.slice(0, 10)
-    const calendarYesterday = format(
-      addDays(new Date(`${calendarToday}T00:00:00`), -1),
-      'yyyy-MM-dd'
-    )
-    // 유효 오늘은 빨라야 달력 어제 — 그보다 과거 날짜는 프로필 조회 없이 스킵
-    if (targetDate >= calendarYesterday) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('day_start_time')
-        .eq('id', user.id)
-        .single()
-      const startTime = (profile?.day_start_time ?? DEFAULT_DAY_START_TIME).slice(0, 5)
-      const effectiveToday = getEffectiveTodayFromClientNow(clientNow, startTime)
-      if (
-        targetDate >= effectiveToday &&
-        clientNow >= `${targetDate}T${startTime}`
-      ) {
-        await applyDailyTemplates(supabase, targetDate)
-      }
+    const seedTargetDate = await resolveSeedTargetDate(supabase, user.id, clientNow)
+    if (targetDate === seedTargetDate) {
+      await applyDailyTemplates(supabase, targetDate)
     }
   }
 

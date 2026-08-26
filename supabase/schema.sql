@@ -237,12 +237,15 @@ CREATE POLICY tta_insert ON public.task_template_applications
 CREATE POLICY tta_delete ON public.task_template_applications
   FOR DELETE USING (auth.uid() = user_id);
 
--- 12-1. 일간 템플릿 시딩 RPC (migration 0009 반영)
+-- 12-1. 일간 템플릿 시딩 RPC (migration 0009 + 20260826022206 반영)
 -- 활성 템플릿을 targetDate 일간 태스크로 시딩한다. 선점(ON CONFLICT)과 insert 를
 -- 한 CTE 문에 묶어 단일 왕복·단일 트랜잭션으로 처리한다. (템플릿, 날짜)당 1회 멱등.
 -- SECURITY INVOKER 로 호출자 RLS 를 그대로 적용한다.
+-- 마지막 문의 RETURNING 으로 **이번 호출이 새로 심은 행만** 돌려준다 — 템플릿 추가·수정
+-- 응답이 이 결과를 실어 클라이언트가 일간 목록을 재조회하지 않게 한다
+-- (docs/task-race-guards.md 「템플릿 변경과 일간 목록」).
 CREATE OR REPLACE FUNCTION public.seed_daily_templates(p_target_date date)
-RETURNS void
+RETURNS SETOF public.tasks
 LANGUAGE sql
 SECURITY INVOKER
 AS $$
@@ -260,7 +263,8 @@ AS $$
   SELECT t.user_id, t.title, t.description, 'daily', p_target_date, false,
          t.category, t.priority
   FROM public.task_templates t
-  JOIN claimed c ON c.template_id = t.id;
+  JOIN claimed c ON c.template_id = t.id
+  RETURNING *;
 $$;
 
 REVOKE ALL ON FUNCTION public.seed_daily_templates(date) FROM public;

@@ -73,6 +73,19 @@ test.describe('일간 템플릿 시딩 · 동시 요청', () => {
         '동시 호출 중 실패한 것이 있으면 선점 경합이 에러로 새어나온 것이다'
       ).toEqual([])
 
+      // RPC 는 **이번 호출이 새로 심은 행만** 돌려준다. 템플릿 추가·수정 응답이 이
+      // 값을 그대로 일간 캐시에 넣으므로(#75), 전부 돌려주면 화면에 중복이 뜬다.
+      // 다섯 호출의 반환을 합치면 정확히 템플릿 하나당 한 행이어야 한다.
+      // 다른 스펙이 남긴 고아 템플릿도 함께 심길 수 있으므로 우리 것만 센다
+      // (다른 단언들이 `.in('title', titles)` 로 좁히는 것과 같은 이유).
+      const returned = results
+        .flatMap((r) => ((r.data ?? []) as { title: string }[]).map((t) => t.title))
+        .filter((title) => titles.includes(title))
+      expect(
+        returned.sort(),
+        '경쟁에서 진 호출까지 행을 돌려주면 RETURNING 이 선점 결과가 아니게 된 것이다'
+      ).toEqual([...titles].sort())
+
       const { data: tasks, error: selectError } = await supabase
         .from('tasks')
         .select('title')
@@ -98,11 +111,18 @@ test.describe('일간 템플릿 시딩 · 동시 요청', () => {
         )
       expect(applications).toHaveLength(titles.length)
 
-      // 멱등: 경합이 끝난 뒤 한 번 더 불러도 늘지 않는다.
-      const { error: repeatError } = await supabase.rpc('seed_daily_templates', {
-        p_target_date: TARGET_DATE,
-      })
+      // 멱등: 경합이 끝난 뒤 한 번 더 불러도 늘지 않는다. 심은 것이 없으니
+      // 반환도 비어 있어야 한다 — 캐시에 더할 것이 없다는 뜻이다.
+      const { data: repeated, error: repeatError } = await supabase.rpc(
+        'seed_daily_templates',
+        { p_target_date: TARGET_DATE }
+      )
       expect(repeatError).toBeNull()
+      expect(
+        ((repeated ?? []) as { title: string }[])
+          .map((t) => t.title)
+          .filter((title) => titles.includes(title))
+      ).toEqual([])
       const { data: after } = await supabase
         .from('tasks')
         .select('title')

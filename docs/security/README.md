@@ -65,6 +65,12 @@ App Router 라우트 핸들러에는 Pages API 의 `bodyParser` 크기 제한이
 `GET /api/tasks` 는 일간 조회 시 활성 템플릿을 태스크로 시딩한다. 이 시딩 여부를
 판정하는 시간 게이트가 쿼리 파라미터 `client_now` 하나에만 의존했다.
 
+> 시딩 진입점이 셋으로 늘었다 — 일간 GET 과 `POST /api/task-templates`,
+> `PATCH /api/task-templates/[id]`(#75). **셋 다 같은 게이트를 탄다.** 판정은
+> `src/lib/daily-seed.ts` 한곳에 있고, 엔드포인트를 늘리면서 검증을 빠뜨리면 아래
+> 증식 경로를 새 엔드포인트에 그대로 다시 여는 셈이다. 템플릿 라우트도 `client_now` 를
+> (body 가 아니라) 쿼리스트링으로 받아 같은 `isTrustableClientNow` 를 통과해야 한다.
+
 `client_now` 는 사용자의 로컬 벽시계다. 서버가 대신 계산할 수 없어서 클라이언트가
 보낸다. 문제는 서버 시각과 대조하지 않아 아래가 통과했다는 것이다.
 
