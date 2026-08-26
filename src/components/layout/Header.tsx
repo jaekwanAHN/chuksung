@@ -11,10 +11,12 @@ import { THEME_IDS, THEMES } from '@/lib/themes'
 import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
 import { useToast } from '@/components/ui/useToast'
+import { useEffectiveToday } from '@/app/(dashboard)/_hooks/profile/useEffectiveToday'
 
 export function Header() {
   const { user, loading } = useAuth()
   const { themeId, setTheme } = useTheme()
+  const { ready, effectiveToday } = useEffectiveToday()
   const currentTheme = THEMES[themeId]
 
   const [dropdownOpen, setDropdownOpen] = useState(false)
@@ -70,7 +72,11 @@ export function Header() {
     }
   }
 
-  const todayLabel = format(new Date(), 'PPP (EEE)', { locale: ko })
+  // 일간 플래너와 같은 '유효 오늘' 기준. null 게이트로 첫 렌더를 서버와
+  // 맞추는 이유와 폴백 근거는 docs/hydration.md 사례 3.
+  const todayLabel = now
+    ? format(ready ? effectiveToday() : now, 'PPP (EEE)', { locale: ko })
+    : null
   const timeLabel = now ? format(now, 'a h:mm:ss', { locale: ko }) : null
 
   return (
@@ -79,7 +85,7 @@ export function Header() {
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
           오늘
         </p>
-        <p className="text-sm font-semibold text-zinc-900">
+        <p className="min-h-5 text-sm font-semibold text-zinc-900">
           {todayLabel}
           {timeLabel && (
             <span className="ml-2 font-mono tabular-nums text-zinc-500">
