@@ -54,7 +54,7 @@ pnpm test:e2e:report   # 마지막 HTML 리포트 열기
 | `e2e/auth.setup.ts` | 세션 발급 → storageState 저장 (인증 셋업 프로젝트) |
 | `e2e/constants.ts` | storageState 경로 등 공유 상수 |
 | `e2e/login.spec.ts` | 로그인 / 인증 리다이렉트 시나리오 |
-| `e2e/navigation.spec.ts` | 사이드바 뷰 전환 · 기간 이동 · 일간 날짜 이동 |
+| `e2e/navigation.spec.ts` | 사이드바 뷰 전환 · 기간 이동 · 일간 날짜 이동 · 헤더 '오늘' 라벨 |
 | `e2e/task.spec.ts` | 일간 태스크 CRUD (설명·카테고리·우선순위 포함) · 완료 토글 |
 | `e2e/task-filters.spec.ts` | 일간 카테고리·우선순위 필터 |
 | `e2e/progress.spec.ts` | 일간 진행률 토글 반영 · 주간/월간 달성률 · 미니 캘린더 |

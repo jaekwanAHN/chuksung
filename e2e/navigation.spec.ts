@@ -1,6 +1,9 @@
 import { test, expect, type Page } from '@playwright/test'
 import fs from 'node:fs'
+import { format } from 'date-fns'
+import { ko } from 'date-fns/locale'
 import { STORAGE_STATE } from './constants'
+import { getEffectiveToday } from '@/lib/task-dates'
 
 /** storageState 에 실제 세션 쿠키가 있는지 (= 인증 테스트 실행 가능 여부) */
 function hasAuthState(): boolean {
@@ -148,5 +151,51 @@ test.describe('일간 날짜 이동', () => {
     page.on('dialog', (dialog) => dialog.accept())
     await card.getByRole('button', { name: '삭제' }).click()
     await expect(card).not.toBeVisible()
+  })
+})
+
+test.describe('헤더 오늘 라벨', () => {
+  test.skip(
+    () => !hasAuthState(),
+    'E2E_TEST_USER_EMAIL/PASSWORD 미설정 — 인증 테스트 건너뜀'
+  )
+  test.use({ storageState: STORAGE_STATE })
+
+  // #71 회귀: 헤더가 달력 오늘을 그대로 써서 자정~하루 시작 시각 사이에는
+  // 같은 화면의 일간 플래너와 다른 날짜를 표시했다 (docs/hydration.md 사례 3)
+  test("헤더의 '오늘'이 하루 시작 시각 기준을 따른다", async ({
+    page,
+    request,
+  }) => {
+    // 현재 시각보다 뒤인 시작 시각을 넣으면 '유효 오늘'이 결정적으로 전날이 된다
+    // — 시계를 조작하지 않고도 하루 중 아무 때나 재현된다
+    const changed = '23:59'
+    const now = new Date()
+    // 하루의 마지막 2분만 예외: 23:59 가 현재 시각보다 뒤가 아니게 되어 트릭이
+    // 성립하지 않고, 기대값 계산과 헤더 렌더 사이에 자정이 끼어들 수도 있다
+    test.skip(
+      now.getHours() === 23 && now.getMinutes() >= 58,
+      '23:58~23:59 — 하루 시작 시각을 현재보다 뒤로 둘 수 없어 건너뜀'
+    )
+
+    const profile = await (await request.get('/api/profile')).json()
+    const original = (profile?.day_start_time ?? '06:00:00').slice(0, 5)
+
+    try {
+      await request.patch('/api/profile', { data: { day_start_time: changed } })
+
+      // /daily 가 아니라 /goal 로 들어간다 — 일간 목록 GET 은 시딩 side effect 가
+      // 있어 방문한 적 없는 날짜에 태스크를 만든다 (#70)
+      await page.goto('/goal')
+
+      const expected = format(getEffectiveToday(now, changed), 'PPP (EEE)', {
+        locale: ko,
+      })
+      await expect(page.locator('header')).toContainText(expected)
+    } finally {
+      await request.patch('/api/profile', {
+        data: { day_start_time: original },
+      })
+    }
   })
 })
