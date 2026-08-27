@@ -1,5 +1,6 @@
 'use client'
 
+import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
@@ -24,7 +25,9 @@ function TimeSegmentInput({
 }) {
   return (
     <label className="flex flex-col items-center gap-2">
-      <input
+      {/* 큰 숫자 입력은 의도적 예외다 — 크기·서체·안쪽 그림자만 따로 두고
+          테두리·포커스는 primitive 의 공통 정의를 그대로 쓴다 (docs/design-tokens.md) */}
+      <Input
         type="number"
         min={0}
         max={max}
@@ -35,14 +38,11 @@ function TimeSegmentInput({
           if (!isNaN(v)) onChange(v)
         }}
         className={cn(
-          'w-16 rounded-xl border bg-white px-2 py-2 text-center',
-          'text-2xl font-mono font-bold shadow-inner outline-none',
+          'w-16 rounded-card px-2 py-2 text-center',
+          'text-2xl font-mono font-bold shadow-inner',
           '[appearance:textfield] scheme-light',
           '[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
-          'transition',
-          disabled
-            ? 'cursor-not-allowed border-zinc-100 bg-zinc-50 text-zinc-300'
-            : 'border-zinc-200 text-zinc-900 hover:border-zinc-300 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-100'
+          !disabled && 'hover:border-zinc-300'
         )}
       />
       <span className="text-[10px] font-semibold uppercase tracking-widest text-zinc-400">

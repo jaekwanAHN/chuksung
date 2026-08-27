@@ -6,6 +6,7 @@ import { ko } from 'date-fns/locale'
 import { Pencil, Target } from 'lucide-react'
 import { useGoal } from '../_hooks/goal/useGoal'
 import { Button } from '@/components/ui/Button'
+import { Textarea } from '@/components/ui/Textarea'
 import { Toast, type ToastVariant } from '@/components/ui/Toast'
 import { QueryErrorRetry } from '../_components/QueryErrorRetry'
 
@@ -65,13 +66,14 @@ export default function GoalPage() {
         />
       ) : editing ? (
         <div className="space-y-3">
-          <textarea
+          {/* 옆의 목표 카드를 그 자리에서 대체하는 편집 표면이라 카드 반경·여백을 쓴다 */}
+          <Textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={8}
             autoFocus
             placeholder="예) 2026년 하반기까지 백엔드 개발자로 취업하기"
-            className="w-full resize-none rounded-xl border border-zinc-200 bg-white p-4 text-sm leading-relaxed text-zinc-900 shadow-sm outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
+            className="resize-none rounded-card p-4 leading-relaxed shadow-sm"
           />
           <div className="flex justify-end gap-2">
             {hasGoal && (
@@ -86,7 +88,7 @@ export default function GoalPage() {
         </div>
       ) : hasGoal ? (
         <div className="space-y-4">
-          <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+          <div className="rounded-card border border-border-subtle bg-white p-5 shadow-sm">
             <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-900">
               {content}
             </p>
@@ -104,7 +106,7 @@ export default function GoalPage() {
           </div>
         </div>
       ) : (
-        <div className="rounded-xl border border-dashed border-zinc-300 bg-white/50 p-8 text-center">
+        <div className="rounded-card border border-dashed border-zinc-300 bg-white/50 p-8 text-center">
           <p className="text-sm text-zinc-500">아직 최종목표가 없습니다.</p>
           <Button type="button" onClick={startEdit} className="mt-4">
             <Pencil className="size-4" />
