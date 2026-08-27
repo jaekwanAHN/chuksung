@@ -51,6 +51,7 @@ export function TaskFilters({
         <div className="flex min-h-10 w-full items-center">
           {mode === 'category' ? (
             <Select
+              aria-label="카테고리 필터"
               className="h-10"
               value={category}
               onChange={(e) =>
@@ -66,6 +67,7 @@ export function TaskFilters({
             </Select>
           ) : mode === 'priority' ? (
             <Select
+              aria-label="우선순위 필터"
               className="h-10"
               value={priority === 'all' ? 'all' : String(priority)}
               onChange={(e) => {
