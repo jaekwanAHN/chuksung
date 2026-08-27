@@ -1,0 +1,1022 @@
+{
+  "schemaVersion": 2,
+  "valid": true,
+  "timestamp": "2026-08-27T03:02:05.726Z",
+  "runs": 5,
+  "base": "https://chuksung.vercel.app",
+  "warmup": "페이지당 1회 방문",
+  "environment": {
+    "kind": "deployed-lighthouse",
+    "origin": "https://chuksung.vercel.app",
+    "deploySha": "3032e1d",
+    "proxyRegion": "sin1",
+    "edge": "icn1",
+    "runner": {
+      "platform": "linux",
+      "arch": "x64",
+      "node": "v24.18.0",
+      "browser": "149.0.7827.55"
+    }
+  },
+  "config": {
+    "formFactor": "mobile",
+    "throttling": "simulated",
+    "disableStorageReset": true,
+    "lighthouseVersion": "13.4.0"
+  },
+  "account": "perf",
+  "volume": {
+    "tasks": 9633,
+    "tasks_completed": 6288,
+    "job_postings": 204,
+    "task_templates": 30,
+    "ddays": 0,
+    "quiz_histories": 39
+  },
+  "results": {
+    "/daily": {
+      "run": 3,
+      "requestedUrl": "https://chuksung.vercel.app/daily",
+      "finalDisplayedUrl": "https://chuksung.vercel.app/daily",
+      "fetchTime": "2026-08-27T02:57:17.547Z",
+      "lighthouseVersion": "13.4.0",
+      "score": 97,
+      "weights": {
+        "performance": 100,
+        "accessibility": 174,
+        "seo": 10.043
+      },
+      "a11y": 100,
+      "seo": 100,
+      "lcp": 1089.3504,
+      "tbt": 91.5,
+      "cls": 0.09522172665455618,
+      "fcp": 881.3504,
+      "si": 975.3355273927681,
+      "selectedRun": 3,
+      "samples": [
+        {
+          "run": 1,
+          "requestedUrl": "https://chuksung.vercel.app/daily",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/daily",
+          "fetchTime": "2026-08-27T02:57:01.588Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 174,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1129.9883,
+          "tbt": 102.5,
+          "cls": 0.00166158084653674,
+          "fcp": 906.9883,
+          "si": 1130.2166152407974
+        },
+        {
+          "run": 2,
+          "requestedUrl": "https://chuksung.vercel.app/daily",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/daily",
+          "fetchTime": "2026-08-27T02:57:09.724Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 97,
+          "weights": {
+            "performance": 100,
+            "accessibility": 174,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1098.4008,
+          "tbt": 94.99999999999989,
+          "cls": 0.09522172665455618,
+          "fcp": 885.4008,
+          "si": 1015.660752461007
+        },
+        {
+          "run": 3,
+          "requestedUrl": "https://chuksung.vercel.app/daily",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/daily",
+          "fetchTime": "2026-08-27T02:57:17.547Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 97,
+          "weights": {
+            "performance": 100,
+            "accessibility": 174,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1089.3504,
+          "tbt": 91.5,
+          "cls": 0.09522172665455618,
+          "fcp": 881.3504,
+          "si": 975.3355273927681
+        },
+        {
+          "run": 4,
+          "requestedUrl": "https://chuksung.vercel.app/daily",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/daily",
+          "fetchTime": "2026-08-27T02:57:25.473Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 97,
+          "weights": {
+            "performance": 100,
+            "accessibility": 174,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1121.23385,
+          "tbt": 103,
+          "cls": 0.09522172665455618,
+          "fcp": 894.2338500000001,
+          "si": 1046.3667886418277
+        },
+        {
+          "run": 5,
+          "requestedUrl": "https://chuksung.vercel.app/daily",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/daily",
+          "fetchTime": "2026-08-27T02:57:33.262Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 96,
+          "weights": {
+            "performance": 100,
+            "accessibility": 174,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1958.5724,
+          "tbt": 112.99999999999989,
+          "cls": 0.09522172665455618,
+          "fcp": 888.2542,
+          "si": 984.2418063976953
+        }
+      ]
+    },
+    "/weekly": {
+      "run": 3,
+      "requestedUrl": "https://chuksung.vercel.app/weekly",
+      "finalDisplayedUrl": "https://chuksung.vercel.app/weekly",
+      "fetchTime": "2026-08-27T02:57:56.035Z",
+      "lighthouseVersion": "13.4.0",
+      "score": 99,
+      "weights": {
+        "performance": 100,
+        "accessibility": 164,
+        "seo": 10.043
+      },
+      "a11y": 100,
+      "seo": 100,
+      "lcp": 1933.4491,
+      "tbt": 87.99999999999989,
+      "cls": 0.00166158084653674,
+      "fcp": 874.8455500000001,
+      "si": 874.8455500000001,
+      "selectedRun": 3,
+      "samples": [
+        {
+          "run": 1,
+          "requestedUrl": "https://chuksung.vercel.app/weekly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/weekly",
+          "fetchTime": "2026-08-27T02:57:40.973Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1914.4430000000002,
+          "tbt": 78,
+          "cls": 0.00166158084653674,
+          "fcp": 858.1067,
+          "si": 858.1067
+        },
+        {
+          "run": 2,
+          "requestedUrl": "https://chuksung.vercel.app/weekly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/weekly",
+          "fetchTime": "2026-08-27T02:57:48.554Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 98,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1975.2334999999998,
+          "tbt": 137.9999999999999,
+          "cls": 0.00166158084653674,
+          "fcp": 867.6517,
+          "si": 867.6517
+        },
+        {
+          "run": 3,
+          "requestedUrl": "https://chuksung.vercel.app/weekly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/weekly",
+          "fetchTime": "2026-08-27T02:57:56.035Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1933.4491,
+          "tbt": 87.99999999999989,
+          "cls": 0.00166158084653674,
+          "fcp": 874.8455500000001,
+          "si": 874.8455500000001
+        },
+        {
+          "run": 4,
+          "requestedUrl": "https://chuksung.vercel.app/weekly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/weekly",
+          "fetchTime": "2026-08-27T02:58:03.604Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1929.2570999999998,
+          "tbt": 78,
+          "cls": 0.00166158084653674,
+          "fcp": 878.2076999999999,
+          "si": 878.2076999999999
+        },
+        {
+          "run": 5,
+          "requestedUrl": "https://chuksung.vercel.app/weekly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/weekly",
+          "fetchTime": "2026-08-27T02:58:11.220Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1945.3998,
+          "tbt": 91,
+          "cls": 0.00166158084653674,
+          "fcp": 876.6547,
+          "si": 876.6547
+        }
+      ]
+    },
+    "/monthly": {
+      "run": 3,
+      "requestedUrl": "https://chuksung.vercel.app/monthly",
+      "finalDisplayedUrl": "https://chuksung.vercel.app/monthly",
+      "fetchTime": "2026-08-27T02:58:33.984Z",
+      "lighthouseVersion": "13.4.0",
+      "score": 98,
+      "weights": {
+        "performance": 100,
+        "accessibility": 164,
+        "seo": 10.043
+      },
+      "a11y": 100,
+      "seo": 100,
+      "lcp": 1969.9539,
+      "tbt": 106,
+      "cls": 0.04190901219405687,
+      "fcp": 893.2,
+      "si": 893.2,
+      "selectedRun": 3,
+      "samples": [
+        {
+          "run": 1,
+          "requestedUrl": "https://chuksung.vercel.app/monthly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/monthly",
+          "fetchTime": "2026-08-27T02:58:18.659Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 98,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 2024.4662,
+          "tbt": 115,
+          "cls": 0.04190901219405687,
+          "fcp": 926.35085,
+          "si": 926.35085
+        },
+        {
+          "run": 2,
+          "requestedUrl": "https://chuksung.vercel.app/monthly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/monthly",
+          "fetchTime": "2026-08-27T02:58:26.370Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 98,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 2014.4791000000002,
+          "tbt": 119,
+          "cls": 0.04190901219405687,
+          "fcp": 916.1384,
+          "si": 916.1384
+        },
+        {
+          "run": 3,
+          "requestedUrl": "https://chuksung.vercel.app/monthly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/monthly",
+          "fetchTime": "2026-08-27T02:58:33.984Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 98,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1969.9539,
+          "tbt": 106,
+          "cls": 0.04190901219405687,
+          "fcp": 893.2,
+          "si": 893.2
+        },
+        {
+          "run": 4,
+          "requestedUrl": "https://chuksung.vercel.app/monthly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/monthly",
+          "fetchTime": "2026-08-27T02:58:41.573Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 98,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 2033.0562,
+          "tbt": 136,
+          "cls": 0.04190494854524741,
+          "fcp": 913.1958,
+          "si": 916.786704000114
+        },
+        {
+          "run": 5,
+          "requestedUrl": "https://chuksung.vercel.app/monthly",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/monthly",
+          "fetchTime": "2026-08-27T02:58:49.323Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 98,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1965.1790999999998,
+          "tbt": 95.99999999999989,
+          "cls": 0.04190494854524741,
+          "fcp": 898.8365,
+          "si": 898.8365
+        }
+      ]
+    },
+    "/goal": {
+      "run": 3,
+      "requestedUrl": "https://chuksung.vercel.app/goal",
+      "finalDisplayedUrl": "https://chuksung.vercel.app/goal",
+      "fetchTime": "2026-08-27T02:59:11.746Z",
+      "lighthouseVersion": "13.4.0",
+      "score": 100,
+      "weights": {
+        "performance": 100,
+        "accessibility": 164,
+        "seo": 10.043
+      },
+      "a11y": 100,
+      "seo": 100,
+      "lcp": 874.2751,
+      "tbt": 83.99999999999989,
+      "cls": 0.00166158084653674,
+      "fcp": 874.2751,
+      "si": 874.2751,
+      "selectedRun": 3,
+      "samples": [
+        {
+          "run": 1,
+          "requestedUrl": "https://chuksung.vercel.app/goal",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/goal",
+          "fetchTime": "2026-08-27T02:58:57.100Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 871.5089,
+          "tbt": 77,
+          "cls": 0.00166158084653674,
+          "fcp": 871.5089,
+          "si": 871.5089
+        },
+        {
+          "run": 2,
+          "requestedUrl": "https://chuksung.vercel.app/goal",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/goal",
+          "fetchTime": "2026-08-27T02:59:04.366Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 1107.6805,
+          "tbt": 69.5,
+          "cls": 0.00166158084653674,
+          "fcp": 824.6804999999999,
+          "si": 962.2197050237743
+        },
+        {
+          "run": 3,
+          "requestedUrl": "https://chuksung.vercel.app/goal",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/goal",
+          "fetchTime": "2026-08-27T02:59:11.746Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 874.2751,
+          "tbt": 83.99999999999989,
+          "cls": 0.00166158084653674,
+          "fcp": 874.2751,
+          "si": 874.2751
+        },
+        {
+          "run": 4,
+          "requestedUrl": "https://chuksung.vercel.app/goal",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/goal",
+          "fetchTime": "2026-08-27T02:59:19.106Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 864.1983,
+          "tbt": 81,
+          "cls": 0.00166158084653674,
+          "fcp": 864.1983,
+          "si": 864.1983
+        },
+        {
+          "run": 5,
+          "requestedUrl": "https://chuksung.vercel.app/goal",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/goal",
+          "fetchTime": "2026-08-27T02:59:26.394Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 100,
+          "seo": 100,
+          "lcp": 874.5225,
+          "tbt": 54.5,
+          "cls": 0.00166158084653674,
+          "fcp": 874.5225,
+          "si": 874.5225
+        }
+      ]
+    },
+    "/jobs": {
+      "run": 3,
+      "requestedUrl": "https://chuksung.vercel.app/jobs",
+      "finalDisplayedUrl": "https://chuksung.vercel.app/jobs",
+      "fetchTime": "2026-08-27T02:59:49.591Z",
+      "lighthouseVersion": "13.4.0",
+      "score": 97,
+      "weights": {
+        "performance": 100,
+        "accessibility": 164,
+        "seo": 10.043
+      },
+      "a11y": 96,
+      "seo": 100,
+      "lcp": 1101.0908,
+      "tbt": 93,
+      "cls": 0.09522172665455618,
+      "fcp": 872.0908,
+      "si": 1003.7804075089989,
+      "selectedRun": 3,
+      "samples": [
+        {
+          "run": 1,
+          "requestedUrl": "https://chuksung.vercel.app/jobs",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/jobs",
+          "fetchTime": "2026-08-27T02:59:33.721Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 97,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1088.7955,
+          "tbt": 77,
+          "cls": 0.09522172665455618,
+          "fcp": 873.7955,
+          "si": 1033.992129992493
+        },
+        {
+          "run": 2,
+          "requestedUrl": "https://chuksung.vercel.app/jobs",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/jobs",
+          "fetchTime": "2026-08-27T02:59:41.913Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 97,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1094.5333,
+          "tbt": 85,
+          "cls": 0.09522172665455618,
+          "fcp": 869.5333,
+          "si": 1005.4841094488838
+        },
+        {
+          "run": 3,
+          "requestedUrl": "https://chuksung.vercel.app/jobs",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/jobs",
+          "fetchTime": "2026-08-27T02:59:49.591Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 97,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1101.0908,
+          "tbt": 93,
+          "cls": 0.09522172665455618,
+          "fcp": 872.0908,
+          "si": 1003.7804075089989
+        },
+        {
+          "run": 4,
+          "requestedUrl": "https://chuksung.vercel.app/jobs",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/jobs",
+          "fetchTime": "2026-08-27T02:59:57.327Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 97,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1085.5603,
+          "tbt": 71.50000000000011,
+          "cls": 0.09522172665455618,
+          "fcp": 874.5603,
+          "si": 943.4393180149717
+        },
+        {
+          "run": 5,
+          "requestedUrl": "https://chuksung.vercel.app/jobs",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/jobs",
+          "fetchTime": "2026-08-27T03:00:05.197Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 97,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1085.576,
+          "tbt": 87.5,
+          "cls": 0.09522172665455618,
+          "fcp": 862.576,
+          "si": 959.9185668794432
+        }
+      ]
+    },
+    "/history": {
+      "run": 3,
+      "requestedUrl": "https://chuksung.vercel.app/history",
+      "finalDisplayedUrl": "https://chuksung.vercel.app/history",
+      "fetchTime": "2026-08-27T03:00:28.363Z",
+      "lighthouseVersion": "13.4.0",
+      "score": 99,
+      "weights": {
+        "performance": 100,
+        "accessibility": 184,
+        "seo": 10.043
+      },
+      "a11y": 96,
+      "seo": 100,
+      "lcp": 1969.1424,
+      "tbt": 102,
+      "cls": 0.00166158084653674,
+      "fcp": 889.6623,
+      "si": 889.6623,
+      "selectedRun": 3,
+      "samples": [
+        {
+          "run": 1,
+          "requestedUrl": "https://chuksung.vercel.app/history",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/history",
+          "fetchTime": "2026-08-27T03:00:12.989Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 184,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1957.5832999999998,
+          "tbt": 96.99999999999989,
+          "cls": 0.00166158084653674,
+          "fcp": 886.6546,
+          "si": 946.8171693789478
+        },
+        {
+          "run": 2,
+          "requestedUrl": "https://chuksung.vercel.app/history",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/history",
+          "fetchTime": "2026-08-27T03:00:20.586Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 184,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1941.6845999999998,
+          "tbt": 102.99999999999989,
+          "cls": 0.00166158084653674,
+          "fcp": 866.1083,
+          "si": 866.1083
+        },
+        {
+          "run": 3,
+          "requestedUrl": "https://chuksung.vercel.app/history",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/history",
+          "fetchTime": "2026-08-27T03:00:28.363Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 184,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1969.1424,
+          "tbt": 102,
+          "cls": 0.00166158084653674,
+          "fcp": 889.6623,
+          "si": 889.6623
+        },
+        {
+          "run": 4,
+          "requestedUrl": "https://chuksung.vercel.app/history",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/history",
+          "fetchTime": "2026-08-27T03:00:35.993Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 184,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1945.4560999999999,
+          "tbt": 91,
+          "cls": 0.00166158084653674,
+          "fcp": 874.2338,
+          "si": 918.2964894047819
+        },
+        {
+          "run": 5,
+          "requestedUrl": "https://chuksung.vercel.app/history",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/history",
+          "fetchTime": "2026-08-27T03:00:43.713Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 99,
+          "weights": {
+            "performance": 100,
+            "accessibility": 184,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 1953.1261,
+          "tbt": 94.99999999999989,
+          "cls": 0.00166158084653674,
+          "fcp": 884.3572,
+          "si": 922.7815314799032
+        }
+      ]
+    },
+    "/quiz": {
+      "run": 3,
+      "requestedUrl": "https://chuksung.vercel.app/quiz",
+      "finalDisplayedUrl": "https://chuksung.vercel.app/quiz",
+      "fetchTime": "2026-08-27T03:01:06.861Z",
+      "lighthouseVersion": "13.4.0",
+      "score": 100,
+      "weights": {
+        "performance": 100,
+        "accessibility": 164,
+        "seo": 10.043
+      },
+      "a11y": 96,
+      "seo": 100,
+      "lcp": 841.8309499999999,
+      "tbt": 28.500000000000057,
+      "cls": 0.00166158084653674,
+      "fcp": 841.8309499999999,
+      "si": 841.8309499999999,
+      "selectedRun": 3,
+      "samples": [
+        {
+          "run": 1,
+          "requestedUrl": "https://chuksung.vercel.app/quiz",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/quiz",
+          "fetchTime": "2026-08-27T03:00:51.442Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 841.1321,
+          "tbt": 29,
+          "cls": 0.00166158084653674,
+          "fcp": 841.1321,
+          "si": 1241.1256019996936
+        },
+        {
+          "run": 2,
+          "requestedUrl": "https://chuksung.vercel.app/quiz",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/quiz",
+          "fetchTime": "2026-08-27T03:00:59.253Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 855.9625,
+          "tbt": 31.000000000000057,
+          "cls": 0.00166158084653674,
+          "fcp": 855.9625,
+          "si": 855.9625
+        },
+        {
+          "run": 3,
+          "requestedUrl": "https://chuksung.vercel.app/quiz",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/quiz",
+          "fetchTime": "2026-08-27T03:01:06.861Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 841.8309499999999,
+          "tbt": 28.500000000000057,
+          "cls": 0.00166158084653674,
+          "fcp": 841.8309499999999,
+          "si": 841.8309499999999
+        },
+        {
+          "run": 4,
+          "requestedUrl": "https://chuksung.vercel.app/quiz",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/quiz",
+          "fetchTime": "2026-08-27T03:01:14.366Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 851.0306,
+          "tbt": 28.5,
+          "cls": 0.00166158084653674,
+          "fcp": 851.0306,
+          "si": 863.8649320003212
+        },
+        {
+          "run": 5,
+          "requestedUrl": "https://chuksung.vercel.app/quiz",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/quiz",
+          "fetchTime": "2026-08-27T03:01:21.797Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 164,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 863.8165,
+          "tbt": 32.49999999999994,
+          "cls": 0.00166158084653674,
+          "fcp": 863.8165,
+          "si": 863.8165
+        }
+      ]
+    },
+    "/timer": {
+      "run": 3,
+      "requestedUrl": "https://chuksung.vercel.app/timer",
+      "finalDisplayedUrl": "https://chuksung.vercel.app/timer",
+      "fetchTime": "2026-08-27T03:01:43.805Z",
+      "lighthouseVersion": "13.4.0",
+      "score": 100,
+      "weights": {
+        "performance": 100,
+        "accessibility": 161,
+        "seo": 10.043
+      },
+      "a11y": 96,
+      "seo": 100,
+      "lcp": 812.6793,
+      "tbt": 28.5,
+      "cls": 0.00166158084653674,
+      "fcp": 812.6793,
+      "si": 812.6793,
+      "selectedRun": 3,
+      "samples": [
+        {
+          "run": 1,
+          "requestedUrl": "https://chuksung.vercel.app/timer",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/timer",
+          "fetchTime": "2026-08-27T03:01:29.271Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 161,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 813.8920999999999,
+          "tbt": 34.00000000000006,
+          "cls": 0.00166158084653674,
+          "fcp": 813.8920999999999,
+          "si": 813.8920999999999
+        },
+        {
+          "run": 2,
+          "requestedUrl": "https://chuksung.vercel.app/timer",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/timer",
+          "fetchTime": "2026-08-27T03:01:36.494Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 161,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 815.2846,
+          "tbt": 28.5,
+          "cls": 0.00166158084653674,
+          "fcp": 815.2846,
+          "si": 815.2846
+        },
+        {
+          "run": 3,
+          "requestedUrl": "https://chuksung.vercel.app/timer",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/timer",
+          "fetchTime": "2026-08-27T03:01:43.805Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 161,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 812.6793,
+          "tbt": 28.5,
+          "cls": 0.00166158084653674,
+          "fcp": 812.6793,
+          "si": 812.6793
+        },
+        {
+          "run": 4,
+          "requestedUrl": "https://chuksung.vercel.app/timer",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/timer",
+          "fetchTime": "2026-08-27T03:01:50.995Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 161,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 825.0638,
+          "tbt": 30.499999999999943,
+          "cls": 0.00166158084653674,
+          "fcp": 825.0638,
+          "si": 825.0638
+        },
+        {
+          "run": 5,
+          "requestedUrl": "https://chuksung.vercel.app/timer",
+          "finalDisplayedUrl": "https://chuksung.vercel.app/timer",
+          "fetchTime": "2026-08-27T03:01:58.302Z",
+          "lighthouseVersion": "13.4.0",
+          "score": 100,
+          "weights": {
+            "performance": 100,
+            "accessibility": 161,
+            "seo": 10.043
+          },
+          "a11y": 96,
+          "seo": 100,
+          "lcp": 813.4468,
+          "tbt": 28.5,
+          "cls": 0.00166158084653674,
+          "fcp": 813.4468,
+          "si": 813.4468
+        }
+      ]
+    }
+  }
+}

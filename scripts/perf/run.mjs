@@ -16,22 +16,24 @@ import {
 } from './lighthouse-result.mjs'
 import { PAGES } from './pages.mjs'
 import {
+  LINEAGES,
   appendHistory,
   comparisonProblems,
   findPreviousSnapshot,
   saveSnapshot,
 } from './ledger.mjs'
+import { parseVercelId } from './deploy-ledger.mjs'
 import { measureDataVolume, formatVolume } from './volume.mjs'
 import { perfCredentials } from './account.mjs'
 import { withPerfLock } from './perf-lock.mjs'
 
 const ROOT = path.resolve(fileURLToPath(import.meta.url), '../../..')
 const OUT_DIR = path.join(ROOT, 'docs', 'perf')
-const SNAP_DIR = path.join(OUT_DIR, 'snapshots')
 
 // ── 인자 파싱 ────────────────────────────────────────────────
-function parseArgs(argv) {
-  const opts = { runs: 5, port: 3111, build: true, pages: PAGES }
+export function parseArgs(argv) {
+  const opts = { runs: 5, port: 3111, build: true, pages: PAGES, url: null }
+  const local = []
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i]
     if (a === '--page' || a === '--pages') {
@@ -42,11 +44,23 @@ function parseArgs(argv) {
       opts.runs = Number(argv[++i])
     } else if (a === '--port') {
       opts.port = Number(argv[++i])
+      local.push(a)
     } else if (a === '--no-build') {
       opts.build = false
+      local.push(a)
+    } else if (a === '--url') {
+      opts.url = argv[++i].replace(/\/$/, '')
     } else if (a === '--help' || a === '-h') {
       opts.help = true
     }
+  }
+  // 로컬 서버를 겨냥하는 옵션과 외부 origin 은 양립하지 않는다. 조용히 한쪽을
+  // 무시하면 원장이 «무엇을 쟀는지» 를 잘못 적는다.
+  if (opts.url && local.length) {
+    throw new Error(`--url 은 ${local.join(', ')} 과 함께 쓸 수 없습니다.`)
+  }
+  if (opts.url && !/^https?:\/\//.test(opts.url)) {
+    throw new Error(`--url 은 http(s) origin 이어야 합니다: ${opts.url}`)
   }
   return opts
 }
@@ -59,16 +73,21 @@ const HELP = `성능 측정 (Lighthouse) — 결과를 docs/perf/ 에 기록
   pnpm perf --page /daily,/weekly   여러 페이지
   pnpm perf --runs 3                실행 횟수 조정 (기본 5)
   pnpm perf --no-build --port 3101  이미 떠 있는 프로덕션 서버 재사용
+  pnpm perf --url https://chuksung.vercel.app          배포 URL 측정
+  pnpm perf --url https://chuksung.vercel.app --page /daily
 
 옵션:
   --page, --pages <list>  측정할 경로 (쉼표 구분). 기본: 전체 대시보드 페이지
   --runs <n>              페이지당 실행 횟수, median 선택 (기본 5)
   --port <n>              프로덕션 서버 포트 (기본 3111)
   --no-build              build/start 건너뛰고 --port 의 기존 서버 진단 (원장 기록 안 함)
+  --url <origin>          build/start 대신 배포된 origin 을 측정.
+                          --port/--no-build 와 함께 쓸 수 없음
   --help                  이 도움말
 
-현재 체크아웃의 코드를 측정·기록합니다. perf 전용 계정과 전역 잠금 규칙:
-  docs/perf/measurement-contract.md`
+원장은 계보별로 갈린다 — 로컬은 history.md, --url 은 deploy-lighthouse.md.
+두 계보의 절대값을 한 표에서 비교하지 않습니다. perf 전용 계정·전역 잠금·신뢰 조건:
+  docs/perf/README.md, docs/perf/measurement-contract.md`
 
 // ── 프로덕션 서버 기동 ───────────────────────────────────────
 function run(cmd, args, opts = {}) {
@@ -200,10 +219,58 @@ function gitValue(args) {
   return execFileSync('git', args, { cwd: ROOT, encoding: 'utf8' }).trim()
 }
 
+/**
+ * 배포가 응답한 코드의 신원과 그 응답이 지나온 경로를 헤더에서 읽는다.
+ * `/login` 비인증을 쓰는 이유는 프록시 matcher 안이면서 쓰기 부작용이 없어서다
+ * (`src/proxy.ts`, `scripts/perf/deploy-paths.mjs`).
+ */
+async function observeDeployment(base) {
+  const res = await fetch(`${base}/login`, { redirect: 'manual', cache: 'no-store' })
+  await res.arrayBuffer()
+  return {
+    deploySha: res.headers.get('x-deploy-sha'),
+    proxyRegion: res.headers.get('x-proxy-region'),
+    edge: parseVercelId(res.headers.get('x-vercel-id')).edge,
+  }
+}
+
+/**
+ * 측정 전 각 페이지를 인증 상태로 한 번 방문한다. 두 오염을 함께 없앤다 —
+ * 콜드스타트가 run 1 에만 얹히는 것과, `/daily` 첫 로드의 템플릿 시딩(INSERT)이
+ * run 1 과 나머지에 서로 다른 데이터 상태를 보여 주는 것. 어느 쪽도 5회 median
+ * 으로는 눌러지지 않는다. 배경은 docs/perf/README.md 「배포 Lighthouse」.
+ */
+async function warmPages(context, base, pages) {
+  const page = await context.newPage()
+  try {
+    for (const p of pages) {
+      await page.goto(`${base}${p}`, { waitUntil: 'networkidle', timeout: 60_000 })
+    }
+  } finally {
+    await page.close()
+  }
+}
+
+function deployEnvironment(base, observed, browserVersion) {
+  return {
+    kind: LINEAGES.deploy.kind,
+    origin: base,
+    deploySha: observed.deploySha,
+    proxyRegion: observed.proxyRegion,
+    edge: observed.edge,
+    runner: {
+      platform: process.platform,
+      arch: process.arch,
+      node: process.version,
+      browser: browserVersion,
+    },
+  }
+}
+
 function localEnvironment(base, browserVersion) {
   const backend = process.env.NEXT_PUBLIC_SUPABASE_URL
   return {
-    kind: 'local-production-build',
+    kind: LINEAGES.local.kind,
     origin: base,
     backendOrigin: backend ? new URL(backend).origin : null,
     git: {
@@ -222,18 +289,36 @@ function localEnvironment(base, browserVersion) {
 
 // ── main ────────────────────────────────────────────────────
 async function measure(opts) {
-  const base = `http://localhost:${opts.port}`
+  const deployed = Boolean(opts.url)
+  const lineage = deployed ? LINEAGES.deploy : LINEAGES.local
+  const base = opts.url ?? `http://localhost:${opts.port}`
+  const snapDir = path.join(OUT_DIR, ...lineage.snapshotDir)
+  // `--no-build` 는 서버의 코드 신원을 증명할 수 없어 기록하지 않는다. `--url` 은
+  // 배포 헤더(`x-deploy-sha`)로 신원이 증명되므로 기록한다.
+  const records = deployed || opts.build
   const creds = perfCredentials()
 
   let server = null
   let context = null
   let profileDir = null
   try {
-    if (opts.build) {
+    if (deployed) {
+      console.log(`▸ 배포 URL 측정: ${base}`)
+      await waitForServer(`${base}/login`, 30_000)
+    } else if (opts.build) {
       server = await startServer(opts.port)
     } else {
       console.log(`▸ 기존 서버 재사용: ${base}`)
       await waitForServer(`${base}/login`, 10_000)
+    }
+
+    const observedBefore = deployed ? await observeDeployment(base) : null
+    if (observedBefore) {
+      console.log(
+        `▸ 배포 커밋 \`${observedBefore.deploySha ?? '미관측'}\` · ` +
+          `프록시 \`${observedBefore.proxyRegion ?? '미관측'}\` · ` +
+          `진입 엣지 \`${observedBefore.edge ?? '미관측'}\``
+      )
     }
 
     // 빌드 전에 발급하면 전체 페이지 측정을 시작할 때까지 토큰 수명이 줄어든다.
@@ -255,6 +340,15 @@ async function measure(opts) {
     })
     await context.addCookies(toBrowserCookies(cookies, base))
 
+    // 워밍은 배포 계보에만 건다. 로컬 계보에 넣으면 측정 조건이 바뀌어 기존
+    // 기준선과의 비교가 끊긴다 — 로컬의 같은 시딩 오염은 별도 작업이다.
+    let warmup = null
+    if (deployed) {
+      console.log(`▸ 워밍 (콜드스타트·시딩 분리): ${opts.pages.length}개 페이지…`)
+      await warmPages(context, base, opts.pages)
+      warmup = '페이지당 1회 방문'
+    }
+
     const results = {}
     for (const page of opts.pages) {
       console.log(`▸ 측정: ${page}`)
@@ -265,11 +359,25 @@ async function measure(opts) {
       )
     }
 
-    if (!opts.build) {
+    if (!records) {
       console.log(
         '\n▸ --no-build 진단 — 서버의 코드 신원을 보장할 수 없어 원장에 쓰지 않습니다'
       )
       return
+    }
+
+    // 측정 중 재배포되면 이 회차의 숫자는 두 코드의 혼합이다. 경고를 남기고
+    // 기록하는 것이 아니라 기록 자체를 중단한다 (`deploy.mjs` 와 같은 규칙).
+    if (deployed) {
+      const after = await observeDeployment(base)
+      if (!observedBefore.deploySha || !observedBefore.proxyRegion) {
+        throw new Error('배포 커밋·프록시 리전을 관측하지 못해 원장에 기록할 수 없습니다.')
+      }
+      if (after.deploySha !== observedBefore.deploySha) {
+        throw new Error(
+          `측정 중 배포 커밋이 바뀌었습니다: ${observedBefore.deploySha} → ${after.deploySha}`
+        )
+      }
     }
 
     // 데이터 볼륨을 함께 남긴다. 이게 없으면 볼륨이 다른 두 측정에 델타가 찍혀
@@ -287,7 +395,10 @@ async function measure(opts) {
       timestamp: new Date().toISOString(),
       runs: opts.runs,
       base,
-      environment: localEnvironment(base, context.browser()?.version() ?? null),
+      warmup,
+      environment: deployed
+        ? deployEnvironment(base, observedBefore, context.browser()?.version() ?? null)
+        : localEnvironment(base, context.browser()?.version() ?? null),
       config: {
         formFactor: 'mobile',
         throttling: 'simulated',
@@ -300,15 +411,14 @@ async function measure(opts) {
       results,
     }
 
-    const file = saveSnapshot(SNAP_DIR, snapshot)
-    const prev = findPreviousSnapshot(SNAP_DIR, file, opts.pages)
+    const ledgerPath = path.join(OUT_DIR, lineage.ledgerFile)
+    const file = saveSnapshot(snapDir, snapshot)
+    const prev = findPreviousSnapshot(snapDir, file, opts.pages)
     const problems = comparisonProblems(snapshot, prev)
-    appendHistory(path.join(OUT_DIR, 'history.md'), snapshot, prev)
+    appendHistory(ledgerPath, snapshot, prev, lineage)
 
     console.log(`\n✔ 스냅샷: ${path.relative(ROOT, file)}`)
-    console.log(
-      `✔ 원장 갱신: ${path.relative(ROOT, path.join(OUT_DIR, 'history.md'))}`
-    )
+    console.log(`✔ 원장 갱신: ${path.relative(ROOT, ledgerPath)}`)
     if (prev && !problems.length) {
       console.log(
         `  (직전 ${prev.timestamp
@@ -343,7 +453,11 @@ async function main() {
   await withPerfLock(baseRoot, () => measure(opts))
 }
 
-main().catch((err) => {
-  console.error('\n✖ 성능 측정 실패:', err.message)
-  process.exitCode = 1
-})
+// 직접 실행할 때만 측정한다. 단위 테스트가 `parseArgs` 를 가져올 때 프로덕션
+// 빌드가 시작되면 안 된다.
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error('\n✖ 성능 측정 실패:', err.message)
+    process.exitCode = 1
+  })
+}
