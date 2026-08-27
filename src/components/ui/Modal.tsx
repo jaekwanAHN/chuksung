@@ -112,7 +112,7 @@ export function Modal({
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          'relative z-10 m-4 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-xl outline-none',
+          'relative z-10 m-4 flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-modal border border-border-subtle bg-white shadow-xl outline-none',
           className
         )}
         role="dialog"

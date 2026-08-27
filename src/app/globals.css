@@ -24,6 +24,17 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* 시맨틱 토큰 — "언제 lg 고 언제 xl 인가"를 이름이 대답하게 한다.
+     어떤 값을 기본으로 삼고 어떤 소수값을 예외로 남겼는지는 docs/design-tokens.md */
+  --radius-field: 0.5rem;  /* 입력·버튼 */
+  --radius-card: 0.75rem;  /* 카드·패널 */
+  --radius-modal: 1rem;    /* 모달·토스트 */
+
+  /* zinc 스케일을 경유해야 테마 4종의 런타임 주입(src/lib/themes.ts)을 그대로 탄다 */
+  --color-border-subtle: var(--color-zinc-200); /* 컨트롤·카드 기본 테두리 */
+  --color-border-muted: var(--color-zinc-100);  /* 카드 안쪽 구분선 */
+  --color-focus-ring: var(--color-zinc-500);    /* 포커스 표시 (비텍스트 대비 4.6:1) */
 }
 
 body {

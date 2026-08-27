@@ -48,7 +48,7 @@ export function Toast({
         role="status"
         aria-live="polite"
         className={cn(
-          'animate-slide-down flex items-center gap-3 whitespace-nowrap rounded-2xl px-5 py-3 shadow-xl',
+          'animate-slide-down flex items-center gap-3 whitespace-nowrap rounded-modal px-5 py-3 shadow-xl',
           variantStyles[variant],
         )}
       >
