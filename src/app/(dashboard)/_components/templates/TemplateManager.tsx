@@ -3,6 +3,9 @@
 import { Plus, Trash2, Pencil, Check, X, Loader2 } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { Toast } from '@/components/ui/Toast'
 import { cn } from '@/lib/utils'
 import type { TaskCategory, TaskPriority } from '@/types'
@@ -14,9 +17,6 @@ const categoryLabel = (value: TaskCategory) =>
   TASK_CATEGORY_OPTIONS.find((c) => c.value === value)?.label ?? value
 const priorityLabel = (value: TaskPriority) =>
   TASK_PRIORITY_OPTIONS.find((p) => p.value === value)?.label ?? String(value)
-
-const inputClass =
-  'w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400'
 
 export function TemplateManager({
   open,
@@ -65,44 +65,40 @@ export function TemplateManager({
 
         {/* 추가 폼 */}
         <div className="space-y-2">
-          <input
+          <Input
             type="text"
             placeholder="제목 (예: 오늘의 알고리즘 1문제)"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className={inputClass}
             maxLength={60}
           />
-          <textarea
+          <Textarea
             placeholder="설명 (선택)"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             rows={2}
-            className={inputClass}
           />
           <div className="flex gap-2">
-            <select
+            <Select
               value={category}
               onChange={(e) => setCategory(e.target.value as TaskCategory)}
-              className={cn(inputClass, 'cursor-pointer')}
             >
               {TASK_CATEGORY_OPTIONS.map((c) => (
                 <option key={c.value} value={c.value}>
                   {c.label}
                 </option>
               ))}
-            </select>
-            <select
+            </Select>
+            <Select
               value={priority}
               onChange={(e) => setPriority(Number(e.target.value) as TaskPriority)}
-              className={cn(inputClass, 'cursor-pointer')}
             >
               {TASK_PRIORITY_OPTIONS.map((p) => (
                 <option key={p.value} value={p.value}>
                   {p.label}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
           <Button
             type="button"
@@ -132,48 +128,48 @@ export function TemplateManager({
                 return (
                   <div
                     key={t.id}
-                    className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2"
+                    className="space-y-2 rounded-field border border-blue-200 bg-blue-50 px-3 py-2"
                   >
-                    <input
+                    <Input
+                      fieldSize="sm"
                       type="text"
                       value={editTitle}
                       onChange={(e) => setEditTitle(e.target.value)}
-                      className="w-full rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
                       maxLength={60}
                       autoFocus
                     />
                     <div className="flex gap-2">
-                      <select
+                      <Select
+                        fieldSize="sm"
                         value={editCategory}
                         onChange={(e) => setEditCategory(e.target.value as TaskCategory)}
-                        className="w-full cursor-pointer rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
                       >
                         {TASK_CATEGORY_OPTIONS.map((c) => (
                           <option key={c.value} value={c.value}>
                             {c.label}
                           </option>
                         ))}
-                      </select>
-                      <select
+                      </Select>
+                      <Select
+                        fieldSize="sm"
                         value={editPriority}
                         onChange={(e) =>
                           setEditPriority(Number(e.target.value) as TaskPriority)
                         }
-                        className="w-full cursor-pointer rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
                       >
                         {TASK_PRIORITY_OPTIONS.map((p) => (
                           <option key={p.value} value={p.value}>
                             {p.label}
                           </option>
                         ))}
-                      </select>
+                      </Select>
                     </div>
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => handleUpdate(t.id)}
                         disabled={!editTitle.trim() || savingEdit}
-                        className="flex cursor-pointer items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-40"
+                        className="flex cursor-pointer items-center gap-1 rounded-field bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-40"
                       >
                         <Check className="size-3" />
                         저장
@@ -181,7 +177,7 @@ export function TemplateManager({
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className="flex cursor-pointer items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                        className="flex cursor-pointer items-center gap-1 rounded-field border border-border-subtle px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
                       >
                         <X className="size-3" />
                         취소
@@ -195,10 +191,10 @@ export function TemplateManager({
                 <div
                   key={t.id}
                   className={cn(
-                    'flex items-center justify-between gap-2 rounded-lg border px-3 py-2 transition-opacity',
+                    'flex items-center justify-between gap-2 rounded-field border px-3 py-2 transition-opacity',
                     t.is_active
-                      ? 'border-zinc-100 bg-zinc-50'
-                      : 'border-zinc-100 bg-white opacity-60',
+                      ? 'border-border-muted bg-zinc-50'
+                      : 'border-border-muted bg-white opacity-60',
                     isDeleting && 'opacity-50'
                   )}
                 >

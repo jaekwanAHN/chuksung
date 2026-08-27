@@ -4,6 +4,7 @@ import { differenceInDays, parseISO } from 'date-fns'
 import { Plus, Trash2, Pencil, Check, X } from 'lucide-react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { Input } from '@/components/ui/Input'
 import { Toast } from '@/components/ui/Toast'
 import { useDdayManager } from './useDdayManager'
 import type { Dday, CreateDdayInput, UpdateDdayInput } from '@/types'
@@ -65,19 +66,18 @@ export function DdayManager({
       <div className="space-y-4">
         {/* 추가 폼 */}
         <div className="space-y-2">
-          <input
+          <Input
             type="text"
             placeholder="이름 (예: 최종 면접)"
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
             maxLength={30}
           />
-          <input
+          <Input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
-            className="w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-zinc-400"
+            className="[&::-webkit-calendar-picker-indicator]:cursor-pointer"
           />
           <Button
             type="button"
@@ -107,28 +107,29 @@ export function DdayManager({
                 return (
                   <div
                     key={d.id}
-                    className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2"
+                    className="space-y-2 rounded-field border border-blue-200 bg-blue-50 px-3 py-2"
                   >
-                    <input
+                    <Input
+                      fieldSize="sm"
                       type="text"
                       value={editLabel}
                       onChange={(e) => setEditLabel(e.target.value)}
-                      className="w-full rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
                       maxLength={30}
                       autoFocus
                     />
-                    <input
+                    <Input
+                      fieldSize="sm"
                       type="date"
                       value={editDate}
                       onChange={(e) => setEditDate(e.target.value)}
-                      className="w-full rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
+                      className="[&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                     <div className="flex gap-2">
                       <button
                         type="button"
                         onClick={() => handleUpdate(d.id)}
                         disabled={!editLabel.trim() || !editDate || savingEdit}
-                        className="flex cursor-pointer items-center gap-1 rounded-md bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-40"
+                        className="flex cursor-pointer items-center gap-1 rounded-field bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700 disabled:opacity-40"
                       >
                         <Check className="size-3" />
                         저장
@@ -136,7 +137,7 @@ export function DdayManager({
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className="flex cursor-pointer items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
+                        className="flex cursor-pointer items-center gap-1 rounded-field border border-border-subtle px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-100"
                       >
                         <X className="size-3" />
                         취소
@@ -149,7 +150,7 @@ export function DdayManager({
               return (
                 <div
                   key={d.id}
-                  className="flex items-center justify-between rounded-lg border border-zinc-100 bg-zinc-50 px-3 py-2"
+                  className="flex items-center justify-between rounded-field border border-border-muted bg-zinc-50 px-3 py-2"
                 >
                   <div>
                     <p className="text-sm font-medium text-zinc-800">
