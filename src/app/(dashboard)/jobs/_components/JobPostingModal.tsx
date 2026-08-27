@@ -1,22 +1,13 @@
 'use client'
 
-import type { ReactNode } from 'react'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { Field } from '@/components/ui/Field'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import type { CreateJobPostingInput, JobPosting, JobPostingStatus } from '@/types'
 import { STATUS_LABEL } from './constants'
-
-// <label> 이 컨트롤을 감싸 암시적으로 연결한다 (래퍼 한 곳으로 모든 필드에 적용).
-function Field({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <label className="block">
-      <span className="mb-1 block text-xs font-medium text-zinc-500">{label}</span>
-      {children}
-    </label>
-  )
-}
-
-const inputClass = 'w-full rounded-lg border border-zinc-200 px-3 py-2 text-sm text-zinc-900'
 
 export function JobPostingModal({
   open,
@@ -52,61 +43,57 @@ export function JobPostingModal({
       }
     >
       <div className="flex flex-col gap-4">
-        <Field label="공고 제목 *">
-          <input
+        <Field label="공고 제목" required>
+          <Input
             type="text"
             value={form.title}
             onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
             placeholder="공고 제목"
-            className={inputClass}
           />
         </Field>
         <Field label="URL">
-          <input
+          <Input
             type="url"
             value={form.url}
             onChange={(e) => setForm((f) => ({ ...f, url: e.target.value }))}
             placeholder="https://..."
-            className={inputClass}
           />
         </Field>
         <Field label="회사명">
-          <input
+          <Input
             type="text"
             value={form.company}
             onChange={(e) => setForm((f) => ({ ...f, company: e.target.value }))}
             placeholder="회사명"
-            className={inputClass}
           />
         </Field>
         <Field label="상태">
-          <select
+          <Select
             value={form.status}
             onChange={(e) => setForm((f) => ({ ...f, status: e.target.value as JobPostingStatus }))}
-            className={`${inputClass} cursor-pointer`}
           >
             {(Object.keys(STATUS_LABEL) as JobPostingStatus[]).map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABEL[s]}
               </option>
             ))}
-          </select>
+          </Select>
         </Field>
         <Field label="마감일">
-          <input
+          <Input
             type="date"
             value={form.deadline}
             onChange={(e) => setForm((f) => ({ ...f, deadline: e.target.value }))}
-            className={`${inputClass} [&::-webkit-calendar-picker-indicator]:cursor-pointer`}
+            className="[&::-webkit-calendar-picker-indicator]:cursor-pointer"
           />
         </Field>
         <Field label="메모">
-          <textarea
+          <Textarea
             value={form.notes}
             onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
             placeholder="메모 (선택)"
             rows={3}
-            className={`${inputClass} resize-none`}
+            className="resize-none"
           />
         </Field>
       </div>
