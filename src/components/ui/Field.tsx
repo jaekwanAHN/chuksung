@@ -9,6 +9,10 @@ import { cn } from '@/lib/utils'
  */
 export function Field({
   label,
+  /**
+   * 라벨에 빨간 `*` 를 그리는 **시각 표시 전용**이다. 컨트롤의 네이티브
+   * `required` 는 별개이므로 브라우저 검증까지 걸려면 컨트롤에도 따로 붙인다.
+   */
   required,
   error,
   className,

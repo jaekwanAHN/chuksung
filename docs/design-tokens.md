@@ -109,6 +109,11 @@ focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foc
 필요가 없고, 빠뜨려서 접근 이름이 사라지는 사고(#103)도 구조적으로 막힌다. E2E 가
 `getByLabel('제목'/'카테고리'/'상태'/'마감일')` 로 잡으므로 **이 연결을 끊지 말 것.**
 
+`Field` 의 `required` 는 라벨에 `*` 를 그리는 시각 표시 전용이다. 브라우저 검증까지
+걸려면 컨트롤에도 네이티브 `required` 를 따로 붙인다 — `TaskForm` 은 붙였고
+`JobPostingModal` 은 저장 버튼을 비활성화하는 쪽이라 붙이지 않았다. 하나만 넣고
+넘어가지 않도록 둘의 관계를 여기 적어 둔다.
+
 `id` 는 접근성 때문이 아니라 테스트가 잡고 있어서 남긴 것만 있다 — `#task-title`,
 `#task-date`(`.claude/skills/verify`), `#day-start-time`(`e2e/template.spec.ts`).
 
