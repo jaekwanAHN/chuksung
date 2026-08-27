@@ -80,6 +80,7 @@ export function TemplateManager({
           />
           <div className="flex gap-2">
             <Select
+              aria-label="카테고리"
               value={category}
               onChange={(e) => setCategory(e.target.value as TaskCategory)}
             >
@@ -90,6 +91,7 @@ export function TemplateManager({
               ))}
             </Select>
             <Select
+              aria-label="우선순위"
               value={priority}
               onChange={(e) => setPriority(Number(e.target.value) as TaskPriority)}
             >
@@ -140,6 +142,7 @@ export function TemplateManager({
                     />
                     <div className="flex gap-2">
                       <Select
+                        aria-label="카테고리 수정"
                         fieldSize="sm"
                         value={editCategory}
                         onChange={(e) => setEditCategory(e.target.value as TaskCategory)}
@@ -151,6 +154,7 @@ export function TemplateManager({
                         ))}
                       </Select>
                       <Select
+                        aria-label="우선순위 수정"
                         fieldSize="sm"
                         value={editPriority}
                         onChange={(e) =>

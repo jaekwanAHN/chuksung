@@ -114,6 +114,21 @@ focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foc
 `JobPostingModal` 은 저장 버튼을 비활성화하는 쪽이라 붙이지 않았다. 하나만 넣고
 넘어가지 않도록 둘의 관계를 여기 적어 둔다.
 
+시각 라벨을 둘 자리가 없거나 두면 같은 이름이 중복되는 컨트롤은 `Field` 대신
+`aria-label` 로 이름만 준다 (#122). 현재 그런 곳은 셀렉트 6개다.
+
+- `TaskFilters` — 왼쪽 모드 버튼이 이미 `전체`/`카테고리`/`우선순위` 를 보여준다.
+  같은 이름을 셀렉트에 다시 주면 화면에 이름이 둘씩 생기므로 `카테고리 필터` /
+  `우선순위 필터` 로 구분한다
+- `TemplateManager` 추가 폼 — 제목·설명이 placeholder 만 쓰는 컴팩트한 구성이라
+  셀렉트에만 시각 라벨을 붙이면 어긋난다 (`카테고리` / `우선순위`)
+- `TemplateManager` 수정 행 — 인라인 편집이라 자리가 없고, **추가 폼과 같은 페이지에
+  동시에 존재**한다. 이름이 겹치지 않게 `카테고리 수정` / `우선순위 수정` 을 쓴다
+  (편집 행은 한 번에 하나뿐이라 행끼리는 겹치지 않는다)
+
+시각 라벨을 둘 자리가 있으면 `aria-label` 로 늘리지 말고 `Field` 를 쓴다 — 눈으로
+보는 사용자에게도 이름이 필요하다.
+
 `id` 는 접근성 때문이 아니라 테스트가 잡고 있어서 남긴 것만 있다 — `#task-title`,
 `#task-date`(`.claude/skills/verify`), `#day-start-time`(`e2e/template.spec.ts`).
 
