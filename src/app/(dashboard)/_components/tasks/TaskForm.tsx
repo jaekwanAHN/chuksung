@@ -10,6 +10,10 @@ import type {
 } from '@/types'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
+import { Field } from '@/components/ui/Field'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
+import { Textarea } from '@/components/ui/Textarea'
 import { getTargetDateForScope } from '@/lib/task-dates'
 import { TASK_CATEGORY_OPTIONS } from '../../_constants/task'
 
@@ -56,20 +60,14 @@ function TaskFormBody({
       className="flex flex-col gap-4"
       onSubmit={handleSubmit}
     >
-      <div>
-        <label
-          htmlFor="task-title"
-          className="mb-1 block text-xs font-medium text-zinc-700"
-        >
-          제목 <span className="text-red-500">*</span>
-        </label>
-        <input
+      <Field label="제목" required>
+        {/* id 는 verify 레시피(.claude/skills/verify)가 #task-title 로 잡는다 */}
+        <Input
           id="task-title"
           required
           autoFocus
           value={title}
           onChange={(e) => setTitle(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 shadow-inner"
           placeholder="무엇을 할까요?"
           onKeyDown={(e) => {
             if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
@@ -78,31 +76,20 @@ function TaskFormBody({
             }
           }}
         />
-      </div>
-      <div>
-        <label
-          htmlFor="task-desc"
-          className="mb-1 block text-xs font-medium text-zinc-700"
-        >
-          설명
-        </label>
-        <textarea
+      </Field>
+      <Field label="설명">
+        <Textarea
           id="task-desc"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           rows={3}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-500 shadow-inner"
           placeholder="선택"
         />
-      </div>
-      <div>
-        <span className="mb-1 block text-xs font-medium text-zinc-700">
-          카테고리
-        </span>
-        <select
+      </Field>
+      <Field label="카테고리">
+        <Select
           value={category}
           onChange={(e) => setCategory(e.target.value as TaskCategory)}
-          className="w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner"
         >
           {TASK_CATEGORY_OPTIONS.map((c) => (
             <option
@@ -113,8 +100,8 @@ function TaskFormBody({
               {c.label}
             </option>
           ))}
-        </select>
-      </div>
+        </Select>
+      </Field>
       <fieldset>
         <legend className="mb-2 text-xs font-medium text-zinc-700">
           우선순위
@@ -143,21 +130,15 @@ function TaskFormBody({
           ))}
         </div>
       </fieldset>
-      <div>
-        <label
-          htmlFor="task-date"
-          className="mb-1 block text-xs font-medium text-zinc-700"
-        >
-          기준 날짜
-        </label>
-        <input
+      <Field label="기준 날짜">
+        <Input
           id="task-date"
           type="date"
           value={targetDate}
           onChange={(e) => setTargetDate(e.target.value)}
-          className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 shadow-inner [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+          className="[&::-webkit-calendar-picker-indicator]:cursor-pointer"
         />
-      </div>
+      </Field>
     </form>
   )
 }
