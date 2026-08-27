@@ -1,5 +1,6 @@
 'use client'
 
+import { Select } from '@/components/ui/Select'
 import { cn } from '@/lib/utils'
 import type { TaskCategory, TaskPriority } from '@/types'
 import { TASK_CATEGORY_OPTIONS, TASK_PRIORITY_OPTIONS } from '../../_constants/task'
@@ -49,8 +50,8 @@ export function TaskFilters({
       <div className="w-full min-w-0 sm:w-52">
         <div className="flex min-h-10 w-full items-center">
           {mode === 'category' ? (
-            <select
-              className="h-10 w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner"
+            <Select
+              className="h-10"
               value={category}
               onChange={(e) =>
                 onCategoryChange(e.target.value as TaskCategory | 'all')
@@ -62,10 +63,10 @@ export function TaskFilters({
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : mode === 'priority' ? (
-            <select
-              className="h-10 w-full cursor-pointer rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-900 shadow-inner"
+            <Select
+              className="h-10"
               value={priority === 'all' ? 'all' : String(priority)}
               onChange={(e) => {
                 const v = e.target.value
@@ -80,7 +81,7 @@ export function TaskFilters({
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : null}
         </div>
       </div>

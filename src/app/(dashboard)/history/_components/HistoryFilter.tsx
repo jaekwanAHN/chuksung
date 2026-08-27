@@ -1,9 +1,10 @@
 'use client'
 
+import { Field } from '@/components/ui/Field'
+import { Input } from '@/components/ui/Input'
+import { Select } from '@/components/ui/Select'
 import type { TaskCategory } from '@/types'
 import { TASK_CATEGORY_OPTIONS } from '../../_constants/task'
-
-const inputClass = 'cursor-pointer rounded-lg border border-zinc-200 px-3 py-2 text-sm text-black'
 
 export function HistoryFilter({
   month,
@@ -17,34 +18,20 @@ export function HistoryFilter({
   onCategoryChange: (value: TaskCategory | 'all') => void
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end">
-      <div>
-        <label
-          htmlFor="history-month"
-          className="mb-1 block text-xs font-medium text-zinc-500"
-        >
-          기간 (월)
-        </label>
-        <input
-          id="history-month"
+    <div className="flex flex-col gap-3 rounded-card border border-border-subtle bg-white p-4 shadow-sm sm:flex-row sm:items-end">
+      <Field label="기간 (월)">
+        <Input
           type="month"
           value={month}
           onChange={(e) => onMonthChange(e.target.value)}
-          className={inputClass}
+          className="w-auto cursor-pointer"
         />
-      </div>
-      <div className="flex-1">
-        <label
-          htmlFor="history-category"
-          className="mb-1 block text-xs font-medium text-zinc-500"
-        >
-          카테고리
-        </label>
-        <select
-          id="history-category"
+      </Field>
+      <Field label="카테고리" className="flex-1">
+        <Select
           value={category}
           onChange={(e) => onCategoryChange(e.target.value as TaskCategory | 'all')}
-          className={`${inputClass} w-full sm:max-w-xs`}
+          className="sm:max-w-xs"
         >
           <option value="all">전체</option>
           {TASK_CATEGORY_OPTIONS.map(({ value, label }) => (
@@ -52,8 +39,8 @@ export function HistoryFilter({
               {label}
             </option>
           ))}
-        </select>
-      </div>
+        </Select>
+      </Field>
     </div>
   )
 }

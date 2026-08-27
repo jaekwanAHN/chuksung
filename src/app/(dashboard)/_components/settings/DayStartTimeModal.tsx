@@ -2,6 +2,8 @@
 
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/Button'
+import { Field } from '@/components/ui/Field'
+import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Toast, type ToastVariant } from '@/components/ui/Toast'
 import { DEFAULT_DAY_START_TIME } from '@/lib/task-dates'
@@ -81,21 +83,18 @@ function DayStartTimeForm({
   return (
     <div className="space-y-3">
       <div className="space-y-2">
-        <label
-          htmlFor="day-start-time"
-          className="block text-xs font-semibold text-zinc-700"
-        >
-          하루 시작 시각
-        </label>
-        <input
-          ref={inputRef}
-          id="day-start-time"
-          type="time"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onClick={openPicker}
-          className="w-full cursor-pointer rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-400"
-        />
+        <Field label="하루 시작 시각">
+          <Input
+            ref={inputRef}
+            // e2e/template.spec.ts 가 #day-start-time 으로 잡는다
+            id="day-start-time"
+            type="time"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onClick={openPicker}
+            className="cursor-pointer"
+          />
+        </Field>
         <p className="text-xs text-zinc-500">
           이 시각부터 하루가 시작됩니다. 템플릿 자동 추가와 새 태스크의 기준
           날짜(&ldquo;오늘&rdquo;)가 모두 이 시각을 따릅니다. 확인을 누르면

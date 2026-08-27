@@ -107,7 +107,8 @@ lint 가 담지 못하는 이유·범위까지 포함하므로 여기에 남긴�
 
 - 페이지 로직은 페이지 훅으로 분리 (`usePlannerPage` 패턴), 페이지 전용 컴포넌트는 해당 라우트의 `_components/`에 배치
 - `useQuery` 캐시 옵션은 `@/lib/query`의 `STABLE_QUERY_OPTIONS`(편집으로만 바뀌는 데이터) / `DAILY_QUERY_OPTIONS`(일간 태스크) 재사용
-- 공통 타입은 `src/types/`에 정의, 공용 UI는 `src/components/ui/`(Button, Modal, Badge, EmptyState, Skeleton, Toast, `useToast` 훅) 재사용 — 새로 만들기 전에 기존 것 확인. 로드 에러+재시도 UI는 `src/app/(dashboard)/_components/QueryErrorRetry` 재사용
+- 공통 타입은 `src/types/`에 정의, 공용 UI는 `src/components/ui/`(Button, Modal, Badge, EmptyState, Skeleton, Toast, Input, Select, Textarea, Field, `useToast` 훅) 재사용 — 새로 만들기 전에 기존 것 확인. 로드 에러+재시도 UI는 `src/app/(dashboard)/_components/QueryErrorRetry` 재사용
+- 폼 컨트롤은 `Input`/`Select`/`Textarea` + 라벨은 `Field` 를 쓰고 테두리·반경·포커스를 호출부에서 다시 적지 않는다. 반경·테두리는 시맨틱 토큰(`rounded-field`/`rounded-card`/`rounded-modal`, `border-border-subtle`/`border-border-muted`)을 쓰고 원시 유틸리티로 되돌아가지 않는다. 예외 판정과 근거는 `docs/design-tokens.md`
 - 여러 번의 원격 DB 왕복이 필요한 서버 로직(예: 템플릿 시딩)은 단일 Postgres 함수(RPC)로 묶어 왕복·지연을 줄일 것 (참조: `seed_daily_templates`, `supabase/migrations/0009`)
 - 커밋 메시지: `feat|fix|test|docs|refactor: 한국어 요약`. **무엇을 바꿨는지**, 필요하면 **왜 그렇게 했는지**만 남긴다. 작업 내용·변경사항·관련 이슈의 상세는 커밋이 아니라 PR 본문에 쓴다
 - 프로젝트 구조·데이터 모델은 `README.md`, E2E 테스트 가이드는 `e2e/README.md` 참조
