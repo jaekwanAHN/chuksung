@@ -95,8 +95,8 @@ test.describe('완료 기록', () => {
     await page.goto('/history')
     await expect(page.getByText(title)).toBeVisible()
 
-    // 라벨로 잡는다 — 연결이 끊기면(#103) 접근 이름이 없어 이 셀렉터가 실패한다
-    const categorySelect = page.getByLabel('카테고리')
+    // 접근 이름으로 잡는다 — 이름이 사라지면 이 셀렉터가 곧바로 실패한다 (#103)
+    const categorySelect = page.getByRole('combobox', { name: '카테고리' })
     await categorySelect.selectOption('interview')
     await expect(page.getByText(title)).not.toBeVisible()
     await categorySelect.selectOption('general')

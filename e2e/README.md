@@ -70,6 +70,36 @@ pnpm test:e2e:report   # 마지막 HTML 리포트 열기
 | `e2e/theme.spec.ts` | 테마 전환 · 새로고침 영속 (localStorage) |
 | `e2e/async-feedback.spec.ts` | 비동기 실패 주입(P1~P4) — 진행/실패/재시도 피드백 회귀 방지 |
 
+## 로케이터 원칙
+
+셀렉트는 **요소 타입이 아니라 접근 이름**으로 잡습니다 (#127).
+
+```ts
+await page.getByRole('combobox', { name: '카테고리', exact: true }).selectOption('interview')
+```
+
+- **`locator('select')` 를 쓰지 않습니다.** "이 페이지의 select 는 하나뿐" 이라는
+  전제 위에 서 있어 컨트롤이 하나 늘면 조용히 깨지고, 실패해도 어느 컨트롤이
+  사라졌는지 말해주지 않습니다. 접근 이름으로 잡으면 접근성 회귀가 곧 테스트
+  실패가 됩니다.
+
+- **셀렉트에는 `getByLabel` 대신 `getByRole('combobox')` 를 씁니다.**
+  `ui/Field` 는 `<label>` 이 컨트롤을 감싸는 암시적 연결이라
+  (`src/components/ui/Field.tsx`) 라벨의 텍스트에 `<option>` 들이 딸려 들어갑니다 —
+  카테고리 셀렉트의 라벨 텍스트는 `"카테고리지원서공부·자격증네트워킹면접기타"` 입니다.
+  그래서 `getByLabel` 은 부분 일치로만 맞고 `exact` 를 붙이면 아무것도 잡지
+  못합니다. `getByRole` 은 접근 이름(accname)을 보므로 선택값이 바뀌어도 `카테고리`
+  로 안정적입니다.
+
+- **이름이 다른 이름의 부분집합이면 `exact: true` 를 붙입니다.** `/daily` 에서
+  태스크 폼의 `카테고리` 는 필터의 `카테고리 필터` 에 부분 일치합니다 — 폼이 열린
+  채 필터가 카테고리 모드면 둘 다 잡혀 strict mode 위반이 납니다.
+  텍스트 쪽에도 같은 함정이 있습니다: `'불합격'` 은 `'합격'` 을 포함합니다
+  (`jobs.spec.ts`).
+
+- 셀렉트는 네이티브 `<select>` 라 `selectOption()` 을 그대로 씁니다.
+  구현체를 바꾸면 상호작용 방식만 손보면 됩니다 (`docs/design-tokens.md`).
+
 ## 데이터 취급 원칙
 
 테스트는 **테스트 계정의 실 DB**를 조작합니다. 한 체크아웃 안에서는 계정이 하나이고

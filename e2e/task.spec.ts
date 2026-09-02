@@ -72,8 +72,8 @@ test.describe('태스크 추가/삭제', () => {
     await page.getByRole('button', { name: '새 태스크' }).click()
     await page.getByLabel('제목').fill(title)
     await page.getByLabel('설명').fill(description)
-    // 카테고리 select 는 label 연결이 없어 폼 내 select 로 접근
-    await page.locator('#task-form select').selectOption('interview')
+    // 필터의 '카테고리 필터' 와 겹치므로 exact (e2e/README.md 「로케이터 원칙」)
+    await page.getByRole('combobox', { name: '카테고리', exact: true }).selectOption('interview')
     await page.getByRole('radio', { name: '높음' }).check()
     await page.getByRole('button', { name: '저장' }).click()
 
@@ -110,13 +110,13 @@ test.describe('태스크 추가/삭제', () => {
     await card.getByRole('button', { name: '수정' }).click()
     await expect(page.getByLabel('제목')).toHaveValue(title)
     await expect(page.getByLabel('설명')).toHaveValue('수정 전 설명')
-    await expect(page.locator('#task-form select')).toHaveValue('general')
+    await expect(page.getByRole('combobox', { name: '카테고리', exact: true })).toHaveValue('general')
     await expect(page.getByRole('radio', { name: '중간' })).toBeChecked()
 
     // 모든 필드 수정
     await page.getByLabel('제목').fill(newTitle)
     await page.getByLabel('설명').fill('수정 후 설명')
-    await page.locator('#task-form select').selectOption('study')
+    await page.getByRole('combobox', { name: '카테고리', exact: true }).selectOption('study')
     await page.getByRole('radio', { name: '낮음' }).check()
     await page.getByRole('button', { name: '저장' }).click()
 
