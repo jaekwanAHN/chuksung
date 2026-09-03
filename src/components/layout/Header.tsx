@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
 import { useToast } from '@/components/ui/useToast'
 import { useEffectiveToday } from '@/app/(dashboard)/_hooks/profile/useEffectiveToday'
+import { HeaderMotto } from './HeaderMotto'
 
 export function Header() {
   const { user, loading } = useAuth()
@@ -94,6 +95,13 @@ export function Header() {
           )}
         </p>
       </div>
+
+      {/* 각오 한마디. lg 미만에서는 좌우 블록이 헤더를 이미 채워 자리가 없다
+          (실측·글자수 상한 근거: docs/header-motto.md) */}
+      <div className="hidden min-w-0 flex-1 justify-center lg:flex">
+        {!loading && user ? <HeaderMotto onError={showError} /> : null}
+      </div>
+
       <div className="flex items-center gap-3">
         {/* 테마 드롭다운 */}
         <div ref={dropdownRef} className="relative">
