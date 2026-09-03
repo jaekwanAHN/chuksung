@@ -28,7 +28,8 @@ test.describe('일간 태스크 필터', () => {
     // 서로 다른 카테고리·우선순위의 태스크 2개 추가
     await page.getByRole('button', { name: '새 태스크' }).click()
     await page.getByLabel('제목').fill(titleA)
-    await page.locator('#task-form select').selectOption('interview')
+    // 필터의 '카테고리 필터' 와 겹치므로 exact (e2e/README.md 「로케이터 원칙」)
+    await page.getByRole('combobox', { name: '카테고리', exact: true }).selectOption('interview')
     await page.getByRole('radio', { name: '높음' }).check()
     await page.getByRole('button', { name: '저장' }).click()
     const cardA = page.locator('li').filter({ hasText: titleA })
@@ -36,30 +37,33 @@ test.describe('일간 태스크 필터', () => {
 
     await page.getByRole('button', { name: '새 태스크' }).click()
     await page.getByLabel('제목').fill(titleB)
-    await page.locator('#task-form select').selectOption('study')
+    await page.getByRole('combobox', { name: '카테고리', exact: true }).selectOption('study')
     await page.getByRole('radio', { name: '낮음' }).check()
     await page.getByRole('button', { name: '저장' }).click()
     const cardB = page.locator('li').filter({ hasText: titleB })
     await expect(cardB).toBeVisible()
 
-    // 카테고리 필터 — 폼 모달이 닫혀 있어 페이지의 select 는 필터 하나뿐
+    // 필터는 mode 에 따라 둘 중 하나만 렌더되므로 모드별로 따로 잡는다
+    const categoryFilter = page.getByRole('combobox', { name: '카테고리 필터' })
+    const priorityFilter = page.getByRole('combobox', { name: '우선순위 필터' })
+
+    // 카테고리 필터
     await page.getByRole('button', { name: '카테고리', exact: true }).click()
-    const filterSelect = page.locator('select')
-    await filterSelect.selectOption('interview')
+    await categoryFilter.selectOption('interview')
     await expect(cardA).toBeVisible()
     await expect(cardB).not.toBeVisible()
 
-    await filterSelect.selectOption('study')
+    await categoryFilter.selectOption('study')
     await expect(cardB).toBeVisible()
     await expect(cardA).not.toBeVisible()
 
     // 우선순위 필터 (값: 1=높음, 3=낮음)
     await page.getByRole('button', { name: '우선순위', exact: true }).click()
-    await filterSelect.selectOption('1')
+    await priorityFilter.selectOption('1')
     await expect(cardA).toBeVisible()
     await expect(cardB).not.toBeVisible()
 
-    await filterSelect.selectOption('3')
+    await priorityFilter.selectOption('3')
     await expect(cardB).toBeVisible()
     await expect(cardA).not.toBeVisible()
 

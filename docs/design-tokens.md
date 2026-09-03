@@ -133,8 +133,10 @@ focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foc
 `#task-date`(`.claude/skills/verify`), `#day-start-time`(`e2e/template.spec.ts`).
 
 `ui/Select` 는 네이티브 `<select>` 를 유지한다. E2E 4개 스펙이 `selectOption()` 으로
-조작하고 `page.locator('select')` 유일성에 기대는 곳이 있어, 리스트박스로 바꾸면 함께
-다시 써야 한다. 구현체를 무엇으로 할지는 #119·#120 에서 판단한다.
+조작하므로 리스트박스로 바꾸면 그 상호작용을 함께 다시 써야 한다. 다만 로케이터는
+#127 에서 `getByRole('combobox')` 로 옮겨 `page.locator('select')` 유일성에 기대는
+곳은 없다 (`e2e/README.md` 「로케이터 원칙」). 구현체를 무엇으로 할지는 #119·#120
+에서 판단한다.
 
 ## 남은 일
 
