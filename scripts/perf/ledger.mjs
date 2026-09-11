@@ -4,6 +4,40 @@ import { formatVolume, VOLUME_KEYS, volumeDrift } from './volume.mjs'
 
 export const LOCAL_SNAPSHOT_SCHEMA_VERSION = 2
 
+/**
+ * Lighthouse 측정의 «계보». 같은 지표를 같은 도구로 재지만 실행 환경이 달라
+ * 서로의 기준선이 될 수 없다. 그래서 스냅샷 디렉터리와 원장 파일을 나눈다 —
+ * 한 디렉터리에 두면 `findPreviousSnapshot` 이 페이지 키만 보고 다른 계보의
+ * 회차를 기준선으로 물어온다. 배경은 docs/perf/README.md.
+ */
+export const LINEAGES = {
+  local: {
+    kind: 'local-production-build',
+    snapshotDir: ['snapshots'],
+    ledgerFile: 'history.md',
+    header:
+      '# 성능 지표 원장 (Lighthouse · 로컬 빌드)\n\n' +
+      '`pnpm perf` 로 자동 기록됨. 최신 측정이 맨 위. 셀 형식: `현재값 🟢/🔴델타`.\n' +
+      '🟢=이전 대비 개선, 🔴=회귀, (—)=오차 범위. 시간은 낮을수록, 점수(Perf/A11y/SEO)는 높을수록 좋음.\n' +
+      'A11y/SEO 는 Perf 점수의 median run 에서 함께 읽은 값이다 (`README.md` 참조).\n' +
+      'run별 측정값과 대상 URL은 `snapshots/` 참조. 지표 의미는 `README.md`.\n' +
+      '**배포 수치와 한 표에서 비교하지 않는다** — `deploy-lighthouse.md` 는 별도 계보다.\n\n',
+  },
+  deploy: {
+    kind: 'deployed-lighthouse',
+    snapshotDir: ['snapshots', 'deploy-lighthouse'],
+    ledgerFile: 'deploy-lighthouse.md',
+    header:
+      '# 성능 지표 원장 (Lighthouse · 배포 URL)\n\n' +
+      '`pnpm perf --url <origin>` 으로 자동 기록됨. 최신 측정이 맨 위.\n' +
+      '셀 형식과 지표 의미는 `history.md`·`README.md` 와 같다.\n' +
+      '측정 전 각 페이지를 한 번 방문해 **warm 상태**를 재며, 콜드스타트는 이 원장의 축이 아니다.\n' +
+      '실제 네트워크 위에 Lighthouse throttling 이 얹히므로 **로컬 원장과 절대값을 비교하지 않는다**\n' +
+      '(`README.md` 「두 계보를 한 표에서 비교하지 않는다」).\n' +
+      'run별 측정값과 대상 URL은 `snapshots/deploy-lighthouse/` 참조.\n\n',
+  },
+}
+
 // 원장에 기록/추적하는 지표 정의. higherBetter=true 는 값이 클수록 개선.
 export const METRICS = [
   { key: 'score', label: 'Perf', higherBetter: true },
@@ -110,6 +144,18 @@ export function comparisonProblems(snapshot, prev) {
   if (snapshot.runs !== prev.runs) {
     problems.push(`실행 횟수가 다르다 (${prev.runs ?? '미기록'} → ${snapshot.runs ?? '미기록'})`)
   }
+  // 계보를 나눠도 같은 계보 안에서 origin 이 갈릴 수 있다 (프리뷰 URL, 포트 변경).
+  // 다른 배포를 기준선으로 삼으면 델타가 코드 변화를 뜻하지 않는다.
+  if (snapshot.base !== prev.base) {
+    problems.push(`측정 대상 오리진이 다르다 (${prev.base ?? '미기록'} → ${snapshot.base ?? '미기록'})`)
+  }
+  // 워밍은 무엇을 재는지 자체를 바꾼다 (cold 혼입 여부). 기록 이전 스냅샷은 필드가
+  // 없으므로 null 로 정규화해 비교한다 — 없는 값으로 기존 기준선을 깨지 않는다.
+  if ((snapshot.warmup ?? null) !== (prev.warmup ?? null)) {
+    problems.push(
+      `워밍 조건이 다르다 (${prev.warmup ?? '없음'} → ${snapshot.warmup ?? '없음'})`
+    )
+  }
 
   const fields = [
     'formFactor',
@@ -171,6 +217,30 @@ export function weightDrift(current, previous) {
   return drift
 }
 
+/**
+ * 매 섹션에 남기는 실행 환경 한 줄. 계보마다 «무엇이 이 숫자의 신원인가» 가 다르다 —
+ * 로컬은 측정한 체크아웃의 커밋, 배포는 응답한 배포의 커밋과 그 응답이 지나온 리전이다.
+ */
+export function describeEnvironment(snapshot) {
+  const env = snapshot.environment
+  if (!env) return null
+  if (env.kind === LINEAGES.deploy.kind) {
+    const parts = [
+      `환경: ${env.kind}`,
+      `origin \`${env.origin ?? '미기록'}\``,
+      `배포 커밋 \`${env.deploySha ?? '미관측'}\``,
+      `프록시 \`${env.proxyRegion ?? '미관측'}\``,
+      `진입 엣지 \`${env.edge ?? '미관측'}\``,
+    ]
+    return parts.join(' · ')
+  }
+  const git = env.git
+  return (
+    `환경: ${env.kind} · commit \`${git?.sha?.slice(0, 7) ?? '미기록'}\`` +
+    `${git?.dirty ? ' (dirty)' : ''} · backend \`${env.backendOrigin ?? '미기록'}\``
+  )
+}
+
 /** 원장에 넣을 이번 측정 섹션. 비교 불가 조건이면 델타 없이 새 기준선으로 렌더한다. */
 export function renderHistorySection(snapshot, prev) {
   const problems = comparisonProblems(snapshot, prev)
@@ -205,11 +275,9 @@ export function renderHistorySection(snapshot, prev) {
   // 측정 조건(데이터 볼륨)을 매 섹션에 남긴다. 지표는 데이터 양에 좌우되므로
   // 볼륨을 모르면 이 표가 무엇과 비교 가능한지 알 수 없다.
   const volumeLine = formatVolume(snapshot.volume)
-  const env = snapshot.environment
-  const git = env?.git
-  const environmentLine = env
-    ? `환경: ${env.kind} · commit \`${git?.sha?.slice(0, 7) ?? '미기록'}\`` +
-      `${git?.dirty ? ' (dirty)' : ''} · backend \`${env.backendOrigin ?? '미기록'}\``
+  const environmentLine = describeEnvironment(snapshot)
+  const warmupLine = snapshot.warmup
+    ? `워밍: ${snapshot.warmup} — 측정 전 각 페이지 1회 방문 (cold 아님, \`README.md\`)`
     : null
 
   const comparisonWarning = problems.length
@@ -231,6 +299,7 @@ export function renderHistorySection(snapshot, prev) {
     `${cfg.formFactor}/${cfg.throttling} · ${compared}\n\n` +
     comparisonWarning +
     (environmentLine ? `${environmentLine}\n\n` : '') +
+    (warmupLine ? `${warmupLine}\n\n` : '') +
     (volumeLine ? `데이터: ${volumeLine}\n\n` : '') +
     [head, sep, ...rows].join('\n') +
     '\n' +
@@ -238,16 +307,13 @@ export function renderHistorySection(snapshot, prev) {
   )
 }
 
-/** 이번 측정 결과를 history.md 상단(최신이 위)에 덧붙인다. */
-export function appendHistory(historyPath, snapshot, prev) {
+/**
+ * 이번 측정 결과를 원장 상단(최신이 위)에 덧붙인다. 머리말은 계보가 소유하므로
+ * 매번 다시 쓰고, **지난 섹션은 건드리지 않는다** — 그 시점의 기록이다.
+ */
+export function appendHistory(historyPath, snapshot, prev, lineage = LINEAGES.local) {
   const section = renderHistorySection(snapshot, prev)
-
-  const header =
-    '# 성능 지표 원장 (Lighthouse)\n\n' +
-    '`pnpm perf` 로 자동 기록됨. 최신 측정이 맨 위. 셀 형식: `현재값 🟢/🔴델타`.\n' +
-    '🟢=이전 대비 개선, 🔴=회귀, (—)=오차 범위. 시간은 낮을수록, 점수(Perf/A11y/SEO)는 높을수록 좋음.\n' +
-    'A11y/SEO 는 Perf 점수의 median run 에서 함께 읽은 값이다 (`README.md` 참조).\n' +
-    'run별 측정값과 대상 URL은 `snapshots/` 참조. 지표 의미는 `README.md`.\n\n'
+  const header = lineage.header
 
   let body = ''
   if (fs.existsSync(historyPath)) {
