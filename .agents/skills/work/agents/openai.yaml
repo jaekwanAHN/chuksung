@@ -1,0 +1,3 @@
+interface:
+  display_name: "이슈에서 PR까지"
+  short_description: "이슈 생성·선택과 기획 검수 후 필요한 검증을 거쳐 PR까지 진행"
