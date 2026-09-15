@@ -121,7 +121,12 @@ Google·카카오 로그인 후 같은 호스트의 `/daily` 도착과 프로덕
 
 인증 없는 HTTP 조회에서는 프리뷰가 Vercel SSO로 302 응답해 `x-deploy-sha`를 확인할
 수 없었다. 프로덕션 `/daily`는 `/login`으로 307 응답하고 `x-deploy-sha: 9ff2291`을
-반환했다. 남은 완료 검증은 실제 배포별 URL의 소셜 로그인과 프리뷰 응답 SHA 대조다.
+반환했다. 이후 사용자는
+`https://chuksung-git-feat-header-motto-jaekwanahns-projects.vercel.app/daily`에서
+로그인 후 서비스 이용이 정상이며 `x-deploy-sha`가 `41b42c1`이라고 확인했다.
+GitHub PR #162의 head `41b42c1c1243d5f915a121b7b757fdcbce77dfd1`과 일치한다.
+이는 브랜치 별칭의 배포 SHA 확인이며 #161 구현을 변경한 것은 아니다.
+남은 완료 검증은 실제 배포별 URL의 소셜 로그인과 해당 응답 SHA 대조다.
 `e2e/README.md`의 인증 전략처럼 실제 소셜 로그인은 자동화하지 않는다.
 이 결과가 확보되기 전에는 #159 전체 완료로 간주하지 않는다.
 
