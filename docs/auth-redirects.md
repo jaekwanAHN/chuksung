@@ -55,6 +55,74 @@ API 를 호출한다.
 맞물릴지부터 정할 것. 오리진을 런타임 값(`window.location.origin`)에서 빌드타임 값으로
 바꾸는 결정이라 프리뷰 배포에서 특히 갈린다.
 
+### 프리뷰 허용목록 (#159)
+
+Supabase는 허용목록과 맞지 않는 `redirectTo`를 에러 없이 Site URL로 대체한다.
+따라서 코드가 프리뷰 오리진을 보내더라도 허용목록이 빠지면 프로덕션으로 돌아간다.
+프로덕션에서 세션 쿠키가 설치되더라도 프리뷰 호스트로 돌아가면 그 쿠키는 전송되지 않는다.
+`.vercel.app`은 public suffix이므로 이를 공통 쿠키 도메인으로 지정해 해결할 수 없다.
+
+프로젝트 `ywwsdezbttlwhiikasjq`의 Authentication → URL Configuration에서
+Site URL은 `https://chuksung.vercel.app`으로 유지하고 Redirect URLs는 다음과 같이 둔다.
+
+```text
+http://localhost:3000/auth/callback
+https://chuksung.vercel.app/auth/callback
+https://chuksung-*-jaekwanahns-projects.vercel.app/auth/callback
+```
+
+마지막 패턴은 브랜치 별칭(`chuksung-git-<브랜치>-jaekwanahns-projects.vercel.app`),
+배포별 URL(`chuksung-<배포해시>-jaekwanahns-projects.vercel.app`), 잘린 브랜치명에
+해시가 붙은 별칭을 포함한다. Supabase glob의 구분자는 `.`과 `/`이므로 `*`는
+하이픈을 포함하지만 다른 호스트 계층이나 경로를 넘지 않는다. 프로젝트 접두사와 소유자
+접미사를 모두 제한하고 경로도 `/auth/callback`만 허용한다.
+`https://*.vercel.app/**`처럼 다른 소유자의 앱까지 포함하는 패턴은 등록하지 않는다.
+
+설정은 원격 Supabase 상태다. 문서 커밋을 배포하거나 되돌려도 설정이 자동 적용·복원되지
+않는다. 복원이 필요하면 현재 목록을 다시 조회한 뒤 위 프리뷰 패턴만 제거한다.
+Google·카카오 콘솔의 콜백은 Supabase의 `/auth/v1/callback`이며 이번 변경 대상이 아니다.
+
+근거: [Supabase Redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls),
+[허용되지 않은 redirectTo의 폴백](https://supabase.com/docs/guides/troubleshooting/why-am-i-being-redirected-to-the-wrong-url-when-using-auth-redirectto-option-_vqIeO).
+
+### #159 적용·검증 기록 (2026-09-15)
+
+기준 코드 `9ff2291d694ab727f04e1954fb49ff6ee73532d5`에서 `LoginButton`은
+`window.location.origin`을, 콜백 Route Handler는 `request.url`의 origin을 사용한다.
+사용자가 기획을 승인한 범위는 프리뷰 패턴 추가, 이 문서, 외부 상태 검증, 커밋·푸시·PR이다.
+
+Management API의 `GET /v1/projects/ywwsdezbttlwhiikasjq/config/auth`로 확인한 변경 전
+`uri_allow_list`에는 localhost와 프로덕션 콜백만 있었다. `PATCH`로 프리뷰 패턴 하나를
+추가하고 같은 GET을 반복해 위 세 항목과 기존 Site URL이 유지됨을 확인했다.
+
+실제 Auth 서버의 `/auth/v1/authorize`에 provider와 `redirect_to`를 보내고, 응답의
+state와 쿠키를 유지해 `/auth/v1/callback`에 `error=access_denied`를 전달했다.
+Google·카카오 각각 아래 7개 주소를 확인했으며, provider 시작 응답과 취소 콜백은 모두 302였다.
+state·쿠키·토큰은 기록하지 않았다.
+
+| redirect_to 사례 | 취소 콜백의 Location (두 provider 모두) |
+|---|---|
+| `chuksung-git-fix-preview-auth-redirect-jaekwanahns-projects.vercel.app/auth/callback` | 요청한 프리뷰 콜백 |
+| `chuksung-abc123def-jaekwanahns-projects.vercel.app/auth/callback` | 요청한 프리뷰 콜백 |
+| `chuksung-git-refactor-template-seed-978ca0-jaekwanahns-projects.vercel.app/auth/callback` | 요청한 프리뷰 콜백 |
+| `chuksung.vercel.app/auth/callback` | 기존 프로덕션 콜백 |
+| `chuksung-test-other-team.vercel.app/auth/callback` | Site URL |
+| `another-app-jaekwanahns-projects.vercel.app/auth/callback` | Site URL |
+| `chuksung-test-jaekwanahns-projects.vercel.app/other` | Site URL |
+
+모든 주소는 HTTPS다. 프리뷰 사례는 패턴 경계를 검사하는 입력이며 실제 배포 존재를
+검증한 것이 아니다. 이 검사는 허용목록과 복귀 목적지 선택을 확인하지만 로그인 성공,
+세션 쿠키 설치, `/daily` 도착을 입증하지 않는다.
+
+남은 완료 검증은 실제 브랜치 별칭·배포별 URL 각각에서 Google·카카오 로그인을 마친 뒤
+같은 호스트의 `/daily`와 해당 배포 커밋의 `x-deploy-sha`를 확인하고 프로덕션 로그인을
+확인하는 것이다. `e2e/README.md`의 인증 전략처럼 실제 소셜 로그인은 자동화하지 않으며
+사용자 확인이 필요하다. 이 결과가 확보되기 전에는 #159 전체 완료로 간주하지 않는다.
+
+저장소 검증은 `git diff --check`와 코드·문서 참조 대조다. 앱 코드·빌드 설정 변경이 없어
+lint/build와 로컬 E2E는 생략한다. 로컬 E2E의 비밀번호 세션 발급은 위 소셜 로그인 완료
+검증을 대신할 수 없다.
+
 ## 프록시는 낙관적으로만 판단한다
 
 프록시는 `getUser()`(Auth 서버 왕복)가 아니라 `getClaims()`(JWKS 로 서명을 로컬
