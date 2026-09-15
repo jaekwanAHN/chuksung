@@ -21,6 +21,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 7. **커밋 → PR** — 템플릿 3절 + `Fixes #<번호>` (→ Git 워크플로, 이슈)
 8. **머지 후 정리** — **작업한 세션이 자기 워크트리를 치운다.** 기본 체크아웃으로 나가 `pnpm wt:rm <브랜치> --delete-branch` (→ Git 워크플로). **머지된 PR 브랜치에 추가 커밋을 푸시하지 말 것** — 반영되지 않는다. 후속 작업은 새 워크트리로
 
+### Codex 작업 스킬
+
+- 저장소 전용 진입점은 `.agents/skills/work/SKILL.md`이며 `$work`로 호출한다.
+- 기획 검수 승인에는 승인 범위의 구현·선택한 검증·커밋·푸시·PR 생성까지 포함한다.
+  별도 푸시 승인을 반복하지 않고 PR 생성에서 종료한다. 머지는 별도 사용자 지시가 필요하다.
+- 사용 예와 검증 기록은 `docs/codex-work-skill.md`를 참조한다.
+
 ## Git 워크플로
 
 - **작업은 항상 워크트리에서 한다.** 기본 체크아웃에서 `pnpm wt:new <브랜치명>` 으로
