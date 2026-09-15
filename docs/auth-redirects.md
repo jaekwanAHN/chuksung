@@ -126,9 +126,14 @@ Google·카카오 로그인 후 같은 호스트의 `/daily` 도착과 프로덕
 로그인 후 서비스 이용이 정상이며 `x-deploy-sha`가 `41b42c1`이라고 확인했다.
 GitHub PR #162의 head `41b42c1c1243d5f915a121b7b757fdcbce77dfd1`과 일치한다.
 이는 브랜치 별칭의 배포 SHA 확인이며 #161 구현을 변경한 것은 아니다.
-남은 완료 검증은 실제 배포별 URL의 소셜 로그인과 해당 응답 SHA 대조다.
-`e2e/README.md`의 인증 전략처럼 실제 소셜 로그인은 자동화하지 않는다.
-이 결과가 확보되기 전에는 #159 전체 완료로 간주하지 않는다.
+배포별 URL 확인 요청에 사용자는
+`https://chuksung-3udlsmm3y-jaekwanahns-projects.vercel.app/daily`와
+`x-deploy-sha: b587f1f`를 추가로 제공했다. 저장소에서 전체 커밋
+`b587f1f3dcfc23be5e2c2089eb0264da6dba97a2` (`docs: 배포 Lighthouse 2회차를 기록한다`)을
+확인했다. 앞선 로그인 정상 도착 보고와 이 후속 배포별 URL 확인을 사용자 수동 검증
+결과로 기록한다. 브랜치 별칭과 배포별 URL 모두 사용자 확인을 확보했다.
+`e2e/README.md`의 인증 전략처럼 실제 소셜 로그인은 자동화하지 않았으며, provider별
+브라우저 실행 로그나 배포별 URL의 Vercel 메타데이터를 직접 수집한 것은 아니다.
 
 저장소 검증은 `git diff --check`와 코드·문서 참조 대조다. 앱 코드·빌드 설정 변경이 없어
 lint/build와 로컬 E2E는 생략한다. 로컬 E2E의 비밀번호 세션 발급은 위 소셜 로그인 완료
