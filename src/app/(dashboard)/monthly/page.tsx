@@ -40,7 +40,7 @@ export default function MonthlyPlannerPage() {
     isMutating,
     openForm,
     closeForm,
-    handleToggle,
+    handleToggleError,
     handleDelete,
     handleSave,
     toast,
@@ -116,7 +116,7 @@ export default function MonthlyPlannerPage() {
             filterMode={filterMode}
             categoryFilter={categoryFilter}
             priorityFilter={priorityFilter}
-            onToggle={handleToggle}
+            onToggleError={handleToggleError}
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
             deletingId={deletingId}

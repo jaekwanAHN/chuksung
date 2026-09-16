@@ -67,6 +67,7 @@ CI는 job 환경변수로 주입합니다. perf 전용 계정의 기본 체크�
 | `e2e/login.spec.ts` | 로그인 / 인증 리다이렉트 시나리오 |
 | `e2e/navigation.spec.ts` | 사이드바 뷰 전환 · 기간 이동 · 일간 날짜 이동 · 헤더 '오늘' 라벨 |
 | `e2e/task.spec.ts` | 일간 태스크 CRUD (설명·카테고리·우선순위 포함) · 완료 토글 |
+| `e2e/task-toggle-race.spec.ts` | 완료 연타의 저장 순서·실패 알림·롤백·재조회·카드 재마운트 |
 | `e2e/task-filters.spec.ts` | 일간 카테고리·우선순위 필터 |
 | `e2e/progress.spec.ts` | 일간 진행률 토글 반영 · 주간/월간 달성률 · 미니 캘린더 |
 | `e2e/template.spec.ts` | 템플릿 CRUD + 일간 시딩 · 하루 시작 시각 설정 |

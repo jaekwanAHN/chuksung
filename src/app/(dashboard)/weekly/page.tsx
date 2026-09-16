@@ -39,7 +39,7 @@ export default function WeeklyPlannerPage() {
     isMutating,
     openForm,
     closeForm,
-    handleToggle,
+    handleToggleError,
     handleDelete,
     handleSave,
     toast,
@@ -113,7 +113,7 @@ export default function WeeklyPlannerPage() {
             filterMode={filterMode}
             categoryFilter={categoryFilter}
             priorityFilter={priorityFilter}
-            onToggle={handleToggle}
+            onToggleError={handleToggleError}
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
             deletingId={deletingId}

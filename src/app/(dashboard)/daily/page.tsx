@@ -86,7 +86,7 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
     isMutating,
     openForm,
     closeForm,
-    handleToggle,
+    handleToggleError,
     handleDelete,
     handleSave,
     toast,
@@ -201,7 +201,7 @@ function DailyPlanner({ initialDate }: { initialDate: Date }) {
             filterMode={filterMode}
             categoryFilter={categoryFilter}
             priorityFilter={priorityFilter}
-            onToggle={handleToggle}
+            onToggleError={handleToggleError}
             onDelete={handleDelete}
             onEdit={(t) => openForm(t)}
             deletingId={deletingId}

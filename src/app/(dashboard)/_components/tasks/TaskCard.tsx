@@ -5,23 +5,26 @@ import { cn } from '@/lib/utils'
 import type { Task } from '@/types'
 import { CategoryBadge, PriorityBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { useToggleTask } from '../../_hooks/tasks/useTaskMutations'
 
 export function TaskCard({
   task,
-  onToggle,
+  onToggleError,
   onDelete,
   onEdit,
   deleting,
   toggling,
 }: {
   task: Task
-  onToggle: (id: string, done: boolean) => void
+  onToggleError: () => void
   onDelete: (id: string) => void
   onEdit: (task: Task) => void
   deleting?: boolean
   /** 완료 토글 응답 대기 중 — 편집·삭제를 막는다 (docs/task-race-guards.md) */
   toggling?: boolean
 }) {
+  const toggleTask = useToggleTask(task, onToggleError)
+
   return (
     <div
       className={cn(
@@ -32,7 +35,7 @@ export function TaskCard({
       <input
         type="checkbox"
         checked={task.is_completed}
-        onChange={(e) => onToggle(task.id, e.target.checked)}
+        onChange={(e) => toggleTask.mutate({ id: task.id, is_completed: e.target.checked })}
         disabled={deleting}
         className="mt-1 size-4 shrink-0 cursor-pointer rounded border-zinc-300 disabled:cursor-not-allowed disabled:opacity-50"
         aria-label={task.is_completed ? '완료 취소' : '완료'}
