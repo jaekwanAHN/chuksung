@@ -12,7 +12,7 @@ export function TaskList({
   filterMode,
   categoryFilter,
   priorityFilter,
-  onToggle,
+  onToggleError,
   onDelete,
   onEdit,
   deletingId,
@@ -24,7 +24,7 @@ export function TaskList({
   filterMode: FilterMode
   categoryFilter: TaskCategory | 'all'
   priorityFilter: TaskPriority | 'all'
-  onToggle: (id: string, done: boolean) => void
+  onToggleError: () => void
   onDelete: (id: string) => void
   onEdit: (task: Task) => void
   deletingId?: string | null
@@ -63,7 +63,7 @@ export function TaskList({
             <li key={task.id}>
               <TaskCard
                 task={task}
-                onToggle={onToggle}
+                onToggleError={onToggleError}
                 onDelete={onDelete}
                 onEdit={onEdit}
                 deleting={deletingId === task.id}

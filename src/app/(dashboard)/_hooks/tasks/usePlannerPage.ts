@@ -5,7 +5,6 @@ import { useTasks } from './useTasks'
 import {
   useCreateTask,
   useDeleteTask,
-  useToggleTask,
   useTogglingTaskIds,
   useUpdateTask,
 } from './useTaskMutations'
@@ -24,23 +23,12 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
 
   const { data: tasks = [], isLoading, error, refetch } = useTasks(scope, anchor)
   const createTask = useCreateTask(scope)
-  const toggleTask = useToggleTask(scope, anchor)
   const deleteTask = useDeleteTask(scope, anchor)
   const updateTask = useUpdateTask(scope, anchor)
   const togglingIds = useTogglingTaskIds()
 
-  const handleToggle = (id: string, done: boolean) => {
-    // 낙관적 업데이트가 즉시 화면을 갱신하고 실패 시 onError 가 롤백하므로
-    // 토글은 진행 중 상태를 별도로 추적하지 않는다. 다만 롤백만으로는 실패를
-    // 알 수 없으므로 토스트로 안내한다.
-    toggleTask.mutate(
-      { id, is_completed: done },
-      {
-        onError: () =>
-          showError('완료 상태를 변경하지 못했습니다. 다시 시도해 주세요.'),
-      }
-    )
-  }
+  const handleToggleError = () =>
+    showError('완료 상태를 변경하지 못했습니다. 다시 시도해 주세요.')
 
   const handleDelete = (id: string) => {
     if (!confirm('이 태스크를 삭제할까요?')) return
@@ -108,7 +96,7 @@ export function usePlannerPage(scope: TaskScope, anchor: Date) {
     isMutating: createTask.isPending || updateTask.isPending,
     openForm,
     closeForm,
-    handleToggle,
+    handleToggleError,
     handleDelete,
     handleSave,
     toast,
