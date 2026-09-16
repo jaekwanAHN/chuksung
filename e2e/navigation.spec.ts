@@ -1,4 +1,5 @@
-import { test, expect, type Page } from '@playwright/test'
+import { expect, type Page } from '@playwright/test'
+import { test, changeTask } from './task-network'
 import fs from 'node:fs'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -126,7 +127,7 @@ test.describe('일간 날짜 이동', () => {
 
     await page.getByRole('button', { name: '새 태스크' }).click()
     await page.getByLabel('제목').fill(title)
-    await page.getByRole('button', { name: '저장' }).click()
+    await changeTask(page, 'POST', () => page.getByRole('button', { name: '저장' }).click())
     const card = page.locator('li').filter({ hasText: title })
     await expect(card).toBeVisible()
 
@@ -149,7 +150,7 @@ test.describe('일간 날짜 이동', () => {
 
     // 정리
     page.on('dialog', (dialog) => dialog.accept())
-    await card.getByRole('button', { name: '삭제' }).click()
+    await changeTask(page, 'DELETE', () => card.getByRole('button', { name: '삭제' }).click())
     await expect(card).not.toBeVisible()
   })
 })

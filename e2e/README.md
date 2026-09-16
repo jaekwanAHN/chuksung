@@ -114,6 +114,9 @@ await page.getByRole('combobox', { name: '카테고리', exact: true }).selectOp
 
 ## 데이터 취급 원칙
 
+태스크 CRUD의 변경 응답·목록 응답 대기와 `api-timing` 첨부는
+[태스크 네트워크 진단](../docs/e2e-task-network.md)을 참조한다.
+
 테스트는 **테스트 계정의 실 DB**를 조작합니다. 한 체크아웃 안에서는 계정이 하나이고
 (`E2E_TEST_USER_*`), 워크트리마다 다른 계정이 배정됩니다 (`docs/parallel-work.md`).
 

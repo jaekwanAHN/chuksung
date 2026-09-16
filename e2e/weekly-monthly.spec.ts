@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test'
+import { expect } from '@playwright/test'
+import { test, changeTask } from './task-network'
 import fs from 'node:fs'
 import { STORAGE_STATE } from './constants'
 
@@ -33,7 +34,7 @@ test.describe('주간/월간 목표 CRUD', () => {
       // 추가
       await page.getByRole('button', { name: addLabel }).click()
       await page.getByLabel('제목').fill(title)
-      await page.getByRole('button', { name: '저장' }).click()
+      await changeTask(page, 'POST', () => page.getByRole('button', { name: '저장' }).click())
       const card = page.locator('li').filter({ hasText: title })
       await expect(card).toBeVisible()
 
@@ -41,13 +42,13 @@ test.describe('주간/월간 목표 CRUD', () => {
       await card.getByRole('button', { name: '수정' }).click()
       await expect(page.getByLabel('제목')).toHaveValue(title)
       await page.getByLabel('제목').fill(newTitle)
-      await page.getByRole('button', { name: '저장' }).click()
+      await changeTask(page, 'PATCH', () => page.getByRole('button', { name: '저장' }).click())
       const updated = page.locator('li').filter({ hasText: newTitle })
       await expect(updated).toBeVisible()
 
       // 삭제 (confirm 수락)
       page.on('dialog', (dialog) => dialog.accept())
-      await updated.getByRole('button', { name: '삭제' }).click()
+      await changeTask(page, 'DELETE', () => updated.getByRole('button', { name: '삭제' }).click())
       await expect(updated).not.toBeVisible()
     })
   }
