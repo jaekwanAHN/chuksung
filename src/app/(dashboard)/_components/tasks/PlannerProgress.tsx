@@ -9,7 +9,7 @@ export function PlannerProgress({
   const done = tasks.filter((t) => t.is_completed).length
   const pct = total === 0 ? 0 : Math.round((done / total) * 100)
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <div className="rounded-card border border-border-subtle bg-white p-4 shadow-sm">
       {label && <p className="mb-2 text-sm font-medium text-zinc-700">{label}</p>}
       <div className="mb-2 h-2 overflow-hidden rounded-full bg-zinc-200">
         <div

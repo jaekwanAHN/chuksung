@@ -80,7 +80,7 @@ export function Header() {
   const timeLabel = now ? format(now, 'a h:mm:ss', { locale: ko }) : null
 
   return (
-    <header className="flex items-center justify-between gap-4 border-b border-zinc-200 bg-background px-4 py-3 md:px-6">
+    <header className="flex items-center justify-between gap-4 border-b border-border-subtle bg-background px-4 py-3 md:px-6">
       <div>
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
           오늘
@@ -103,7 +103,7 @@ export function Header() {
             aria-label={`테마 ${currentTheme.label}`}
             aria-expanded={dropdownOpen}
             aria-controls="theme-menu"
-            className="flex cursor-pointer items-center gap-1.5 rounded-lg px-2 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
+            className="flex cursor-pointer items-center gap-1.5 rounded-field px-2 py-1.5 text-xs font-medium text-zinc-600 transition-colors hover:bg-zinc-100"
           >
             <span
               className="size-3.5 rounded-full ring-1 ring-zinc-200 ring-offset-1"
@@ -116,7 +116,7 @@ export function Header() {
           {dropdownOpen && (
             <div
               id="theme-menu"
-              className="absolute right-0 top-full z-50 mt-1 min-w-[7rem] overflow-hidden rounded-xl border border-zinc-200 bg-background shadow-lg"
+              className="absolute right-0 top-full z-50 mt-1 min-w-[7rem] overflow-hidden rounded-card border border-border-subtle bg-background shadow-lg"
             >
               {THEME_IDS.map((id) => (
                 <button
@@ -140,7 +140,7 @@ export function Header() {
               <img
                 src={user.user_metadata.avatar_url as string}
                 alt=""
-                className="size-9 rounded-full border border-zinc-200"
+                className="size-9 rounded-full border border-border-subtle"
               />
             ) : (
               <div className="flex size-9 items-center justify-center rounded-full bg-zinc-200 text-sm font-medium text-zinc-600">

@@ -103,7 +103,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## 하드 룰
 
 **구현 전에 이 절을 다시 읽는다.** 아래 대부분은 `tsc`·lint·build 가 잡지 못해
-코드 리뷰까지 가서야 드러난다. 맨 아래 두 항목만 `pnpm lint` 가 집행한다.
+코드 리뷰까지 가서야 드러난다. 맨 아래 네 항목은 `pnpm lint` 가 집행한다.
 
 **이 목록을 다른 파일로 복사하지 말 것.** 사본은 원본이 바뀔 때 조용히 어긋난다.
 `/work` 같은 커맨드에서는 이 절을 참조만 한다.
@@ -119,11 +119,14 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - 새 Route Handler는 `@/lib/api/route-helpers`의 `withAuth`로 감싸고(미인증 시 401), 요청 본문은 `parseBody` + `@/lib/api/schemas`의 zod 스키마로 검증, DB 에러는 `dbError`로 응답할 것. raw body를 insert/update에 스프레드 금지 (참조: `src/app/api/tasks/route.ts`). `withAuth`가 레이트 리밋(429), `parseBody`가 본문 크기 상한(413)을 함께 처리하므로 우회하지 말 것 — 방어 목록은 `docs/security/README.md`
 - 클라이언트가 보낸 시각·날짜로 서버 분기를 만들지 말 것. 불가피하면 서버 시각과 대조해 허용 오차를 두고 검증할 것 (참조: `isTrustableClientNow`)
 
-아래 둘은 **`pnpm lint` 가 집행하므로 구현 중 따로 신경 쓰지 않아도 된다.** 규칙 자체는
+아래 네 항목은 **`pnpm lint` 가 집행하므로 구현 중 따로 신경 쓰지 않아도 된다.** 규칙 자체는
 lint 가 담지 못하는 이유·범위까지 포함하므로 여기에 남긴다 (lint 는 그 부분집합을 잡는다).
 
 - 훅 파일에는 `'use client'` 명시 — `chuksung/require-use-client` 가 `use*.ts(x)` 를 검사한다. 훅이 아닌 파일이 클라이언트 훅을 쓰는 경우는 lint 대상이 아니다
 - 클라이언트에서 API 호출은 `@/lib/axios`의 `apiClient` 사용 (baseURL·401 → `/login` 리다이렉트 일원화). raw `fetch`나 개별 axios 인스턴스 생성 금지 — `no-restricted-imports`/`no-restricted-globals` 가 집행한다(route handler 는 서버 코드라 `fetch` 대상 제외). 인증은 쿠키 세션이라 요청에 토큰을 붙이지 않는다 (참조: `withAuth`)
+
+- UI primitive 밖에서는 토큰화된 반경·테두리에 원시 유틸리티를 쓰거나 대체 표시 없이 `outline-none`으로 포커스를 지우지 않는다 — `chuksung/no-raw-style-utilities`가 `className`·`cn()`의 정적 클래스 문자열을 검사한다. 동적 값의 한계와 기하학적 반경·특수 테두리의 예외 근거는 `docs/design-tokens.md`를 따른다.
+- UI primitive 밖에서는 raw `<input>`/`<select>`/`<textarea>` 대신 공용 폼 컨트롤을 쓴다 — `chuksung/no-raw-form-control`이 검사하며, 정적으로 확인되는 checkbox/radio는 허용한다. `src/components/ui/**`는 두 스타일 룰의 검사 대상에서 제외한다.
 
 ## 컨벤션
 

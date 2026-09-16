@@ -41,7 +41,7 @@ export function HistoryCalendar({
   }
 
   return (
-    <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <div className="overflow-x-auto rounded-card border border-border-subtle bg-white p-4 shadow-sm">
       <p className="mb-3 text-sm font-semibold text-zinc-900">완료 활동 히트맵</p>
       <p className="mb-2 text-xs text-zinc-500">
         최근 {HEATMAP_WEEKS}주 (열=한 주, 행=월~일). 셀에 마우스를 올리면 날짜·완료 수를 볼 수 있습니다.

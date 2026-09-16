@@ -14,8 +14,9 @@ const PROVIDER_LABEL: Record<Provider, string> = {
   kakao: '카카오',
 }
 
-const buttonClass =
-  'flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60'
+const buttonClass = cn(
+  'flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-field px-4 text-sm font-medium shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-60'
+)
 
 /**
  * Google·Kakao OAuth 로그인 버튼.

@@ -106,7 +106,10 @@ export default function GoalPage() {
           </div>
         </div>
       ) : (
-        <div className="rounded-card border border-dashed border-zinc-300 bg-white/50 p-8 text-center">
+        <div className={
+          // eslint-disable-next-line chuksung/no-raw-style-utilities -- 점선 빈 상태 테두리 예외 (docs/design-tokens.md)
+          'rounded-card border border-dashed border-zinc-300 bg-white/50 p-8 text-center'
+        }>
           <p className="text-sm text-zinc-500">아직 최종목표가 없습니다.</p>
           <Button type="button" onClick={startEdit} className="mt-4">
             <Pencil className="size-4" />

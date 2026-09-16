@@ -15,7 +15,7 @@ export function QueryErrorRetry({
   onRetry: () => void
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white py-10 text-center">
+    <div className="rounded-card border border-border-subtle bg-white py-10 text-center">
       <p className="text-sm text-red-600">{message}</p>
       <Button
         type="button"

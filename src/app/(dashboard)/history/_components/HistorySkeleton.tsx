@@ -18,7 +18,7 @@ export function HistorySkeleton() {
         {Array.from({ length: 4 }, (_, i) => (
           <div
             key={i}
-            className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+            className="rounded-card border border-border-subtle bg-white p-4 shadow-sm"
           >
             <Skeleton className="h-4 w-20" />
             <Skeleton className="mt-1 h-8 w-12" />
@@ -28,7 +28,7 @@ export function HistorySkeleton() {
       </div>
 
       {/* HistoryCalendar: 제목 2줄 + 12주 × 7일 히트맵 + 범례 */}
-      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="overflow-x-auto rounded-card border border-border-subtle bg-white p-4 shadow-sm">
         <Skeleton className="mb-3 h-5 w-28" />
         <Skeleton className="mb-2 h-4 w-72 max-w-full" />
         <div className="flex gap-1">
@@ -46,7 +46,7 @@ export function HistorySkeleton() {
       </div>
 
       {/* HistoryFilter: 라벨+입력 2개 */}
-      <div className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-end">
+      <div className="flex flex-col gap-3 rounded-card border border-border-subtle bg-white p-4 shadow-sm sm:flex-row sm:items-end">
         <div>
           <Skeleton className="mb-1 h-4 w-16" />
           <Skeleton className="h-[38px] w-36" />
@@ -64,7 +64,7 @@ export function HistorySkeleton() {
           {Array.from({ length: 6 }, (_, i) => (
             <li
               key={i}
-              className="flex items-center gap-2 rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-2"
+              className="flex items-center gap-2 rounded-field border border-border-muted bg-zinc-50/80 px-3 py-2"
             >
               <Skeleton className="h-5 w-14 rounded-full" />
               <Skeleton className="h-5 w-10 rounded-full" />

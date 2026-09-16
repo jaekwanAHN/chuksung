@@ -38,7 +38,7 @@ export function QuizCard({
 
   if (total === 0) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center text-sm text-zinc-400">
+      <div className="rounded-card border border-border-subtle bg-white py-16 text-center text-sm text-zinc-400">
         {emptyMessage}
       </div>
     )
@@ -46,7 +46,7 @@ export function QuizCard({
 
   if (done) {
     return (
-      <div className="flex flex-col items-center gap-6 rounded-xl border border-zinc-200 bg-white py-16 text-center">
+      <div className="flex flex-col items-center gap-6 rounded-card border border-border-subtle bg-white py-16 text-center">
         <p className="text-4xl">🎉</p>
         <div>
           <p className="text-lg font-semibold text-zinc-900">모든 문항을 완료했습니다!</p>
@@ -64,7 +64,7 @@ export function QuizCard({
     <div className="space-y-4">
       <QuizProgress current={index + 1} total={total} />
 
-      <div className="min-h-48 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <div className="min-h-48 rounded-card border border-border-subtle bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-start justify-between gap-2">
           <div className="flex flex-wrap items-center gap-2">
             <span

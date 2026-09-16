@@ -40,7 +40,7 @@ export default function DailyPlannerPage() {
   return (
     <>
       {failed && (
-        <div className="mx-auto mb-4 flex max-w-3xl items-center justify-between gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+        <div className="mx-auto mb-4 flex max-w-3xl items-center justify-between gap-3 rounded-field border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
           <span>
             하루 시작 시각 설정을 불러오지 못해 달력 기준 &lsquo;오늘&rsquo;로
             표시하고 있습니다.

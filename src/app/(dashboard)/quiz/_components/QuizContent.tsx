@@ -54,7 +54,7 @@ export function QuizContent({ categories, questions, selected, initialFavoriteId
           }
         />
         {isPending && (
-          <div className="animate-fade-in absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/60 backdrop-blur-sm">
+          <div className="animate-fade-in absolute inset-0 z-10 flex items-center justify-center rounded-card bg-white/60 backdrop-blur-sm">
             <Loader2 className="size-7 animate-spin text-zinc-500" />
           </div>
         )}
