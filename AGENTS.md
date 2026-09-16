@@ -34,9 +34,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
   시작하고, 끝나면 **그 작업을 한 세션이** 기본 체크아웃으로 나가
   `pnpm wt:rm <브랜치명> --delete-branch` 로 치운다.
   `wt:new` 가 `origin/main` 최신에서 분기하므로 따로 `git pull` 하지 않아도 된다
-- **남의 워크트리를 지우지 않는다.** 머지됐고 트리가 깨끗해도 그 세션은 아직 살아
-  있을 수 있다 — 머지 여부로는 판별되지 않는다. 남은 워크트리는 `pnpm wt:preflight`
-  가 보고하고, **지울지는 사람이 정한다** (`docs/parallel-work.md` 「정리의 주인」)
+- **main에 병합된 워크트리는 세션 소유권과 무관하게 별도 질문 없이 정리한다.**
+  최신 `origin/main`에 현재 HEAD가 포함됐거나, main 대상 PR이 `MERGED`이고 현재 HEAD가
+  그 PR의 최종 head 커밋과 일치하는지 확인한다(스쿼시 병합 포함).
+  커밋되지 않은 변경·미푸시 커밋·병합 후 추가 커밋이 있으면 보존한다.
+  기본 체크아웃에서 `pnpm wt:rm <브랜치> --delete-branch`를 사용하고 `--force`로
+  보호 장치를 우회하지 않는다. 슬롯 부족이면 정리 후 생성을 재시도한다
+  (`docs/parallel-work.md` 「정리의 주인」).
 - 브랜치명: `<type>/<kebab-case-요약>` (예: `feat/e2e-playwright`, `fix/modal-rounded-corners`)
 - main에 직접 커밋 금지. 작업은 브랜치 → PR로 병합
 - **기본 체크아웃에서 `git checkout -b` 로 브랜치를 따지 않는다.** `git checkout` 은
