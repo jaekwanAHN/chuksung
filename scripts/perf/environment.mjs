@@ -23,10 +23,9 @@ export function inheritPerfCredentials(targetEnv, baseEnv) {
  * 기본 체크아웃 경로를 반환해 저장소 공용 perf 잠금에도 같은 기준을 쓰게 한다.
  */
 export function loadPerfEnvironment(root) {
-  for (const file of ['.env.local', '.env.test']) {
-    const full = path.join(root, file)
-    if (fs.existsSync(full)) process.loadEnvFile(full)
-  }
+  // 환경변수 로드 계약: e2e/README.md
+  const localEnv = path.join(root, '.env.local')
+  if (fs.existsSync(localEnv)) process.loadEnvFile(localEnv)
 
   const base = baseRepoPath(root)
   const baseEnv = readEnvFile(path.join(base, '.env.local'))

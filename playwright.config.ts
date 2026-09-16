@@ -2,10 +2,8 @@ import { defineConfig, devices } from '@playwright/test'
 import fs from 'node:fs'
 
 // Playwright 의 Node 프로세스는 .env 를 자동 로드하지 않으므로 직접 로드한다.
-// (.env.test 가 있으면 우선, 없으면 .env.local 사용)
-for (const file of ['.env.local', '.env.test']) {
-  if (fs.existsSync(file)) process.loadEnvFile(file)
-}
+// 기존 환경변수가 우선하며, 없는 키만 .env.local 에서 채운다 (e2e/README.md).
+if (fs.existsSync('.env.local')) process.loadEnvFile('.env.local')
 
 /**
  * Playwright E2E 설정.

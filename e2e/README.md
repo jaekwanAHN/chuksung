@@ -20,7 +20,18 @@ pnpm test:e2e:ui       # Playwright UI 모드 (디버깅)
 pnpm test:e2e:report   # 마지막 HTML 리포트 열기
 ```
 
-기본적으로 `.env.local`(없으면 `.env.test`)의 환경 변수를 불러옵니다.
+### 환경변수 로드 계약
+
+Playwright, 계정 프로비저닝, `dev:login`, perf 도구는 **기존 환경변수 → `.env.local`**
+순으로 값을 사용합니다. `.env.local`은 없는 키만 채우며, 파일이 없어도 실행 환경의
+값으로 동작합니다. `.env.test`는 이 네 도구에서 읽지 않습니다. 기존에 해당 파일에
+넣었던 값은 `.env.local`로 옮기거나 실행 환경에 설정하세요.
+
+워크트리의 포트·E2E 계정은 `wt:new`가 해당 워크트리의 `.env.local`에 주입합니다.
+CI는 job 환경변수로 주입합니다. perf 전용 계정의 기본 체크아웃 상속은
+[기존 규칙](../docs/parallel-work.md)을 따릅니다.
+이 계약은 도구의 명시적 로더에 적용되며 Next.js 자체의 환경 파일 로딩 규칙과는 별개입니다.
+변경 근거와 검증은 [#111 작업 기록](../docs/env-loading.md)을 참조하세요.
 
 ## 인증 전략
 
@@ -37,7 +48,7 @@ pnpm test:e2e:report   # 마지막 HTML 리포트 열기
 
 1. Supabase 대시보드에서 **Email 로그인 활성화** 후 테스트 전용 사용자를 생성합니다.
    (가급적 프로덕션이 아닌 별도/스테이징 프로젝트 권장)
-2. `.env.local` 또는 `.env.test` 에 다음을 추가합니다.
+2. `.env.local` 또는 실행 환경에 다음을 설정합니다.
 
    ```bash
    E2E_TEST_USER_EMAIL=e2e@example.com
