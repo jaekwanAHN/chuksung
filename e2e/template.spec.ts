@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test'
+import { expect } from '@playwright/test'
+import { test, changeTask } from './task-network'
 import fs from 'node:fs'
 import { STORAGE_STATE } from './constants'
 
@@ -50,7 +51,13 @@ test.describe('템플릿 관리 · 하루 시작 시각', () => {
     const manager = page.getByRole('dialog')
     await expect(manager).toBeVisible()
     await manager.getByPlaceholder(/제목/).fill(title)
-    await manager.getByRole('button', { name: '템플릿 추가' }).click()
+    const [created] = await Promise.all([
+      page.waitForResponse((response) => response.request().method() === 'POST' &&
+        new URL(response.url()).pathname === '/api/task-templates', { timeout: 15_000 }),
+      manager.getByRole('button', { name: '템플릿 추가' }).click(),
+    ])
+    expect(created.status()).toBe(201)
+    await created.json()
     // 모달 목록에 표시
     await expect(manager.getByText(title)).toBeVisible()
     await page.keyboard.press('Escape')
@@ -65,7 +72,7 @@ test.describe('템플릿 관리 · 하루 시작 시각', () => {
 
     // 정리 1: 시딩된 태스크 삭제 (confirm 수락)
     page.on('dialog', (dialog) => dialog.accept())
-    await seeded.getByRole('button', { name: '삭제' }).click()
+    await changeTask(page, 'DELETE', () => seeded.getByRole('button', { name: '삭제' }).click())
     await expect(seeded).not.toBeVisible()
 
     // 정리 2: 템플릿 삭제 (confirm 없음) — 행은 justify-between 컨테이너
@@ -73,7 +80,12 @@ test.describe('템플릿 관리 · 하루 시작 시각', () => {
     const row = manager
       .locator('div.justify-between')
       .filter({ hasText: title })
-    await row.getByRole('button', { name: '삭제' }).click()
+    const [deleted] = await Promise.all([
+      page.waitForResponse((response) => response.request().method() === 'DELETE' &&
+        new URL(response.url()).pathname.startsWith('/api/task-templates/'), { timeout: 15_000 }),
+      row.getByRole('button', { name: '삭제' }).click(),
+    ])
+    expect(deleted.status()).toBe(204)
     await expect(manager.getByText(title)).not.toBeVisible()
     await page.keyboard.press('Escape')
   })

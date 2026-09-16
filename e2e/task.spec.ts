@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test'
+import { expect } from '@playwright/test'
+import { test, changeTask } from './task-network'
 import fs from 'node:fs'
 import { STORAGE_STATE } from './constants'
 
@@ -28,7 +29,7 @@ test.describe('태스크 추가/삭제', () => {
     await expect(page.getByRole('dialog')).toBeVisible()
 
     await page.getByLabel('제목').fill(title)
-    await page.getByRole('button', { name: '저장' }).click()
+    await changeTask(page, 'POST', () => page.getByRole('button', { name: '저장' }).click())
 
     await expect(page.getByRole('dialog')).not.toBeVisible()
     await expect(page.getByText(title)).toBeVisible()
@@ -36,7 +37,7 @@ test.describe('태스크 추가/삭제', () => {
     // 정리
     page.on('dialog', (dialog) => dialog.accept())
     const card = page.locator('li').filter({ hasText: title })
-    await card.getByRole('button', { name: '삭제' }).click()
+    await changeTask(page, 'DELETE', () => card.getByRole('button', { name: '삭제' }).click())
     await expect(card).not.toBeVisible()
   })
 
@@ -48,7 +49,7 @@ test.describe('태스크 추가/삭제', () => {
     // 태스크 추가
     await page.getByRole('button', { name: '새 태스크' }).click()
     await page.getByLabel('제목').fill(title)
-    await page.getByRole('button', { name: '저장' }).click()
+    await changeTask(page, 'POST', () => page.getByRole('button', { name: '저장' }).click())
     await expect(page.getByText(title)).toBeVisible()
 
     // 브라우저 confirm() 다이얼로그를 수락
@@ -56,7 +57,7 @@ test.describe('태스크 추가/삭제', () => {
 
     // 해당 태스크 카드에서 삭제 버튼 클릭
     const taskCard = page.locator('li').filter({ hasText: title })
-    await taskCard.getByRole('button', { name: '삭제' }).click()
+    await changeTask(page, 'DELETE', () => taskCard.getByRole('button', { name: '삭제' }).click())
 
     await expect(page.getByText(title)).not.toBeVisible()
   })
@@ -75,7 +76,7 @@ test.describe('태스크 추가/삭제', () => {
     // 필터의 '카테고리 필터' 와 겹치므로 exact (e2e/README.md 「로케이터 원칙」)
     await page.getByRole('combobox', { name: '카테고리', exact: true }).selectOption('interview')
     await page.getByRole('radio', { name: '높음' }).check()
-    await page.getByRole('button', { name: '저장' }).click()
+    await changeTask(page, 'POST', () => page.getByRole('button', { name: '저장' }).click())
 
     const card = page.locator('li').filter({ hasText: title })
     await expect(card).toBeVisible()
@@ -85,7 +86,7 @@ test.describe('태스크 추가/삭제', () => {
 
     // 정리
     page.on('dialog', (dialog) => dialog.accept())
-    await card.getByRole('button', { name: '삭제' }).click()
+    await changeTask(page, 'DELETE', () => card.getByRole('button', { name: '삭제' }).click())
     await expect(card).not.toBeVisible()
   })
 
@@ -101,7 +102,7 @@ test.describe('태스크 추가/삭제', () => {
     await page.getByRole('button', { name: '새 태스크' }).click()
     await page.getByLabel('제목').fill(title)
     await page.getByLabel('설명').fill('수정 전 설명')
-    await page.getByRole('button', { name: '저장' }).click()
+    await changeTask(page, 'POST', () => page.getByRole('button', { name: '저장' }).click())
 
     const card = page.locator('li').filter({ hasText: title })
     await expect(card).toBeVisible()
@@ -118,7 +119,7 @@ test.describe('태스크 추가/삭제', () => {
     await page.getByLabel('설명').fill('수정 후 설명')
     await page.getByRole('combobox', { name: '카테고리', exact: true }).selectOption('study')
     await page.getByRole('radio', { name: '낮음' }).check()
-    await page.getByRole('button', { name: '저장' }).click()
+    await changeTask(page, 'PATCH', () => page.getByRole('button', { name: '저장' }).click())
 
     const updated = page.locator('li').filter({ hasText: newTitle })
     await expect(updated).toBeVisible()
@@ -128,7 +129,7 @@ test.describe('태스크 추가/삭제', () => {
 
     // 정리
     page.on('dialog', (dialog) => dialog.accept())
-    await updated.getByRole('button', { name: '삭제' }).click()
+    await changeTask(page, 'DELETE', () => updated.getByRole('button', { name: '삭제' }).click())
     await expect(updated).not.toBeVisible()
   })
 
@@ -139,7 +140,7 @@ test.describe('태스크 추가/삭제', () => {
 
     await page.getByRole('button', { name: '새 태스크' }).click()
     await page.getByLabel('제목').fill(title)
-    await page.getByRole('button', { name: '저장' }).click()
+    await changeTask(page, 'POST', () => page.getByRole('button', { name: '저장' }).click())
 
     const card = page.locator('li').filter({ hasText: title })
     await expect(card).toBeVisible()
@@ -168,7 +169,7 @@ test.describe('태스크 추가/삭제', () => {
 
     // 정리
     page.on('dialog', (dialog) => dialog.accept())
-    await card.getByRole('button', { name: '삭제' }).click()
+    await changeTask(page, 'DELETE', () => card.getByRole('button', { name: '삭제' }).click())
     await expect(card).not.toBeVisible()
   })
 
@@ -179,7 +180,7 @@ test.describe('태스크 추가/삭제', () => {
 
     await page.getByRole('button', { name: '새 태스크' }).click()
     await page.getByLabel('제목').fill(title)
-    await page.getByRole('button', { name: '저장' }).click()
+    await changeTask(page, 'POST', () => page.getByRole('button', { name: '저장' }).click())
 
     const card = page.locator('li').filter({ hasText: title })
     await expect(card).toBeVisible()
@@ -199,7 +200,7 @@ test.describe('태스크 추가/삭제', () => {
 
     // 정리
     page.on('dialog', (dialog) => dialog.accept())
-    await card.getByRole('button', { name: '삭제' }).click()
+    await changeTask(page, 'DELETE', () => card.getByRole('button', { name: '삭제' }).click())
     await expect(card).not.toBeVisible()
   })
 })
