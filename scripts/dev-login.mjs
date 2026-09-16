@@ -17,9 +17,8 @@ import fs from 'node:fs'
 import { chromium } from '@playwright/test'
 import { getAuthCookies, toBrowserCookies } from './perf/auth.mjs'
 
-for (const f of ['.env.local', '.env.test']) {
-  if (fs.existsSync(f)) process.loadEnvFile(f)
-}
+// 환경변수 로드 계약: e2e/README.md
+if (fs.existsSync('.env.local')) process.loadEnvFile('.env.local')
 
 const args = process.argv.slice(2)
 const portIdx = args.indexOf('--port')

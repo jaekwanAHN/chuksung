@@ -20,9 +20,8 @@ import fs from 'node:fs'
 import crypto from 'node:crypto'
 import { createClient } from '@supabase/supabase-js'
 
-for (const f of ['.env.local', '.env.test']) {
-  if (fs.existsSync(f)) process.loadEnvFile(f)
-}
+// 환경변수 로드 계약: e2e/README.md
+if (fs.existsSync('.env.local')) process.loadEnvFile('.env.local')
 
 // 복제 순서 = FK 의존 순서. task_template_applications 는 task_templates 뒤에 와야 한다.
 // user_id 가 없는 전역 테이블(quiz_categories/questions/follow_ups)은 복제 대상이 아니다.

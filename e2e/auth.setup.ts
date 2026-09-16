@@ -12,7 +12,7 @@ import { STORAGE_STATE } from './constants'
  * 세션 쿠키를 발급하고, `@supabase/ssr` 가 쓰는 것과 동일한 포맷으로 쿠키를
  * 인코딩해 주입합니다.
  *
- * 필요한 환경 변수 (.env.local 또는 .env.test):
+ * 필요한 환경 변수 (.env.local 또는 실행 환경):
  *   NEXT_PUBLIC_SUPABASE_URL
  *   NEXT_PUBLIC_SUPABASE_ANON_KEY
  *   E2E_TEST_USER_EMAIL
