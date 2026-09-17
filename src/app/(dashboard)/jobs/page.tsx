@@ -52,7 +52,7 @@ export default function JobsPage() {
       {loading ? (
         <p className="text-sm text-zinc-500">불러오는 중…</p>
       ) : error ? (
-        <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center">
+        <div className="rounded-card border border-border-subtle bg-white py-16 text-center">
           <p className="text-sm text-zinc-500">공고를 불러오지 못했습니다.</p>
           <Button
             type="button"
@@ -64,7 +64,7 @@ export default function JobsPage() {
           </Button>
         </div>
       ) : postings.length === 0 ? (
-        <div className="rounded-xl border border-zinc-200 bg-white py-16 text-center text-sm text-zinc-400">
+        <div className="rounded-card border border-border-subtle bg-white py-16 text-center text-sm text-zinc-400">
           저장된 공고가 없습니다. 공고를 추가해 보세요.
         </div>
       ) : (
@@ -82,7 +82,7 @@ export default function JobsPage() {
           {hasMore && (
             <button
               type="button"
-              className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-200 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+              className="mt-4 w-full cursor-pointer rounded-field border border-border-subtle py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
               onClick={showMore}
             >
               더 보기 ({totalCount - postings.length}건 남음)

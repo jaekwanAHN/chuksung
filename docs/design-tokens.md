@@ -5,7 +5,7 @@
 서로 다른 값으로 존재했고(#124), 새 화면은 가까운 파일을 베끼며 그 상태를 복제했다.
 
 이 문서는 무엇을 토큰으로 굳혔고 **무엇을 일부러 굳히지 않았는지**, 그리고 그 판정의
-근거를 남긴다. 규칙 자체의 요약은 `AGENTS.md` 「컨벤션」에 한 줄로만 있고, 근거는 여기다.
+근거를 남긴다. 규칙의 원본은 `AGENTS.md` 「하드 룰」·「컨벤션」이고, 근거는 여기다.
 
 ## 시맨틱 토큰
 
@@ -138,11 +138,73 @@ focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foc
 곳은 없다 (`e2e/README.md` 「로케이터 원칙」). 구현체를 무엇으로 할지는 #119·#120
 에서 판단한다.
 
+## lint 집행 (#125)
+
+`eslint.config.mjs`가 `scripts/eslint/style-rules.mjs`의 두 룰을 `error`로 적용한다.
+대상은 `src/**/*.ts(x)`이며, 원시 요소와 스타일을 정의하는 `src/components/ui/**`만
+두 룰에서 제외한다. 다른 lint 규칙은 이 경로에도 계속 적용된다.
+
+- `no-raw-style-utilities`: `className`과 이름이 `cn`인 호출의 문자열 리터럴,
+  조건식의 결과 분기, 논리식, 배열·객체 키, 템플릿의 완성된 정적 클래스를 검사한다.
+  `rounded-md/lg/xl/2xl`, `border-zinc-*`, 대체 표시 없는 `outline-none`이 대상이다.
+  상태·반응형·임의 variant, important 표시, 색상 투명도가 붙어도 검사한다.
+  `rounded-full`과 `rounded-sm`은 기하학적 값으로 허용하며 사용 목적까지 추론하지 않는다.
+- `no-raw-form-control`: raw `input/select/textarea`를 검사한다. `input`의 최종 `type`이
+  문자열 리터럴로 checkbox/radio임을 확인할 수 있을 때만 허용한다. 뒤의 spread가
+  `type`을 덮을 수 있거나 동적 값이면 허용하지 않는다. 공용 `Input/Select/Textarea`를 쓴다.
+
+포커스 대체는 같은 표현식에서 함께 적용되는 `focus:outline-2` +
+`focus:outline-focus-ring` 또는 `focus-visible:` 쌍으로 확인한다. 조건부 클래스는
+다른 분기의 포커스 제거를 정당화하지 못한다. variant가 붙은 `outline-none`은 같은
+variant의 대체 표시를 요구한다. 이 검사는 구문상 표시 유무를 확인할 뿐 실제 색 대비나
+CSS 우선순위를 증명하지 않는다. 폼에서는 직접 조합보다 공용 primitive를 사용한다.
+
+문자열 변수의 값 추적, 다른 파일·함수의 반환값, 동적 클래스 조립, `cn`의 별칭은 분석하지
+않는다. 클래스 상수도 선언 시 `cn('...')`으로 감싸 검사 대상에 둔다(`LoginButton` 참고).
+조건 비교 문자열·객체 값·일반 메시지는 클래스가 아니므로 검사하지 않는다. 정적 분석의
+범위를 넓히기 위해 모든 문자열을 검사하면 이런 값에 오탐이 생긴다.
+
+### 국소 예외
+
+소수값을 전역 허용하면 일반 폼·카드에서도 재사용되므로 다음 다섯 곳만
+`eslint-disable-next-line chuksung/no-raw-style-utilities`와 이 문서 포인터를 둔다.
+파일 전체를 제외하지 않으며, 같은 파일의 다른 위반은 계속 실패한다.
+
+| 위치 | 값 | 유지 근거 |
+|---|---|---|
+| `MonthMiniCalendar` | `rounded-md` | 위 소수값 판정에서 유지한 미니 달력 셀 |
+| `TaskCard` | `border-zinc-300` | primitive 대상이 아닌 네이티브 체크박스 |
+| `TaskForm` | `border-zinc-400` | primitive 대상이 아닌 네이티브 라디오 |
+| `goal/page` | `border-zinc-300` | 점선 빈 상태의 경계 |
+| `timer/page` | `hover:border-zinc-300` | 기존 숫자 입력의 hover 피드백, 포커스는 Input이 소유 |
+
+나머지 반경·테두리는 기존 값과 동일한 토큰으로 치환했다. `rounded-md` 예외를
+`rounded-field`로 강제하지 않으므로 달력의 반경도 바뀌지 않는다. 추가 강한 테두리
+토큰이나 앱 동작 변경은 필요하지 않다.
+
+### 승인 범위와 검증 기록
+
+사용자의 “기다리는 동안 #125 진행해줘” 요청으로 앞서 제시한 계획의 구현·검증·커밋·
+푸시·PR 생성 범위를 승인받았다. 작업 브랜치는 `chore/enforce-style-tokens`, 기준은
+`7173384`다. #178의 작업 시작 전 main 최신화 변경은 이미 별도 병합되었다.
+
+초기 warn 검사에서 66건을 확인했다. 위 다섯 예외를 명시하고 나머지를 이관한 뒤
+warn 0건을 확인해 error로 승격했다. 문자열 상수였던 로그인 버튼도 토큰화하고
+`cn()`으로 감쌌다. raw 폼 요소 세 곳은 모두 checkbox/radio여서 그대로 통과한다.
+
+검증 명령은 `git diff --check`, `node --test scripts/eslint/style-rules.test.mjs`,
+`pnpm lint`, `pnpm build`다. 룰 테스트는 실제 ESLint 설정의 error 수준·primitive 제외,
+금지 클래스와 폼 요소, 조건부 포커스, variant·템플릿·객체 클래스, 국소 예외를 확인한다.
+앱 변경은 같은 값의 클래스 치환과 lint 예외 표시뿐이어서 로컬 E2E·성능 측정은
+선택하지 않았다. 전체 E2E는 PR의 기존 CI에서 실행한다.
+
+결과: diff 검사·룰 테스트·lint·build 모두 통과했다. 개별 결과를 출력하는
+`node scripts/eslint/style-rules.test.mjs`로도 58개 테스트 통과를 확인했다.
+첫 build는 샌드박스의 Google Fonts 연결 실패로 중단됐고, 네트워크 권한으로 재실행한
+build에서 컴파일·타입 검사·21개 페이지 생성까지 통과했다. 워크트리와 기본 체크아웃의
+중복 lockfile에 대한 기존 Next.js 루트 추론 경고는 남아 있다.
+
 ## 남은 일
 
-- **lint 집행 (#125).** 토큰이 있어도 강제되지 않으면 다시 표류한다. `rounded-lg` 같은
-  원시 유틸리티를 폼·카드 자리에서 막는 룰이 붙어야 이 문서가 규칙이 된다
-- **카드·모달 반경 스윕.** `--radius-card` 는 이번에 손댄 파일에만 적용했다. 남은
-  `rounded-xl` 20여 곳은 순수한 클래스 치환이라 #125 와 함께 하는 편이 안전하다
 - **시각 회귀 스냅샷.** Playwright 가 이미 있어 `toHaveScreenshot()` 비용은 낮지만,
-  기준선은 위 스윕이 끝난 뒤에 떠야 의미가 있다
+  이번 스윕 이후 상태를 기준선으로 삼는 후속 작업이다

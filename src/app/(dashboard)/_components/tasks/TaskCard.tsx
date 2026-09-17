@@ -28,8 +28,8 @@ export function TaskCard({
   return (
     <div
       className={cn(
-        'flex gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm transition',
-        task.is_completed && 'border-zinc-100 bg-zinc-50/80 opacity-80'
+        'flex gap-3 rounded-card border border-border-subtle bg-white p-4 shadow-sm transition',
+        task.is_completed && 'border-border-muted bg-zinc-50/80 opacity-80'
       )}
     >
       <input
@@ -37,7 +37,10 @@ export function TaskCard({
         checked={task.is_completed}
         onChange={(e) => toggleTask.mutate({ id: task.id, is_completed: e.target.checked })}
         disabled={deleting}
-        className="mt-1 size-4 shrink-0 cursor-pointer rounded border-zinc-300 disabled:cursor-not-allowed disabled:opacity-50"
+        className={
+          // eslint-disable-next-line chuksung/no-raw-style-utilities -- 체크박스 테두리 예외 (docs/design-tokens.md)
+          'mt-1 size-4 shrink-0 cursor-pointer rounded border-zinc-300 disabled:cursor-not-allowed disabled:opacity-50'
+        }
         aria-label={task.is_completed ? '완료 취소' : '완료'}
       />
       <div className="min-w-0 flex-1">

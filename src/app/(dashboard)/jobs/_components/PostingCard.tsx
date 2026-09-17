@@ -18,7 +18,7 @@ export function PostingCard({
   const { deadlineLabel, daysLeft, ddayLabel, ddayClass } = usePostingCard(posting)
   const linkUrl = httpUrlOrNull(posting.url)
   return (
-    <li className="flex flex-col gap-2 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <li className="flex flex-col gap-2 rounded-card border border-border-subtle bg-white p-4 shadow-sm">
       <div className="flex items-start justify-between gap-2">
         <div className="flex flex-1 flex-col gap-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">

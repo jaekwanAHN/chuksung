@@ -42,6 +42,7 @@ function TimeSegmentInput({
           'text-2xl font-mono font-bold shadow-inner',
           '[appearance:textfield] scheme-light',
           '[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
+          // eslint-disable-next-line chuksung/no-raw-style-utilities -- 타이머 hover 테두리 예외 (docs/design-tokens.md)
           !disabled && 'hover:border-zinc-300'
         )}
       />
@@ -79,14 +80,14 @@ export default function TimerPage() {
   return (
     <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-10 py-12">
       {/* 모드 토글 */}
-      <div className="flex rounded-xl border border-zinc-200 bg-zinc-100 p-1">
+      <div className="flex rounded-card border border-border-subtle bg-zinc-100 p-1">
         {(['stopwatch', 'timer'] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
             className={cn(
-              'w-28 cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold transition-all',
+              'w-28 cursor-pointer rounded-field px-4 py-2 text-sm font-semibold transition-all',
               mode === m
                 ? 'bg-white text-zinc-900 shadow-sm'
                 : 'text-zinc-500 hover:text-zinc-700'

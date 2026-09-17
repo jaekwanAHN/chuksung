@@ -45,7 +45,7 @@ function DdaySidebar({
   onRetry: () => void
 }) {
   return (
-    <div className="mt-1 border-t border-zinc-100 px-1 pt-3">
+    <div className="mt-1 border-t border-border-muted px-1 pt-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
           D-day
@@ -105,8 +105,8 @@ export function Sidebar() {
 
   return (
     <>
-      <aside className="hidden w-52 shrink-0 flex-col border-r border-zinc-200 bg-background md:flex">
-        <div className="border-b border-zinc-100 px-4 py-4">
+      <aside className="hidden w-52 shrink-0 flex-col border-r border-border-subtle bg-background md:flex">
+        <div className="border-b border-border-muted px-4 py-4">
           <Link href="/daily" className="text-lg font-bold text-zinc-900">
             chuksung
             <NavigationProgress />
@@ -122,7 +122,7 @@ export function Sidebar() {
                 key={href}
                 href={href}
                 className={cn(
-                  'flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition',
+                  'flex items-center gap-2 rounded-field px-3 py-2 text-sm font-medium transition',
                   active
                     ? 'bg-zinc-900 text-white'
                     : 'text-zinc-600 hover:bg-zinc-100'
@@ -144,7 +144,7 @@ export function Sidebar() {
       </aside>
 
       {/* 모바일 하단 탭 */}
-      <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-zinc-200 bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur md:hidden">
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex border-t border-border-subtle bg-background/95 px-2 pb-[env(safe-area-inset-bottom)] pt-1 backdrop-blur md:hidden">
         {nav.map(({ href, label, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(`${href}/`)
           return (

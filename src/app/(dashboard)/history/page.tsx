@@ -59,7 +59,7 @@ export default function HistoryPage() {
               완료된 태스크 ({filteredCount}건)
             </h2>
             {rows.length === 0 ? (
-              <p className="rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-6 text-center text-sm text-zinc-400">
+              <p className="rounded-field border border-border-muted bg-zinc-50/80 px-3 py-6 text-center text-sm text-zinc-400">
                 이 기간에 완료한 태스크가 없습니다.
               </p>
             ) : (
@@ -73,7 +73,7 @@ export default function HistoryPage() {
               <button
                 type="button"
                 disabled={isFetching}
-                className="mt-4 w-full cursor-pointer rounded-lg border border-zinc-200 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
+                className="mt-4 w-full cursor-pointer rounded-field border border-border-subtle py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-60"
                 onClick={showMore}
               >
                 {isFetching ? '불러오는 중…' : '더 보기'}

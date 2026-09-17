@@ -28,7 +28,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t border-zinc-200 bg-white px-4 py-4 md:px-6">
+    <footer className="border-t border-border-subtle bg-white px-4 py-4 md:px-6">
       <div className="flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
         <p className="text-xs text-zinc-600">
           © {new Date().getFullYear()} chuksung. All rights reserved.

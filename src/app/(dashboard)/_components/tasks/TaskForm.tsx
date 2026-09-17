@@ -123,7 +123,10 @@ function TaskFormBody({
                 name="priority"
                 checked={priority === p}
                 onChange={() => setPriority(p)}
-                className="size-4 shrink-0 border-zinc-400 text-zinc-900 accent-zinc-800"
+                className={
+                  // eslint-disable-next-line chuksung/no-raw-style-utilities -- 라디오 테두리 예외 (docs/design-tokens.md)
+                  'size-4 shrink-0 border-zinc-400 text-zinc-900 accent-zinc-800'
+                }
               />
               {label}
             </label>

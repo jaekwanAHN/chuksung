@@ -1,6 +1,7 @@
 import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
+import { noRawStyleUtilities, noRawFormControl } from "./scripts/eslint/style-rules.mjs";
 
 const eslintConfig = defineConfig([
   ...nextVitals,
@@ -24,7 +25,7 @@ const eslintConfig = defineConfig([
   // ─────────────────────────────────────────────────────────────────────
   // AGENTS.md 「하드 룰」 중 기계로 판정 가능한 것.
   //
-  // 하드 룰은 대부분 의미 판단이 필요해 코드 리뷰에 의존하지만, 아래 둘은
+  // 하드 룰은 대부분 의미 판단이 필요해 코드 리뷰에 의존하지만, 아래 규칙은
   // 구문만 보고 확정할 수 있다. 여기서 결정론적으로 잡으면 리뷰는 판단이
   // 필요한 룰에만 집중할 수 있다.
   //
@@ -42,10 +43,12 @@ const eslintConfig = defineConfig([
   // 기대대로 매칭하지 않아 전 파일 오탐이 났다. 하드 룰 게이트라 동작이
   // 확실해야 하므로 AST 를 직접 보는 로컬 룰로 둔다.
   {
-    files: ["src/**/use*.ts", "src/**/use*.tsx"],
+    files: ["src/**/*.ts", "src/**/*.tsx"],
     plugins: {
       chuksung: {
         rules: {
+          "no-raw-style-utilities": noRawStyleUtilities,
+          "no-raw-form-control": noRawFormControl,
           "require-use-client": {
             meta: {
               type: "problem",
@@ -76,8 +79,21 @@ const eslintConfig = defineConfig([
         },
       },
     },
+  },
+  {
+    files: ["src/**/use*.ts", "src/**/use*.tsx"],
     rules: {
       "chuksung/require-use-client": "error",
+    },
+  },
+
+  // 집행 범위와 예외 근거: docs/design-tokens.md
+  {
+    files: ["src/**/*.ts", "src/**/*.tsx"],
+    ignores: ["src/components/ui/**"],
+    rules: {
+      "chuksung/no-raw-style-utilities": "error",
+      "chuksung/no-raw-form-control": "error",
     },
   },
 

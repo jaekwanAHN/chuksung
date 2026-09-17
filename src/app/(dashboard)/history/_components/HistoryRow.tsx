@@ -8,7 +8,7 @@ export function HistoryRow({ task }: { task: Task }) {
     ? format(parseISO(task.completed_at), 'yyyy-MM-dd HH:mm', { locale: ko })
     : ''
   return (
-    <li className="flex flex-wrap items-center gap-2 rounded-lg border border-zinc-100 bg-zinc-50/80 px-3 py-2 text-sm">
+    <li className="flex flex-wrap items-center gap-2 rounded-field border border-border-muted bg-zinc-50/80 px-3 py-2 text-sm">
       <CategoryBadge category={task.category} />
       <PriorityBadge priority={task.priority} />
       <span className="font-medium text-zinc-900">{task.title}</span>

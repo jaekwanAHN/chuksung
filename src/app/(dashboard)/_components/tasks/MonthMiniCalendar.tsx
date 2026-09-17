@@ -25,7 +25,7 @@ export function MonthMiniCalendar({
   const weekdays = ['월', '화', '수', '목', '금', '토', '일']
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+    <div className="rounded-card border border-border-subtle bg-white p-4 shadow-sm">
       <p className="mb-3 text-sm font-semibold text-zinc-900">
         {format(month, 'yyyy년 M월', { locale: ko })} 일별 완료
       </p>
@@ -42,6 +42,7 @@ export function MonthMiniCalendar({
               key={key}
               title={n ? `${key} 완료 ${n}건` : key}
               className={cn(
+                // eslint-disable-next-line chuksung/no-raw-style-utilities -- 미니 달력 셀 예외 (docs/design-tokens.md)
                 'flex aspect-square flex-col items-center justify-center rounded-md text-[11px]',
                 inMonth ? 'bg-zinc-50 text-zinc-800' : 'text-zinc-500',
                 n > 0 && inMonth && 'bg-emerald-100 font-semibold text-emerald-900'
