@@ -80,9 +80,13 @@ export const upsertGoalSchema = z.object({
   content: z.string().max(10000),
 })
 
-export const updateProfileSchema = z.object({
-  day_start_time: z.iso.time(),
-})
+// motto 의 20자 상한은 헤더 중앙의 실측 가용폭에서 나왔다 (docs/header-motto.md).
+export const updateProfileSchema = z
+  .object({
+    day_start_time: z.iso.time().optional(),
+    motto: z.string().trim().max(20).nullish(),
+  })
+  .refine(nonEmpty, NON_EMPTY_MESSAGE)
 
 export const createTaskTemplateSchema = z.object({
   title: z.string().trim().min(1).max(200),

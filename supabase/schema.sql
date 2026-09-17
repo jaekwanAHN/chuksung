@@ -8,6 +8,8 @@ CREATE TABLE public.profiles (
   full_name TEXT,
   avatar_url TEXT,
   day_start_time TIME NOT NULL DEFAULT '06:00',
+  -- 헤더 중앙에 노출하는 각오 한마디. 20자 상한의 근거는 docs/header-motto.md
+  motto TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
