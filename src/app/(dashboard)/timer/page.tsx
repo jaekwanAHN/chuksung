@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/Input'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/Button'
 import { Toast } from '@/components/ui/Toast'
+import { DdayCountdown } from './_components/DdayCountdown'
 import { useTimerPage } from './_hooks/useTimerPage'
 
 function pad(n: number) {
@@ -81,23 +82,25 @@ export default function TimerPage() {
     <div className="mx-auto flex max-w-sm flex-col items-center justify-center gap-10 py-12">
       {/* 모드 토글 */}
       <div className="flex rounded-card border border-border-subtle bg-zinc-100 p-1">
-        {(['stopwatch', 'timer'] as const).map((m) => (
+        {(['stopwatch', 'timer', 'dday'] as const).map((m) => (
           <button
             key={m}
             type="button"
             onClick={() => setMode(m)}
+            aria-pressed={mode === m}
             className={cn(
-              'w-28 cursor-pointer rounded-field px-4 py-2 text-sm font-semibold transition-all',
+              'flex-1 cursor-pointer rounded-field px-4 py-2 text-sm font-semibold transition-all',
               mode === m
                 ? 'bg-white text-zinc-900 shadow-sm'
                 : 'text-zinc-500 hover:text-zinc-700'
             )}
           >
-            {m === 'stopwatch' ? '스톱워치' : '타이머'}
+            {m === 'stopwatch' ? '스톱워치' : m === 'timer' ? '타이머' : 'D-day'}
           </button>
         ))}
       </div>
 
+      {mode === 'dday' ? <DdayCountdown /> : <>
       {/* 시간 표시 */}
       <div className="flex flex-col items-center gap-3">
         <div
@@ -180,6 +183,8 @@ export default function TimerPage() {
           초기화
         </Button>
       </div>
+
+      </>}
 
       <Toast
         open={toastOpen}
