@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-export type TimerMode = 'stopwatch' | 'timer'
+export type TimerMode = 'stopwatch' | 'timer' | 'dday'
 
 const STORAGE_KEY = 'chuksung:timer:v1'
 
@@ -45,7 +45,7 @@ function loadPersisted(): TimerState | null {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
     const s = JSON.parse(raw) as Partial<TimerState>
-    if (s.mode !== 'stopwatch' && s.mode !== 'timer') return null
+    if (s.mode !== 'stopwatch' && s.mode !== 'timer' && s.mode !== 'dday') return null
     if (typeof s.elapsedBase !== 'number' || typeof s.remainingBase !== 'number') return null
     if (typeof s.configured !== 'number') return null
     if (s.startedAt !== null && typeof s.startedAt !== 'number') return null

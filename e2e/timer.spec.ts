@@ -64,3 +64,54 @@ test.describe('타이머', () => {
     await expect(page.getByLabel('초')).toBeEnabled()
   })
 })
+
+test.describe('D-day 카운트다운', () => {
+  test.skip(() => !hasAuthState(), '인증 상태 없음')
+  test.use({ storageState: STORAGE_STATE, timezoneId: 'Asia/Seoul' })
+
+  test('밀리초 감소·선택 복원·날짜 도달·모바일 폭', async ({ page }) => {
+    const year = new Date().getFullYear()
+    await page.route('**/api/ddays', (route) => route.fulfill({ json: [
+      { id: 'first', label: '첫 목표', target_date: `${year}-01-02` },
+      { id: 'second', label: '다음 목표', target_date: `${year}-01-03` },
+    ] }))
+    await page.goto('/timer')
+    await page.clock.install({ time: new Date(`${year}-01-01T23:59:57.000+09:00`) })
+    await page.clock.pauseAt(new Date(`${year}-01-01T23:59:58.000+09:00`))
+    await page.getByRole('button', { name: 'D-day', exact: true }).click()
+    await page.clock.runFor(32)
+    const timer = page.getByRole('timer', { name: 'D-day 남은 시간' })
+    await expect(timer).toContainText('00:00:01.')
+    const before = await timer.textContent()
+    await page.clock.runFor(160)
+    expect(await timer.textContent()).not.toBe(before)
+    await page.getByRole('combobox', { name: '카운트다운 D-day' }).selectOption('second')
+    await page.clock.runFor(32)
+    await expect(timer).toContainText('1일')
+    await page.reload()
+    await expect(page.getByRole('button', { name: 'D-day', exact: true })).toHaveAttribute('aria-pressed', 'true')
+    await expect(page.getByRole('combobox', { name: '카운트다운 D-day' })).toHaveValue('second')
+    await page.getByRole('combobox', { name: '카운트다운 D-day' }).selectOption('first')
+    await page.clock.runFor(3000)
+    await expect(timer).toContainText('00:00:00.000')
+    await expect(page.getByText('D-day에 도착했어요!')).toBeVisible()
+    await page.clock.runFor(1000)
+    await expect(timer).toContainText('00:00:00.000')
+    await page.setViewportSize({ width: 375, height: 812 })
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+  })
+
+  test('조회 실패 재시도와 빈 목록에서 관리 열기', async ({ page }) => {
+    let fail = true
+    await page.route('**/api/ddays', (route) => route.fulfill({ status: fail ? 500 : 200, json: fail ? { error: 'test' } : [] }))
+    await page.goto('/timer')
+    await page.getByRole('button', { name: 'D-day', exact: true }).click()
+    const retry = page.getByRole('main').getByRole('button', { name: '다시 시도' })
+    await expect(retry).toBeVisible({ timeout: 15000 })
+    fail = false
+    await retry.click()
+    await expect(page.getByText('등록된 D-day가 없습니다. 목표 날짜를 추가해 주세요.')).toBeVisible()
+    await page.getByRole('button', { name: 'D-day 관리', exact: true }).click()
+    await expect(page.getByRole('heading', { name: 'D-day 설정' })).toBeVisible()
+  })
+})
