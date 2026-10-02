@@ -28,11 +28,13 @@ export interface Profile {
   full_name: string | null
   avatar_url: string | null
   day_start_time: string
+  motto: string | null
   created_at: string
 }
 
 export interface UpdateProfileInput {
   day_start_time?: string
+  motto?: string | null
 }
 
 export interface TaskTemplate {

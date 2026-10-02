@@ -37,5 +37,27 @@ export function useProfile() {
     },
   })
 
-  return { profile, loading, error, refetch, updateDayStartTime, savingDayStartTime }
+  const { mutateAsync: updateMotto, isPending: savingMotto } = useMutation({
+    mutationFn: async (motto: string) => {
+      // 빈 문자열은 "각오 없음" 이므로 null 로 저장해 미설정과 같게 다룬다.
+      const { data } = await apiClient.patch<Profile>('/profile', {
+        motto: motto.trim() || null,
+      })
+      return data
+    },
+    onSuccess: (data) => {
+      queryClient.setQueryData<Profile>(profileKeys.all, data)
+    },
+  })
+
+  return {
+    profile,
+    loading,
+    error,
+    refetch,
+    updateDayStartTime,
+    savingDayStartTime,
+    updateMotto,
+    savingMotto,
+  }
 }
