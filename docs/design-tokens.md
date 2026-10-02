@@ -129,8 +129,11 @@ focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-foc
 시각 라벨을 둘 자리가 있으면 `aria-label` 로 늘리지 말고 `Field` 를 쓴다 — 눈으로
 보는 사용자에게도 이름이 필요하다.
 
-`id` 는 접근성 때문이 아니라 테스트가 잡고 있어서 남긴 것만 있다 — `#task-title`,
-`#task-date`(`.claude/skills/verify`), `#day-start-time`(`e2e/template.spec.ts`).
+`Field` 는 라벨이 컨트롤을 감싸므로 연결에 `id/htmlFor` 가 필요하지 않다.
+현재 태스크 스펙은 제목을 접근 이름으로 찾는다. 남아 있는 `task-title`·`task-date`
+ID를 테스트의 필수 계약으로 간주하지 않는다. `day-start-time`은
+`e2e/template.spec.ts`가 직접 참조한다. 현재 로케이터는 `e2e/*.spec.ts`와
+[E2E 로케이터 원칙](../e2e/README.md#로케이터-원칙)을 기준으로 확인한다.
 
 `ui/Select` 는 네이티브 `<select>` 를 유지한다. E2E 4개 스펙이 `selectOption()` 으로
 조작하므로 리스트박스로 바꾸면 그 상호작용을 함께 다시 써야 한다. 다만 로케이터는
