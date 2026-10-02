@@ -5,58 +5,67 @@ description: chuksung 앱의 변경사항을 실제 브라우저/HTTP로 구동 
 
 # chuksung 런타임 검증 레시피
 
-## dev 서버
+## 작업 환경과 서버
+
+작업 워크트리에서 실행한다. 포트·계정은 [슬롯 규칙](../../../docs/parallel-work.md)의
+현재 워크트리 배정을 사용한다. 기본 체크아웃이나 다른 슬롯의 값을 가져오지 않는다.
+[환경변수 로드 계약](../../../e2e/README.md#환경변수-로드-계약)에 따라 기존 환경변수가
+`.env.local`보다 우선하므로 다른 작업에서 상속된 포트·계정이 없는지 확인한다.
+자격 증명은 출력하지 않는다.
+
+아래 `<슬롯 포트>`는 현재 워크트리의 `E2E_PORT` 값으로 바꾼다.
 
 ```bash
-pnpm dev --port 3101   # 3000은 다른 세션과 충돌 가능 — 3101 사용
-curl -s -o /dev/null -w "%{http_code}" http://localhost:3101/login   # 200이면 준비됨
+pnpm dev --port <슬롯 포트>
 ```
 
-## 인증 세션 (OAuth 우회)
+같은 워크트리의 별도 터미널에서 해당 서버의 `/login` 응답을 확인한다. HTTP 200만으로
+다른 브랜치 서버가 아님을 증명할 수는 없다. 이미 포트가 사용 중이면 프로세스의 작업
+경로를 확인하고, 소유가 불명확한 서버를 재사용하거나 종료하지 않는다.
+같은 슬롯의 수동 검증과 E2E는 동시에 실행하지 않는다. E2E 실행 전 수동 검증용 서버와
+브라우저를 종료한다. 포트만 바꿔도 계정 공유로 인한 데이터 간섭은 남는다.
 
-앱 로그인은 Google/Kakao OAuth 전용. 검증은 `e2e/auth.setup.ts`와 같은 방식으로
-`.env.local`의 `E2E_TEST_USER_EMAIL/PASSWORD`(e2e@example.com 테스트 계정)로
-`@supabase/ssr` `createServerClient` + 커스텀 쿠키 스토어 → `signInWithPassword`
-→ 발급된 쿠키를 curl `Cookie:` 헤더나 Playwright `ctx.addCookies()`에 주입.
+## 인증 세션과 브라우저
 
-주의: ESM 해석 때문에 스크립트는 **프로젝트 루트**에 임시 파일(`.xxx.tmp.mjs`)로
-두고 실행 후 삭제할 것 (scratchpad에서 실행하면 `@supabase/ssr` 못 찾음).
-
-## 브라우저 구동 (GUI 검증)
-
-`@playwright/test`의 chromium을 직접 import해 드라이버 스크립트 작성
-(테스트 러너 말고 스크립트로). 브라우저 바이너리는 설치돼 있음.
-
-### 자주 쓰는 셀렉터
-- 사이드바 내비: `aside nav a[href="/weekly"]` (Link 전환 후)
-- 새 태스크 버튼: `getByRole('button', { name: '새 태스크' })`
-- 태스크 폼: `#task-title`, `#task-date`(type=date), 저장 버튼
-- 태스크 카드: 완료 토글은 `<input type="checkbox">`(role=checkbox, aria-label
-  `완료`/`완료 취소`) — button 아님. 수정/삭제는 aria-label `수정`/`삭제` 버튼.
-  카드 컨테이너는 `div.rounded-xl`
-- 날짜 이동: `전날`/`다음날` aria-label 버튼
-- 타이머 표시: `div.text-7xl` (⚠️ `/\d{2}:\d{2}:\d{2}/` 정규식으로 body를 매칭하면
-  **헤더의 현재 시각 시계**가 잡힘 — 반드시 이 셀렉터 사용)
-- 타이머 버튼: `시작`/`일시정지`/`재개`/`초기화`("리셋" 아님), 완료 토스트: `타이머 완료! 🎉`
-
-### 함정
-- 삭제는 네이티브 `confirm()` — `page.on('dialog', d => d.accept())` 필수
-- dev는 React StrictMode: 이펙트 2회 실행으로 포커스/타이밍 동작이 prod와 다를 수 있음
-- 검증 중 만든 데이터는 반드시 삭제(테스트 계정이지만 실 DB). goal PUT은 기존 값을
-  덮어쓰므로 건드리지 말 것
-- 검증용 태스크 제목에 `검증-<타임스탬프>` 마커를 넣으면 정리하기 쉬움
-
-## API 검증 (curl)
-
-발급한 쿠키를 `-H "Cookie: ..."`로 붙여 `http://localhost:3101/api/...` 호출.
-401/400/404 매핑과 zod 스트립 동작 검증에 사용.
-
-## 원격 DB 상태 확인 (Docker 없음 주의)
-
-WSL2에 Docker가 없어 `supabase db dump/diff` 불가. 대신 Management API:
+인증된 수동 브라우저는 [기존 로그인 도구](../../../scripts/dev-login.mjs)를 사용한다.
+서버가 떠 있는 상태에서 같은 워크트리의 포그라운드 터미널로 실행한다.
 
 ```bash
-curl -s -X POST "https://api.supabase.com/v1/projects/ywwsdezbttlwhiikasjq/database/query" \
-  -H "Authorization: Bearer $(cat ~/.supabase/access-token)" \
-  -d '{"query":"select ... (문자열은 $$...$$ 인용)"}'
+pnpm dev:login /daily --port <슬롯 포트>
 ```
+
+도구는 현재 작업의 E2E 계정으로 쿠키를 주입하고 브라우저를 연다. `E2E_PORT`를 자동으로
+사용하지 않으므로 `--port`를 생략하지 않는다. 임시 세션 발급 파일을 새로 만들 필요가 없다.
+브라우저 준비물은 [E2E 최초 셋업](../../../e2e/README.md#최초-1회-셋업)을 따른다.
+
+자동 검증은 해당 `e2e/*.spec.ts`와 [인증 셋업](../../../e2e/auth.setup.ts)을 재사용한다.
+현재 로케이터는 [E2E 스펙 목록과 로케이터 원칙](../../../e2e/README.md)에서 찾는다.
+이 레시피에 별도 셀렉터 목록을 유지하지 않는다. 추가 관측이 필요하면 기존 스펙의
+인증·로케이터·정리 방식을 기준으로 Playwright 관측을 구성한다.
+
+## dev와 production 비교
+
+App Router의 dev StrictMode는 이펙트 설정·정리를 추가 실행한다. 포커스·타이머·구독
+이상이 보이면 정리 함수 누락이나 중복 부작용의 신호일 수 있으므로 무시하지 않는다.
+같은 워크트리의 dev 서버를 종료하고 production 빌드로 같은 동작을 재확인한다.
+
+```bash
+pnpm build && pnpm start --port <슬롯 포트>
+```
+
+위 서버에 다시 `pnpm dev:login`으로 접속해 비교한다. production에서 재현되지 않아도
+이펙트의 정리·재실행 안전성을 확인한다. 비교를 위해 StrictMode 설정을 끄지는 않는다.
+
+## API와 데이터 검증
+
+HTTP 검증도 현재 슬롯 서버와 해당 작업 계정의 인증 컨텍스트를 사용한다.
+`dev:login`은 브라우저를 여는 도구이며 curl용 쿠키를 출력하지 않는다. 자동 API 검증은
+기존 인증 스펙의 요청 방식을 따른다. 쿠키·토큰을 출력하거나 저장소에 커밋하지 않는다.
+
+테스트 계정도 원격 실 DB를 사용한다. 만든 데이터만 정리하고, 기존 값을 바꿔야 하는
+검증은 해당 스펙의 백업·복원 방식을 따른다. 계정 분리는 공용 문항이나 DB 스키마를
+격리하지 않는다. 삭제 대화상자 처리와 복원 방식도 대상 스펙을 기준으로 확인한다.
+
+원격 스키마 정의 확인이 필요할 때만 [원격 실제 상태 확인](../../../docs/schema-source-of-truth.md#management-api로-원격-실제-상태-확인)을
+따른다. Management API 토큰은 조회 전용이 아니며 대상은 실 DB이므로 이 검증 절차에서는
+**조회만** 수행한다. DB 변경은 이 레시피의 범위가 아니다.

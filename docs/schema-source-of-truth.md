@@ -57,6 +57,33 @@ Editor 로 수동 적용해 와서 오탐이 나기 쉬운 구조다. 그래서 
 볼륨이 바뀌어 성능 원장이 오염된다
 (`docs/perf/incidents/data-volume-contamination.md`).
 
+## Management API로 원격 실제 상태 확인
+
+Docker를 사용할 수 없어 `pnpm db:diff`가 막혔거나, 이름 검사로는 확인할 수 없는
+함수 정의·정책 등을 대조해야 할 때 Management API의
+`POST /v1/projects/<project-ref>/database/query`로 카탈로그를 조회할 수 있다.
+Docker 사용 가능 여부는 실행 환경에서 확인하며, WSL이라는 이유만으로 없다고 가정하지 않는다.
+
+이 절차는 **조회 전용**이다. Management API 액세스 토큰은 DB 조회만 가능한 키가
+아니며 원격 대상은 운영 DB다. HTTP POST는 SQL 전달 방식일 뿐 쓰기 허가를 뜻하지 않는다.
+
+1. 현재 작업의 Supabase URL과 연결된 프로젝트를 대조해 대상 project ref를 확인한다.
+   예전 명령에 들어 있던 프로젝트 식별자를 그대로 복사하지 않는다.
+2. 필요한 객체만 한정한 카탈로그 조회 SQL을 준비한다. 예를 들어 `pg_proc`와
+   `pg_namespace`에서 스키마·함수 이름을 제한해 `pg_get_functiondef`로 정의를 읽거나,
+   `pg_policies`에서 대상 테이블의 RLS 정책을 읽는다.
+3. 기존에 구성된 Management API 인증으로 JSON 본문의 `query`에 조회 SQL을 전달한다.
+   토큰은 요청 인증에만 사용하고 터미널 출력·문서·커밋에 남기지 않는다.
+4. 결과를 `supabase/schema.sql` 및 관련 마이그레이션과 대조하고 대상 프로젝트,
+   확인 시각, 확인한 저장소 커밋과 차이를 기록한다. 필요한 정의만 남기고 사용자 데이터는
+   수집하지 않는다.
+
+`SELECT`로 시작한다는 이유만으로 안전한 조회라고 판단하지 않는다. 쓰기 함수 호출,
+데이터를 변경하는 CTE, DML·DDL·권한 변경은 이 절차에서 실행하지 않는다.
+차이를 발견해도 여기서 수정 SQL을 실행하지 않고 저장소의 DB 변경 절차로 넘긴다.
+토큰이나 권한이 없으면 확인하지 못한 범위를 기록한다. PostgREST 호출 결과만으로
+함수 본문까지 일치한다고 보고하지 않는다.
+
 ## 남은 것
 
 `completed_tasks_history` 뷰(`schema.sql`)는 `src/` 어디서도 쓰이지 않는다. 이 RPC 로
