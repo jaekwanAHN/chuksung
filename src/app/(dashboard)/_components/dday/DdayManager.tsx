@@ -75,8 +75,11 @@ export function DdayManager({
           />
           <Input
             type="date"
+            max="9999-12-31"
             value={date}
-            onChange={(e) => setDate(e.target.value)}
+            onChange={(e) => {
+              if (e.target.value.split('-')[0].length <= 4) setDate(e.target.value)
+            }}
             className="[&::-webkit-calendar-picker-indicator]:cursor-pointer"
           />
           <Button
@@ -120,8 +123,11 @@ export function DdayManager({
                     <Input
                       fieldSize="sm"
                       type="date"
+                      max="9999-12-31"
                       value={editDate}
-                      onChange={(e) => setEditDate(e.target.value)}
+                      onChange={(e) => {
+                        if (e.target.value.split('-')[0].length <= 4) setEditDate(e.target.value)
+                      }}
                       className="[&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                     <div className="flex gap-2">
